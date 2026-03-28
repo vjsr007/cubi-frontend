@@ -1,0 +1,23 @@
+import { invoke } from '@tauri-apps/api/core';
+import type { AppConfig, SystemInfo, GameInfo, ScanResult } from '../types';
+
+export const api = {
+  // Config
+  getConfig: () => invoke<AppConfig>('get_config'),
+  setConfig: (config: AppConfig) => invoke<void>('set_config', { config }),
+  detectEmudeck: () => invoke<string | null>('detect_emudeck'),
+  getConfigPath: () => invoke<string>('get_config_path'),
+
+  // Library
+  getSystems: () => invoke<SystemInfo[]>('get_systems'),
+  getGames: (systemId: string) => invoke<GameInfo[]>('get_games', { systemId }),
+  getGame: (gameId: string) => invoke<GameInfo | null>('get_game', { gameId }),
+  toggleFavorite: (gameId: string) => invoke<boolean>('toggle_favorite', { gameId }),
+
+  // Scanner
+  scanLibrary: (dataRoot: string) => invoke<ScanResult>('scan_library', { dataRoot }),
+
+  // Launcher
+  launchGame: (gameId: string) => invoke<void>('launch_game', { gameId }),
+  getEmulatorStatus: (systemId: string) => invoke<string | null>('get_emulator_status', { systemId }),
+};

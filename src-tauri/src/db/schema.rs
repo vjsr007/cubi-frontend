@@ -1,0 +1,39 @@
+pub const CREATE_SCHEMA: &str = "
+CREATE TABLE IF NOT EXISTS systems (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    extensions TEXT NOT NULL DEFAULT '[]',
+    game_count INTEGER NOT NULL DEFAULT 0,
+    rom_path TEXT NOT NULL DEFAULT '',
+    icon TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS games (
+    id TEXT PRIMARY KEY,
+    system_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    file_path TEXT NOT NULL UNIQUE,
+    file_name TEXT NOT NULL,
+    file_size INTEGER NOT NULL DEFAULT 0,
+    box_art TEXT,
+    description TEXT,
+    developer TEXT,
+    publisher TEXT,
+    year TEXT,
+    genre TEXT,
+    players INTEGER NOT NULL DEFAULT 1,
+    rating REAL NOT NULL DEFAULT 0.0,
+    last_played TEXT,
+    play_count INTEGER NOT NULL DEFAULT 0,
+    favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (system_id) REFERENCES systems(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_games_system_id ON games(system_id);
+CREATE INDEX IF NOT EXISTS idx_games_title ON games(title);
+CREATE INDEX IF NOT EXISTS idx_games_last_played ON games(last_played);
+CREATE INDEX IF NOT EXISTS idx_games_favorite ON games(favorite);
+";

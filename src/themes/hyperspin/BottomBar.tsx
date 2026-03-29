@@ -1,10 +1,13 @@
+import { useI18nStore } from '../../stores/i18nStore';
+
 interface BottomBarProps {
   mode: 'system' | 'game';
   systemName?: string;
 }
 
 export function BottomBar({ mode, systemName }: BottomBarProps) {
-  const centerLabel = mode === 'system' ? 'Select System' : `${systemName ?? 'Games'}`;
+  const { t } = useI18nStore();
+  const centerLabel = mode === 'system' ? t('hyperspin.selectSystem') : `${systemName ?? t('hyperspin.selectGame')}`;
 
   return (
     <div
@@ -29,7 +32,7 @@ export function BottomBar({ mode, systemName }: BottomBarProps) {
           fontFamily: 'system-ui, Arial, sans-serif',
         }}
       >
-        Player 1
+        {t('hyperspin.player1')}
       </span>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -60,7 +63,7 @@ export function BottomBar({ mode, systemName }: BottomBarProps) {
           fontFamily: 'system-ui, Arial, sans-serif',
         }}
       >
-        Player 2
+        {t('hyperspin.player2')}
       </span>
     </div>
   );

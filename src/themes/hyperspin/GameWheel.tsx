@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { GameInfo } from '../../types';
 import { useAudio } from '../../hooks/useAudio';
+import { useI18nStore } from '../../stores/i18nStore';
 
 interface GameWheelProps {
   games: GameInfo[];
@@ -88,6 +89,7 @@ export function GameWheel({ games, focusedIndex, onFocusChange, onSelect, onBack
   const axisRef = useRef(0);
   const lastMoveRef = useRef(0);
   const { playTick, playEnter, playBack } = useAudio();
+  const { t } = useI18nStore();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -155,7 +157,7 @@ export function GameWheel({ games, focusedIndex, onFocusChange, onSelect, onBack
       })}
       {games.length === 0 && (
         <div style={{ color: '#555', fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          No games found
+          {t('hyperspin.noGames')}
         </div>
       )}
     </div>

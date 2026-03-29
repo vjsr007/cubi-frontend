@@ -9,6 +9,7 @@ import { BottomBar } from './BottomBar';
 import { Toast } from '../../components/common/Toast';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { useAudio } from '../../hooks/useAudio';
+import { useI18nStore } from '../../stores/i18nStore';
 import type { GameInfo } from '../../types';
 
 type HyperView = 'systems' | 'games';
@@ -27,6 +28,7 @@ export function HyperSpinTheme() {
   const rafRef = useRef<number>(0);
   const lastMoveRef = useRef(0);
   const { playTick, playEnter } = useAudio();
+  const { t } = useI18nStore();
 
   useEffect(() => {
     loadSystems();
@@ -118,9 +120,9 @@ export function HyperSpinTheme() {
             onClick={() => navigateTo('library')}
             style={{ background: 'none', border: '1px solid #444', borderRadius: 6, color: '#aaa', padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}
           >
-            ← Back
+            {t('hyperspin.back')}
           </button>
-          <span style={{ color: '#f39c12', fontWeight: 600, fontSize: 15 }}>Settings</span>
+          <span style={{ color: '#f39c12', fontWeight: 600, fontSize: 15 }}>{t('hyperspin.settings')}</span>
         </div>
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <SettingsPage />
@@ -144,7 +146,7 @@ export function HyperSpinTheme() {
       {/* Settings button */}
       <button
         onClick={() => navigateTo('settings')}
-        title="Settings"
+        title={t('hyperspin.settings')}
         style={{
           position: 'absolute',
           top: 12,

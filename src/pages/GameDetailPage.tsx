@@ -2,7 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '../stores/uiStore';
 import { useLibraryStore } from '../stores/libraryStore';
-import { useGameMedia, bestImage } from '../hooks/useMedia';
+import { useI18nStore } from '../stores/i18nStore';
+import { useGameMedia } from '../hooks/useMedia';
+import { useTranslate } from '../hooks/useTranslate';
 import { GameBoxCase } from '../components/library/GameBoxCase';
 import { VideoPreview } from '../components/media/VideoPreview';
 import { SystemLogo } from '../components/common/SystemLogo';
@@ -11,10 +13,19 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 export function GameDetailPage() {
   const { selectedGameId, navigateTo, showToast } = useUiStore();
   const { launchGame, games, toggleFavorite } = useLibraryStore();
+  const { t } = useI18nStore();
   const [boxFlipped, setBoxFlipped] = useState(false);
 
   const game = games.find((g) => g.id === selectedGameId);
   const { data: media, isLoading: mediaLoading } = useGameMedia(game?.id ?? null);
+
+  const { translate, toggleOriginal, isLoading: translating, canTranslate,
+          isTranslated, showingOriginal, getField } = useTranslate(game?.id ?? '', {
+    description: game?.description,
+    genre: game?.genre,
+    developer: game?.developer,
+    publisher: game?.publisher,
+  });
 
   const handleLaunch = useCallback(() => {
     if (game) launchGame(game.id).catch((err) => showToast(String(err), 'error'));
@@ -33,12 +44,16 @@ export function GameDetailPage() {
   if (!game) {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <LoadingSpinner size="lg" message="Loading game..." />
+        <LoadingSpinner size="lg" message={t('common.loading')} />
       </div>
     );
   }
 
   const hasVideo = !!media?.video;
+  const description = getField('description');
+  const genre = getField('genre');
+  const developer = getField('developer');
+  const publisher = getField('publisher');
 
   return (
     <motion.div
@@ -54,13 +69,12 @@ export function GameDetailPage() {
           style={{
             background: 'none', border: 'none', color: 'var(--color-text-muted)',
             cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: '4px 0',
-            display: 'flex', alignItems: 'center', gap: 6,
-            transition: 'color 0.15s',
+            display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.15s',
           }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; }}
         >
-          ← Back to Library
+          {t('settings.back')}
         </button>
 
         <div style={{ display: 'flex', gap: 40, alignItems: 'flex-start' }}>
@@ -71,7 +85,6 @@ export function GameDetailPage() {
             transition={{ duration: 0.35, delay: 0.1 }}
             style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}
           >
-            {/* 3D Game Box */}
             <GameBoxCase
               game={game}
               media={media ?? null}
@@ -81,16 +94,10 @@ export function GameDetailPage() {
               height={380}
               spineWidth={20}
             />
-
-            {/* Flip hint */}
-            <p style={{
-              fontSize: 11, color: 'var(--color-text-muted)', margin: 0,
-              textAlign: 'center', opacity: 0.6,
-            }}>
-              {boxFlipped ? 'Click box or press Space to see front' : 'Click box or press Space to flip'}
+            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: 0, textAlign: 'center', opacity: 0.6 }}>
+              {boxFlipped ? t('game.flipToFront') : t('game.flipToFlip')}
             </p>
 
-            {/* Video Preview */}
             {hasVideo && media?.video && (
               <div style={{
                 width: 300, aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden',
@@ -110,7 +117,7 @@ export function GameDetailPage() {
                   borderRadius: '50%',
                   animation: 'spin 0.6s linear infinite',
                 }} />
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Loading media...</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{t('common.loading')}</span>
               </div>
             )}
           </motion.div>
@@ -137,44 +144,85 @@ export function GameDetailPage() {
             {/* Tags row */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
               {game.year && <Tag>{game.year}</Tag>}
-              {game.genre && <Tag>{game.genre}</Tag>}
-              {game.developer && <Tag>{game.developer}</Tag>}
-              {game.players > 1 && <Tag>{game.players} Players</Tag>}
-              {game.favorite && <Tag color="#f59e0b">★ Favorite</Tag>}
+              {genre && <Tag>{genre}</Tag>}
+              {developer && <Tag>{developer}</Tag>}
+              {publisher && <Tag>{publisher}</Tag>}
+              {game.players > 1 && <Tag>{game.players} {t('game.players')}</Tag>}
+              {game.favorite && <Tag color="#f59e0b">★ {t('game.favorite')}</Tag>}
             </div>
 
             {/* Description */}
-            {game.description && (
-              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.7, marginBottom: 24, maxWidth: 500 }}>
-                {game.description}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {t('game.description')}
+                </span>
+
+                {/* Translate / Original toggle buttons */}
+                {canTranslate && !isTranslated && (
+                  <button
+                    onClick={translate}
+                    disabled={translating}
+                    style={{
+                      background: 'none', border: '1px solid var(--color-border)',
+                      borderRadius: 6, padding: '2px 10px', fontSize: 11,
+                      color: 'var(--color-text-muted)', cursor: translating ? 'default' : 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      transition: 'border-color 0.15s, color 0.15s',
+                      opacity: translating ? 0.7 : 1,
+                    }}
+                    onMouseEnter={(e) => { if (!translating) { const b = e.currentTarget; b.style.borderColor = 'var(--color-primary)'; b.style.color = 'var(--color-primary)'; } }}
+                    onMouseLeave={(e) => { const b = e.currentTarget; b.style.borderColor = 'var(--color-border)'; b.style.color = 'var(--color-text-muted)'; }}
+                  >
+                    {translating ? (
+                      <>
+                        <div style={{ width: 10, height: 10, border: '1.5px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                        {t('game.translating')}
+                      </>
+                    ) : (
+                      <>🌐 {t('game.translateMetadata')}</>
+                    )}
+                  </button>
+                )}
+
+                {isTranslated && (
+                  <button
+                    onClick={toggleOriginal}
+                    style={{
+                      background: showingOriginal ? 'var(--color-surface-2)' : 'none',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 6, padding: '2px 10px', fontSize: 11,
+                      color: showingOriginal ? 'var(--color-text)' : 'var(--color-text-muted)',
+                      cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {showingOriginal ? '🌐 Translated' : `📄 ${t('game.showOriginal')}`}
+                  </button>
+                )}
+              </div>
+
+              <p style={{ fontSize: 14, color: 'var(--color-text-muted)', lineHeight: 1.7, margin: 0, maxWidth: 500 }}>
+                {description ?? t('game.noDescription')}
               </p>
-            )}
+            </div>
 
             {/* Stats grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-              <StatCard label="Play Count" value={game.play_count} />
-              <StatCard label="Last Played" value={game.last_played ? new Date(game.last_played).toLocaleDateString() : 'Never'} />
-              <StatCard label="Rating" value={game.rating > 0 ? `${(game.rating * 10).toFixed(0)}%` : '—'} />
+              <StatCard label={t('game.playCount')} value={game.play_count} />
+              <StatCard label={t('game.lastPlayed')} value={game.last_played ? new Date(game.last_played).toLocaleDateString() : t('game.neverPlayed')} />
+              <StatCard label={t('game.rating')} value={game.rating > 0 ? `${(game.rating * 10).toFixed(0)}%` : '—'} />
             </div>
 
             {/* Launch button */}
             <button
               onClick={handleLaunch}
               style={{
-                background: 'var(--color-primary)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '14px 36px',
-                fontSize: 16,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 10,
+                background: 'var(--color-primary)', color: '#fff', border: 'none',
+                borderRadius: 10, padding: '14px 36px', fontSize: 16, fontWeight: 700,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10,
                 boxShadow: '0 4px 16px rgba(124,58,237,0.3)',
-                transition: 'transform 0.1s, box-shadow 0.1s',
-                marginBottom: 24,
+                transition: 'transform 0.1s, box-shadow 0.1s', marginBottom: 24,
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
@@ -185,7 +233,7 @@ export function GameDetailPage() {
                 (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(124,58,237,0.3)';
               }}
             >
-              ▶ Launch Game
+              ▶ {t('game.launch')}
             </button>
 
             {/* Favorite toggle */}
@@ -193,29 +241,19 @@ export function GameDetailPage() {
               <button
                 onClick={() => toggleFavorite(game.id)}
                 style={{
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 8,
-                  padding: '8px 16px',
-                  fontSize: 13,
-                  cursor: 'pointer',
+                  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer',
                   color: game.favorite ? '#f59e0b' : 'var(--color-text-muted)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  transition: 'border-color 0.15s',
+                  display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'border-color 0.15s',
                 }}
               >
-                {game.favorite ? '★ Favorited' : '☆ Add to Favorites'}
+                {game.favorite ? `★ ${t('game.favorite')}` : `☆ ${t('game.favorite')}`}
               </button>
             </div>
 
             {/* File info */}
-            <div style={{
-              background: 'var(--color-surface)', borderRadius: 8,
-              border: '1px solid var(--color-border)', padding: '12px 16px',
-            }}>
-              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>File</p>
+            <div style={{ background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)', padding: '12px 16px' }}>
+              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('game.file')}</p>
               <p style={{ fontSize: 12, color: 'var(--color-text)', fontFamily: 'monospace', margin: '0 0 4px', wordBreak: 'break-all' }}>
                 {game.file_name}
               </p>
@@ -226,9 +264,9 @@ export function GameDetailPage() {
 
             {/* Keyboard shortcuts hint */}
             <div style={{ marginTop: 20, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <KbdHint keys="Enter" action="Launch" />
-              <KbdHint keys="Space" action="Flip box" />
-              <KbdHint keys="Esc" action="Back" />
+              <KbdHint keys="Enter" action={t('game.launch')} />
+              <KbdHint keys="Space" action={t('game.flipBox')} />
+              <KbdHint keys="Esc" action={t('common.back')} />
             </div>
           </motion.div>
         </div>
@@ -255,10 +293,7 @@ function Tag({ children, color }: { children: React.ReactNode; color?: string })
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div style={{
-      background: 'var(--color-surface)', borderRadius: 8,
-      border: '1px solid var(--color-border)', padding: '10px 14px',
-    }}>
+    <div style={{ background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)', padding: '10px 14px' }}>
       <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </p>

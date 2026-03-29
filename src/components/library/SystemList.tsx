@@ -1,4 +1,5 @@
 import { useLibraryStore } from '../../stores/libraryStore';
+import { useI18nStore } from '../../stores/i18nStore';
 import { SystemLogo } from '../common/SystemLogo';
 import { SYSTEM_LOGOS } from '../../assets/system-logos';
 
@@ -15,6 +16,7 @@ const SYSTEM_COLORS: Record<string, string> = {
 
 export function SystemList() {
   const { systems, selectedSystemId, selectSystem, isLoadingSystems } = useLibraryStore();
+  const { t } = useI18nStore();
 
   if (isLoadingSystems) {
     return (
@@ -33,8 +35,8 @@ export function SystemList() {
         borderRight: '1px solid var(--color-border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       }}>
-        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'center', margin: 0 }}>
-          No systems found.<br />Scan your ROMs in Settings.
+        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'center', margin: 0, whiteSpace: 'pre-line' }}>
+          {t('library.noSystemsScan')}
         </p>
       </div>
     );
@@ -48,7 +50,7 @@ export function SystemList() {
     }}>
       <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid var(--color-border)' }}>
         <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, padding: '4px 8px' }}>
-          Systems
+          {t('library.systems')}
         </p>
       </div>
       <div style={{ padding: 8 }}>
@@ -101,7 +103,7 @@ export function SystemList() {
                   {sys.name}
                 </p>
                 <p style={{ fontSize: 11, margin: 0, color: active ? 'rgba(255,255,255,0.7)' : 'var(--color-text-muted)' }}>
-                  {sys.game_count} games
+                  {sys.game_count} {t('library.games')}
                 </p>
               </div>
             </button>

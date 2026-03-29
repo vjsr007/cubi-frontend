@@ -1,0 +1,114 @@
+export interface LocaleStrings {
+  settings: {
+    title: string;
+    general: string;
+    paths: string;
+    language: string;
+    theme: string;
+    dataRoot: string;
+    emudeckPath: string;
+    detectEmuDeck: string;
+    save: string;
+    saved: string;
+    browse: string;
+    scanLibrary: string;
+    scanning: string;
+    back: string;
+    autoScan: string;
+    hashRoms: string;
+    scanner: string;
+  };
+  library: {
+    title: string;
+    noSystems: string;
+    noSystemsScan: string;
+    systems: string;
+    noGames: string;
+    noGamesYet: string;
+    noRomsAt: string;
+    setRomPath: string;
+    scanNow: string;
+    openSettings: string;
+    scanPrompt: string;
+    scanningRoms: string;
+    searchPlaceholder: string;
+    allSystems: string;
+    games: string;
+    sortBy: string;
+    viewGrid: string;
+    viewList: string;
+    loadingGames: string;
+  };
+  filters: {
+    favorites: string;
+    sortTitle: string;
+    sortLastPlayed: string;
+    sortPlayCount: string;
+    sortRating: string;
+    sortYear: string;
+    ascending: string;
+    descending: string;
+  };
+  game: {
+    launch: string;
+    developer: string;
+    publisher: string;
+    year: string;
+    genre: string;
+    players: string;
+    rating: string;
+    playCount: string;
+    lastPlayed: string;
+    favorite: string;
+    addFavorite: string;
+    removeFavorite: string;
+    description: string;
+    translateMetadata: string;
+    showOriginal: string;
+    translating: string;
+    noDescription: string;
+    timesPlayed: string;
+    neverPlayed: string;
+    size: string;
+    file: string;
+    flipToFlip: string;
+    flipToFront: string;
+    flipBox: string;
+  };
+  hyperspin: {
+    selectSystem: string;
+    player1: string;
+    player2: string;
+    noGames: string;
+    loading: string;
+    selectGame: string;
+    settings: string;
+    back: string;
+  };
+  themes: {
+    defaultName: string;
+    defaultDesc: string;
+    hyperspinName: string;
+    hyperspinDesc: string;
+  };
+  common: {
+    loading: string;
+    error: string;
+    close: string;
+    settings: string;
+    back: string;
+    yes: string;
+    no: string;
+    cancel: string;
+    confirm: string;
+  };
+}
+
+export const SUPPORTED_LANGUAGES: { code: string; name: string; native: string; flag: string }[] = [
+  { code: 'en', name: 'English',    native: 'English',    flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish',    native: 'Español',    flag: '🇪🇸' },
+  { code: 'fr', name: 'French',     native: 'Français',   flag: '🇫🇷' },
+  { code: 'de', name: 'German',     native: 'Deutsch',    flag: '🇩🇪' },
+  { code: 'pt', name: 'Portuguese', native: 'Português',  flag: '🇧🇷' },
+  { code: 'ja', name: 'Japanese',   native: '日本語',      flag: '🇯🇵' },
+];

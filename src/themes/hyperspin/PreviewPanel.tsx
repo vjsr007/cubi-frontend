@@ -1,5 +1,6 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { useGameMedia, useSystemMedia, bestImage } from '../../hooks/useMedia';
+import { useI18nStore } from '../../stores/i18nStore';
 import { VideoPreview } from '../../components/media/VideoPreview';
 import { MediaImage } from '../../components/media/MediaImage';
 import { SystemLogo } from '../../components/common/SystemLogo';
@@ -15,6 +16,7 @@ interface PreviewPanelProps {
 export function PreviewPanel({ system, game, mode, focused = true }: PreviewPanelProps) {
   const { data: gameMedia, isLoading: gameMediaLoading } = useGameMedia(mode === 'game' ? (game?.id ?? null) : null);
   const { data: systemMedia } = useSystemMedia(system?.id ?? null);
+  const { t } = useI18nStore();
 
   const showVideo = mode === 'game' && !!gameMedia?.video;
   const displayImage = mode === 'game'
@@ -119,7 +121,7 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
               animation: 'spin 0.8s linear infinite',
             }} />
             <div style={{ fontSize: 12, color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Loading...
+              {t('hyperspin.loading')}
             </div>
           </div>
         ) : showVideo && gameMedia?.video ? (
@@ -135,7 +137,7 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0.4 }}>
             <div style={{ fontSize: 64 }}>🕹️</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', padding: '0 16px' }}>
-              {system?.name ?? 'SELECT SYSTEM'}
+              {system?.name ?? t('hyperspin.selectSystem')}
             </div>
           </div>
         )}

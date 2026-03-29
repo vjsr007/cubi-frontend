@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useUiStore } from '../../stores/uiStore';
+import { useI18nStore } from '../../stores/i18nStore';
 import { useGamepad } from '../../hooks/useGamepad';
 import { GameCard } from './GameCard';
 import { LoadingSpinner } from '../common/LoadingSpinner';
@@ -11,6 +12,7 @@ const COLUMNS = 6;
 export function GameGrid() {
   const store = useLibraryStore();
   const { showToast, navigateTo } = useUiStore();
+  const { t } = useI18nStore();
   const gridRef = useRef<HTMLDivElement>(null);
 
   const filteredGames = store.getFilteredGames();
@@ -90,7 +92,7 @@ export function GameGrid() {
   if (store.isLoadingGames) {
     return (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <LoadingSpinner size="lg" message="Loading games..." />
+        <LoadingSpinner size="lg" message={t('library.loadingGames')} />
       </div>
     );
   }
@@ -100,7 +102,7 @@ export function GameGrid() {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 56, marginBottom: 12 }}>🎮</div>
-          <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>No games found</p>
+          <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>{t('library.noGames')}</p>
         </div>
       </div>
     );

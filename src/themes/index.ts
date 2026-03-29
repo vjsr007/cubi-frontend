@@ -1,29 +1,8 @@
-import type { ComponentType } from 'react';
-import { DefaultTheme } from './default';
-import { HyperSpinTheme } from './hyperspin';
+// Import manifests to trigger self-registration.
+// To add a theme: create its folder + manifest.ts, then add one import here.
+// To remove a theme: delete its folder and remove the import below.
+import './default/manifest';
+import './hyperspin/manifest';
 
-export interface ThemeLayout {
-  id: string;
-  name: string;
-  description: string;
-  Component: ComponentType;
-}
-
-export const THEMES: ThemeLayout[] = [
-  {
-    id: 'default',
-    name: 'Default',
-    description: 'Clean sidebar with game grid',
-    Component: DefaultTheme,
-  },
-  {
-    id: 'hyperspin',
-    name: 'HyperSpin',
-    description: 'Classic spinning wheel frontend',
-    Component: HyperSpinTheme,
-  },
-];
-
-export function getTheme(id: string): ThemeLayout {
-  return THEMES.find((t) => t.id === id) ?? THEMES[0];
-}
+export { getTheme, getAllThemes, registerTheme } from './registry';
+export type { ThemeManifest } from './registry';

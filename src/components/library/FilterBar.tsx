@@ -1,4 +1,5 @@
 import { useLibraryStore } from '../../stores/libraryStore';
+import { useI18nStore } from '../../stores/i18nStore';
 import type { SortField, ViewMode } from '../../types';
 
 export function FilterBar() {
@@ -10,6 +11,7 @@ export function FilterBar() {
     showFavoritesOnly, toggleFavoritesOnly,
     games, getFilteredGames,
   } = useLibraryStore();
+  const { t } = useI18nStore();
 
   const filteredCount = getFilteredGames().length;
 
@@ -34,7 +36,7 @@ export function FilterBar() {
         <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--color-text-muted)' }}>🔍</span>
         <input
           type="text"
-          placeholder="Search games..."
+          placeholder={t('library.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{ ...inputStyle, width: '100%', paddingLeft: 26 }}
@@ -60,26 +62,27 @@ export function FilterBar() {
           display: 'flex', alignItems: 'center', gap: 4,
         }}
       >
-        ★ Favorites
+        ★ {t('filters.favorites')}
       </button>
 
       {/* Sort */}
       <select
         value={sortField}
         onChange={(e) => setSortField(e.target.value as SortField)}
+        aria-label={t('library.sortBy')}
         style={{ ...inputStyle, cursor: 'pointer' }}
       >
-        <option value="title">Title</option>
-        <option value="last_played">Last Played</option>
-        <option value="play_count">Play Count</option>
-        <option value="rating">Rating</option>
-        <option value="year">Year</option>
+        <option value="title">{t('filters.sortTitle')}</option>
+        <option value="last_played">{t('filters.sortLastPlayed')}</option>
+        <option value="play_count">{t('filters.sortPlayCount')}</option>
+        <option value="rating">{t('filters.sortRating')}</option>
+        <option value="year">{t('filters.sortYear')}</option>
       </select>
 
       <button
         onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
         style={{ ...inputStyle, cursor: 'pointer', padding: '6px 10px' }}
-        title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+        title={sortOrder === 'asc' ? t('filters.ascending') : t('filters.descending')}
       >
         {sortOrder === 'asc' ? '↑' : '↓'}
       </button>
@@ -90,6 +93,7 @@ export function FilterBar() {
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
+            title={mode === 'grid' ? t('library.viewGrid') : t('library.viewList')}
             style={{
               padding: '6px 10px', border: 'none', cursor: 'pointer', fontSize: 13,
               background: viewMode === mode ? 'var(--color-primary)' : 'var(--color-surface-2)',

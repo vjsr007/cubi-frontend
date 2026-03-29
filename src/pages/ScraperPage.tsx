@@ -16,7 +16,7 @@ export function ScraperPage() {
   const { systems, loadSystems } = useLibraryStore();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editingForm, setEditingForm] = useState<ScraperConfig | null | 'new'>('null');
+  const [editingForm, setEditingForm] = useState<ScraperConfig | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function ScraperPage() {
   };
 
   const handleFormSave = async (s: ScraperConfig) => {
-    if (editingForm && editingForm !== 'null') {
+    if (editingForm !== null) {
       await updateScraper(s);
     } else {
       await addScraper(s);
@@ -159,7 +159,7 @@ export function ScraperPage() {
         <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
           {showForm ? (
             <ScraperForm
-              initial={editingForm !== 'null' ? editingForm : null}
+              initial={editingForm}
               onSave={handleFormSave}
               onCancel={() => setShowForm(false)}
             />

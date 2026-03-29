@@ -102,6 +102,44 @@ export interface LocaleStrings {
     cancel: string;
     confirm: string;
   };
+  scraper: {
+    title: string;
+    scrapers: string;
+    addScraper: string;
+    editScraper: string;
+    deleteScraper: string;
+    noScrapers: string;
+    name: string;
+    url: string;
+    apiKey: string;
+    username: string;
+    password: string;
+    enabled: string;
+    priority: string;
+    requiresCredentials: string;
+    credentialHint: string;
+    supports: string;
+    save: string;
+    cancel: string;
+    runScrape: string;
+    cancelScrape: string;
+    selectSystem: string;
+    allSystems: string;
+    filterAll: string;
+    filterImages: string;
+    filterVideos: string;
+    filterMetadata: string;
+    filterMissing: string;
+    overwrite: string;
+    progress: string;
+    done: string;
+    scraped: string;
+    skipped: string;
+    errors: string;
+    jobRunning: string;
+    selectScraper: string;
+    confirmDelete: string;
+  };
 }
 
 export const SUPPORTED_LANGUAGES: { code: string; name: string; native: string; flag: string }[] = [

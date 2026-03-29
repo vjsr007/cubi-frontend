@@ -28,6 +28,12 @@ pub fn run() {
             commands::media::get_system_media,
             commands::media::download_game_media,
             commands::media::download_system_media,
+            commands::scraper::get_scrapers,
+            commands::scraper::add_scraper,
+            commands::scraper::update_scraper,
+            commands::scraper::delete_scraper,
+            commands::scraper::run_scrape_job,
+            commands::scraper::cancel_scrape_job,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

@@ -3,6 +3,7 @@ import { Toast } from '../../components/common/Toast';
 import { LibraryPage } from '../../pages/LibraryPage';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { GameDetailPage } from '../../pages/GameDetailPage';
+import { ScraperPage } from '../../pages/ScraperPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -15,6 +16,7 @@ export function DefaultTheme() {
         {currentPage === 'library' && <LibraryPage />}
         {currentPage === 'settings' && <SettingsPage />}
         {currentPage === 'game-detail' && <GameDetailPage />}
+        {currentPage === 'scraper' && <ScraperPage />}
       </main>
       <Toast />
     </div>

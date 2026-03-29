@@ -8,6 +8,7 @@ import { PreviewPanel } from './PreviewPanel';
 import { BottomBar } from './BottomBar';
 import { Toast } from '../../components/common/Toast';
 import { SettingsPage } from '../../pages/SettingsPage';
+import { ScraperPage } from '../../pages/ScraperPage';
 import { useAudio } from '../../hooks/useAudio';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { GameInfo } from '../../types';
@@ -130,6 +131,10 @@ export function HyperSpinTheme() {
         <Toast />
       </div>
     );
+  }
+
+  if (currentPage === 'scraper') {
+    return <ScraperPage />;
   }
 
   return (

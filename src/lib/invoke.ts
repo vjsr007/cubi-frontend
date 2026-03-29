@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia } from '../types';
+import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia, ScraperConfig, ScrapeJob, ScrapeResult } from '../types';
 
 export const api = {
   // Config
@@ -26,4 +26,12 @@ export const api = {
   getSystemMedia: (systemId: string) => invoke<SystemMedia>('get_system_media', { systemId }),
   downloadGameMedia: (gameId: string) => invoke<GameMedia>('download_game_media', { gameId }),
   downloadSystemMedia: (systemId: string) => invoke<SystemMedia>('download_system_media', { systemId }),
+
+  // Scrapers
+  getScrapers: () => invoke<ScraperConfig[]>('get_scrapers'),
+  addScraper: (scraper: ScraperConfig) => invoke<void>('add_scraper', { scraper }),
+  updateScraper: (scraper: ScraperConfig) => invoke<void>('update_scraper', { scraper }),
+  deleteScraper: (id: string) => invoke<void>('delete_scraper', { id }),
+  runScrapeJob: (job: ScrapeJob) => invoke<ScrapeResult>('run_scrape_job', { job }),
+  cancelScrapeJob: () => invoke<void>('cancel_scrape_job'),
 };

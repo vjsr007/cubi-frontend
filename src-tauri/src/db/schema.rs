@@ -36,4 +36,19 @@ CREATE INDEX IF NOT EXISTS idx_games_system_id ON games(system_id);
 CREATE INDEX IF NOT EXISTS idx_games_title ON games(title);
 CREATE INDEX IF NOT EXISTS idx_games_last_played ON games(last_played);
 CREATE INDEX IF NOT EXISTS idx_games_favorite ON games(favorite);
+
+CREATE TABLE IF NOT EXISTS scrapers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    api_key TEXT,
+    username TEXT,
+    password TEXT,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    priority INTEGER NOT NULL DEFAULT 0,
+    supports TEXT NOT NULL DEFAULT '[]',
+    requires_credentials INTEGER NOT NULL DEFAULT 0,
+    credential_hint TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 ";

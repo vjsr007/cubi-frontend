@@ -3,7 +3,7 @@ pub mod schema;
 use rusqlite::{Connection, Result as SqlResult};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
-use crate::models::{GameInfo, SystemInfo};
+use crate::models::{GameInfo, SystemInfo, ScraperConfig, default_scrapers};
 
 pub struct Database {
     pub conn: Mutex<Connection>,
@@ -25,6 +25,95 @@ impl Database {
     fn initialize(&self) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(schema::CREATE_SCHEMA)?;
+        drop(conn);
+        self.seed_default_scrapers();
+        Ok(())
+    }
+
+    /// Seed default scrapers if the table is empty
+    fn seed_default_scrapers(&self) {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM scrapers", [], |r| r.get(0))
+            .unwrap_or(0);
+        if count == 0 {
+            for s in default_scrapers() {
+                let supports_json = serde_json::to_string(&s.supports).unwrap_or_default();
+                let _ = conn.execute(
+                    "INSERT OR IGNORE INTO scrapers
+                     (id, name, url, api_key, username, password, enabled, priority,
+                      supports, requires_credentials, credential_hint)
+                     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
+                    rusqlite::params![
+                        s.id, s.name, s.url,
+                        s.api_key, s.username, s.password,
+                        s.enabled as i32, s.priority,
+                        supports_json,
+                        s.requires_credentials as i32,
+                        s.credential_hint,
+                    ],
+                );
+            }
+        }
+    }
+
+    pub fn get_scrapers(&self) -> SqlResult<Vec<ScraperConfig>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id,name,url,api_key,username,password,enabled,priority,
+                    supports,requires_credentials,credential_hint
+             FROM scrapers ORDER BY priority ASC, name ASC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            let supports_json: String = row.get(8)?;
+            let supports: Vec<String> = serde_json::from_str(&supports_json).unwrap_or_default();
+            Ok(ScraperConfig {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                url: row.get(2)?,
+                api_key: row.get(3)?,
+                username: row.get(4)?,
+                password: row.get(5)?,
+                enabled: row.get::<_, i32>(6)? != 0,
+                priority: row.get(7)?,
+                supports,
+                requires_credentials: row.get::<_, i32>(9)? != 0,
+                credential_hint: row.get(10)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn upsert_scraper(&self, s: &ScraperConfig) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let supports_json = serde_json::to_string(&s.supports).unwrap_or_default();
+        conn.execute(
+            "INSERT INTO scrapers
+             (id,name,url,api_key,username,password,enabled,priority,
+              supports,requires_credentials,credential_hint)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
+             ON CONFLICT(id) DO UPDATE SET
+               name=excluded.name, url=excluded.url,
+               api_key=excluded.api_key, username=excluded.username,
+               password=excluded.password, enabled=excluded.enabled,
+               priority=excluded.priority, supports=excluded.supports,
+               requires_credentials=excluded.requires_credentials,
+               credential_hint=excluded.credential_hint",
+            rusqlite::params![
+                s.id, s.name, s.url,
+                s.api_key, s.username, s.password,
+                s.enabled as i32, s.priority,
+                supports_json,
+                s.requires_credentials as i32,
+                s.credential_hint,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_scraper(&self, id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM scrapers WHERE id = ?1", [id])?;
         Ok(())
     }
 

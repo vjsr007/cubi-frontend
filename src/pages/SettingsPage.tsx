@@ -295,6 +295,20 @@ export function SettingsPage() {
           >
             {isScanning ? scanProgress : t('settings.scanLibrary')}
           </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('scraper')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            🕹️ {t('scraper.title')}
+          </button>
         </div>
       </div>
     </div>

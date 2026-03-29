@@ -14,7 +14,7 @@ interface ScraperState {
   addScraper: (s: ScraperConfig) => Promise<void>;
   updateScraper: (s: ScraperConfig) => Promise<void>;
   deleteScraper: (id: string) => Promise<void>;
-  setProgress: (p: ScrapeProgress) => void;
+  setProgress: (p: ScrapeProgress | null) => void;
   setJobRunning: (v: boolean) => void;
   setLastResult: (r: ScrapeResult | null) => void;
   setError: (e: string | null) => void;

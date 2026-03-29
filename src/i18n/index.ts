@@ -90,6 +90,8 @@ export interface LocaleStrings {
     defaultDesc: string;
     hyperspinName: string;
     hyperspinDesc: string;
+    auroraName: string;
+    auroraDesc: string;
   };
   common: {
     loading: string;

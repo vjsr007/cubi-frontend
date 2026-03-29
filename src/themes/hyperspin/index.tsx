@@ -12,6 +12,7 @@ import { ScraperPage } from '../../pages/ScraperPage';
 import { PcGamesPage } from '../../pages/PcGamesPage';
 import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { RomPathsPage } from '../../pages/RomPathsPage';
+import { InputMappingPage } from '../../pages/InputMappingPage';
 import { useAudio } from '../../hooks/useAudio';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { GameInfo } from '../../types';
@@ -162,6 +163,15 @@ export function HyperSpinTheme() {
     return (
       <div style={{ height: '100%', background: '#0d0d0d' }}>
         <RomPathsPage />
+        <Toast />
+      </div>
+    );
+  }
+
+  if (currentPage === 'input-mapping') {
+    return (
+      <div style={{ height: '100%', background: '#0d0d0d' }}>
+        <InputMappingPage />
         <Toast />
       </div>
     );

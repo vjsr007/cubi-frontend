@@ -4,6 +4,7 @@ import type {
   ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials,
   PcImportGame, PcLibraryStatus, SystemEmulatorInfo,
   SystemDefInfo, RomPathOverride,
+  InputProfile, ButtonBinding, SystemProfileAssignment, ActionInfo,
 } from '../types';
 
 export const api = {
@@ -68,4 +69,30 @@ export const api = {
     invoke<void>('set_rom_path_override', { systemId, customPath }),
   deleteRomPathOverride: (systemId: string) =>
     invoke<void>('delete_rom_path_override', { systemId }),
+
+  // Input Mapping
+  getInputProfiles: () => invoke<InputProfile[]>('get_input_profiles'),
+  getInputProfile: (profileId: string) => invoke<InputProfile | null>('get_input_profile', { profileId }),
+  createInputProfile: (name: string, controllerType: string, baseProfileId?: string) =>
+    invoke<InputProfile>('create_input_profile', { name, controllerType, baseProfileId }),
+  updateInputProfile: (profileId: string, name: string) =>
+    invoke<void>('update_input_profile', { profileId, name }),
+  deleteInputProfile: (profileId: string) =>
+    invoke<void>('delete_input_profile', { profileId }),
+  getProfileBindings: (profileId: string) =>
+    invoke<ButtonBinding[]>('get_profile_bindings', { profileId }),
+  setBinding: (profileId: string, action: string, buttonIndex: number, axisIndex?: number, axisDirection?: string) =>
+    invoke<void>('set_binding', { profileId, action, buttonIndex, axisIndex, axisDirection }),
+  resetProfileBindings: (profileId: string) =>
+    invoke<void>('reset_profile_bindings', { profileId }),
+  getSystemProfileAssignments: () =>
+    invoke<SystemProfileAssignment[]>('get_system_profile_assignments'),
+  setSystemProfileAssignment: (systemId: string, profileId: string) =>
+    invoke<void>('set_system_profile_assignment', { systemId, profileId }),
+  deleteSystemProfileAssignment: (systemId: string) =>
+    invoke<void>('delete_system_profile_assignment', { systemId }),
+  exportProfileForEmulator: (profileId: string, emulatorName: string) =>
+    invoke<string>('export_profile_for_emulator', { profileId, emulatorName }),
+  getAllActions: () => invoke<ActionInfo[]>('get_all_actions'),
+  getButtonLabel: (buttonIndex: number) => invoke<string>('get_button_label', { buttonIndex }),
 };

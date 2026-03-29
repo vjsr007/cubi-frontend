@@ -585,7 +585,7 @@ dependencies = [
 
 [[package]]
 name = "cubi-frontend"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -606,6 +606,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "toml 0.8.2",
+ "uuid",
  "walkdir",
  "which",
  "winreg 0.52.0",

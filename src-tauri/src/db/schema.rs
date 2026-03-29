@@ -57,4 +57,30 @@ CREATE TABLE IF NOT EXISTS system_rom_paths (
     custom_path TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS input_profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    controller_type TEXT NOT NULL DEFAULT 'Xbox',
+    is_builtin INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS input_bindings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    button_index INTEGER NOT NULL DEFAULT -1,
+    axis_index INTEGER,
+    axis_direction TEXT,
+    FOREIGN KEY (profile_id) REFERENCES input_profiles(id) ON DELETE CASCADE,
+    UNIQUE(profile_id, action)
+);
+
+CREATE TABLE IF NOT EXISTS system_profile_assignments (
+    system_id TEXT PRIMARY KEY,
+    profile_id TEXT NOT NULL,
+    FOREIGN KEY (profile_id) REFERENCES input_profiles(id) ON DELETE CASCADE
+);
 ";

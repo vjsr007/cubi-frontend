@@ -405,6 +405,20 @@ export function SettingsPage() {
           >
             📁 ROM Paths
           </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('input-mapping')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            🕹️ Input Mapping
+          </button>
         </div>
       </div>
     </div>

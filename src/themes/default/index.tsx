@@ -7,6 +7,7 @@ import { ScraperPage } from '../../pages/ScraperPage';
 import { PcGamesPage } from '../../pages/PcGamesPage';
 import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { RomPathsPage } from '../../pages/RomPathsPage';
+import { InputMappingPage } from '../../pages/InputMappingPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -23,6 +24,7 @@ export function DefaultTheme() {
         {currentPage === 'pc-games'         && <PcGamesPage />}
         {currentPage === 'emulator-config'  && <EmulatorConfigPage />}
         {currentPage === 'rom-paths'         && <RomPathsPage />}
+        {currentPage === 'input-mapping'    && <InputMappingPage />}
       </main>
       <Toast />
     </div>

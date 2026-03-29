@@ -27,7 +27,13 @@ impl Database {
         conn.execute_batch(schema::CREATE_SCHEMA)?;
         drop(conn);
         self.seed_default_scrapers();
+        self.seed_default_input_profiles();
         Ok(())
+    }
+
+    /// Seed built-in input profiles (Xbox, PlayStation, Nintendo) if none exist
+    fn seed_default_input_profiles(&self) {
+        crate::services::input_mapping_service::DefaultPresets::seed(self);
     }
 
     /// Seed default scrapers if the table is empty
@@ -340,6 +346,162 @@ impl Database {
             "DELETE FROM system_rom_paths WHERE system_id = ?1",
             [system_id],
         )?;
+        Ok(())
+    }
+
+    // ── Input Profiles ────────────────────────────────────────────────
+
+    pub fn get_input_profiles(&self) -> SqlResult<Vec<crate::models::InputProfile>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, controller_type, is_builtin, created_at, updated_at
+             FROM input_profiles ORDER BY is_builtin DESC, name ASC"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::InputProfile {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                controller_type: crate::models::ControllerType::from_str(
+                    &row.get::<_, String>(2)?
+                ),
+                is_builtin: row.get::<_, i32>(3)? != 0,
+                created_at: row.get(4)?,
+                updated_at: row.get(5)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn get_input_profile(&self, profile_id: &str) -> SqlResult<Option<crate::models::InputProfile>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, name, controller_type, is_builtin, created_at, updated_at
+             FROM input_profiles WHERE id = ?1"
+        )?;
+        let mut rows = stmt.query_map([profile_id], |row| {
+            Ok(crate::models::InputProfile {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                controller_type: crate::models::ControllerType::from_str(
+                    &row.get::<_, String>(2)?
+                ),
+                is_builtin: row.get::<_, i32>(3)? != 0,
+                created_at: row.get(4)?,
+                updated_at: row.get(5)?,
+            })
+        })?;
+        Ok(rows.next().transpose()?)
+    }
+
+    pub fn insert_input_profile(&self, profile: &crate::models::InputProfile) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR IGNORE INTO input_profiles (id, name, controller_type, is_builtin, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                profile.id,
+                profile.name,
+                profile.controller_type.as_str(),
+                profile.is_builtin as i32,
+                profile.created_at,
+                profile.updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_input_profile_name(&self, profile_id: &str, name: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE input_profiles SET name = ?2, updated_at = datetime('now') WHERE id = ?1",
+            rusqlite::params![profile_id, name],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_input_profile(&self, profile_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM input_profiles WHERE id = ?1 AND is_builtin = 0", [profile_id])?;
+        Ok(())
+    }
+
+    // ── Input Bindings ────────────────────────────────────────────────
+
+    pub fn get_profile_bindings(&self, profile_id: &str) -> SqlResult<Vec<crate::models::ButtonBinding>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT profile_id, action, button_index, axis_index, axis_direction
+             FROM input_bindings WHERE profile_id = ?1 ORDER BY action ASC"
+        )?;
+        let rows = stmt.query_map([profile_id], |row| {
+            Ok(crate::models::ButtonBinding {
+                profile_id: row.get(0)?,
+                action: row.get(1)?,
+                button_index: row.get(2)?,
+                axis_index: row.get(3)?,
+                axis_direction: row.get(4)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn set_binding(
+        &self,
+        profile_id: &str,
+        action: &str,
+        button_index: i32,
+        axis_index: Option<i32>,
+        axis_direction: Option<&str>,
+    ) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO input_bindings (profile_id, action, button_index, axis_index, axis_direction)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(profile_id, action) DO UPDATE SET
+               button_index = excluded.button_index,
+               axis_index = excluded.axis_index,
+               axis_direction = excluded.axis_direction",
+            rusqlite::params![profile_id, action, button_index, axis_index, axis_direction],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_profile_bindings(&self, profile_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM input_bindings WHERE profile_id = ?1", [profile_id])?;
+        Ok(())
+    }
+
+    // ── System ↔ Profile Assignments ──────────────────────────────────
+
+    pub fn get_system_profile_assignments(&self) -> SqlResult<Vec<crate::models::SystemProfileAssignment>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT system_id, profile_id FROM system_profile_assignments ORDER BY system_id"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::SystemProfileAssignment {
+                system_id: row.get(0)?,
+                profile_id: row.get(1)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn set_system_profile_assignment(&self, system_id: &str, profile_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO system_profile_assignments (system_id, profile_id)
+             VALUES (?1, ?2)
+             ON CONFLICT(system_id) DO UPDATE SET profile_id = excluded.profile_id",
+            rusqlite::params![system_id, profile_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_system_profile_assignment(&self, system_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM system_profile_assignments WHERE system_id = ?1", [system_id])?;
         Ok(())
     }
 }

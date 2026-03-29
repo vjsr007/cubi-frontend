@@ -10,3 +10,5 @@ pub mod libretro;
 pub mod scraper_service;
 pub mod pc_import_service;
 pub mod steamgriddb;
+pub mod input_mapping_service;
+pub mod exporters;

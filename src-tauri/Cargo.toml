@@ -1,6 +1,6 @@
 [package]
 name = "cubi-frontend"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [lib]
@@ -31,6 +31,7 @@ which = "7"
 reqwest = { version = "0.12", features = ["stream", "json"] }
 futures = "0.3"
 percent-encoding = "2"
+uuid = { version = "1", features = ["v4"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

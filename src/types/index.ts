@@ -94,7 +94,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping';
 
 export interface ScraperConfig {
   id: string;
@@ -197,4 +197,35 @@ export interface SystemDefInfo {
 export interface RomPathOverride {
   system_id: string;
   custom_path: string;
+}
+
+// ── Input Mapping ─────────────────────────────────────────────────────
+
+export type ControllerType = 'Xbox' | 'PlayStation' | 'Nintendo' | 'Custom';
+
+export interface InputProfile {
+  id: string;
+  name: string;
+  controller_type: ControllerType;
+  is_builtin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ButtonBinding {
+  profile_id: string;
+  action: string;
+  button_index: number;
+  axis_index?: number;
+  axis_direction?: string;
+}
+
+export interface SystemProfileAssignment {
+  system_id: string;
+  profile_id: string;
+}
+
+export interface ActionInfo {
+  name: string;
+  category: string; // 'UI' | 'Game' | 'Hotkey'
 }

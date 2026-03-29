@@ -49,6 +49,20 @@ pub fn run() {
             commands::rom_paths::get_rom_path_overrides,
             commands::rom_paths::set_rom_path_override,
             commands::rom_paths::delete_rom_path_override,
+            commands::input_mapping::get_input_profiles,
+            commands::input_mapping::get_input_profile,
+            commands::input_mapping::create_input_profile,
+            commands::input_mapping::update_input_profile,
+            commands::input_mapping::delete_input_profile,
+            commands::input_mapping::get_profile_bindings,
+            commands::input_mapping::set_binding,
+            commands::input_mapping::reset_profile_bindings,
+            commands::input_mapping::get_system_profile_assignments,
+            commands::input_mapping::set_system_profile_assignment,
+            commands::input_mapping::delete_system_profile_assignment,
+            commands::input_mapping::export_profile_for_emulator,
+            commands::input_mapping::get_all_actions,
+            commands::input_mapping::get_button_label,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

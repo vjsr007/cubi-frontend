@@ -20,11 +20,15 @@ impl Default for AppConfig {
     }
 }
 
+fn default_fullscreen() -> bool { true }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneralConfig {
     pub version: String,
     pub theme: String,
     pub language: String,
+    #[serde(default = "default_fullscreen")]
+    pub fullscreen: bool,
 }
 
 impl Default for GeneralConfig {
@@ -33,6 +37,7 @@ impl Default for GeneralConfig {
             version: "0.1.0".to_string(),
             theme: "dark".to_string(),
             language: "en".to_string(),
+            fullscreen: true,
         }
     }
 }

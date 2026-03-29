@@ -13,7 +13,7 @@ fn libretro_playlist_name(system_id: &str) -> Option<&'static str> {
         "gba"           => Some("Nintendo - Game Boy Advance"),
         "nds"           => Some("Nintendo - Nintendo DS"),
         "3ds"           => Some("Nintendo - Nintendo 3DS"),
-        "gc"            => Some("Nintendo - GameCube"),
+        "gc" | "gamecube" | "ngc" => Some("Nintendo - GameCube"),
         "wii"           => Some("Nintendo - Wii"),
         "wiiu"          => Some("Nintendo - Wii U"),
         "switch"        => Some("Nintendo - Switch"),

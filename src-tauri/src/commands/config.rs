@@ -1,9 +1,18 @@
 use crate::models::AppConfig;
 use crate::services::config_service;
+use tauri::Manager;
 
 #[tauri::command]
 pub fn get_config() -> Result<AppConfig, String> {
     config_service::load_config()
+}
+
+#[tauri::command]
+pub fn set_fullscreen(app: tauri::AppHandle, fullscreen: bool) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    window.set_fullscreen(fullscreen).map_err(|e: tauri::Error| e.to_string())
 }
 
 #[tauri::command]

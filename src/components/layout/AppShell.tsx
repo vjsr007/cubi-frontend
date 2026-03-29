@@ -1,13 +1,36 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useConfigStore } from '../../stores/configStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useI18nStore } from '../../stores/i18nStore';
 import { getTheme } from '../../themes';
+import { api } from '../../lib/invoke';
 
 export function AppShell() {
-  const { loadConfig, config } = useConfigStore();
+  const { loadConfig, config, saveConfig } = useConfigStore();
   const { currentPage, navigateTo } = useUiStore();
   const setLocale = useI18nStore((s) => s.setLocale);
+  const fsRef = useRef<boolean>(config?.general.fullscreen ?? true);
+
+  useEffect(() => {
+    if (config) fsRef.current = config.general.fullscreen ?? true;
+  }, [config?.general.fullscreen]);
+
+  // F11 toggles fullscreen globally
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        const next = !fsRef.current;
+        fsRef.current = next;
+        api.setFullscreen(next).catch(() => {});
+        if (config) {
+          saveConfig({ ...config, general: { ...config.general, fullscreen: next } }).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [config, saveConfig]);
 
   useEffect(() => {
     loadConfig();

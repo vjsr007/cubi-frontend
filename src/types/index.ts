@@ -8,6 +8,7 @@ export interface GeneralConfig {
   version: string;
   theme: string;
   language: string;
+  fullscreen: boolean;
 }
 
 export interface PathsConfig {
@@ -106,6 +107,12 @@ export interface ScrapeResult {
   skipped: number;
   errors: number;
   messages: string[];
+}
+
+export interface EsDECredentials {
+  screenscraper_username: string | null;
+  screenscraper_password: string | null;
+  active_scraper: string | null;
 }
 
 export interface GameMedia {

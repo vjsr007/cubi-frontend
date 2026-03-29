@@ -17,6 +17,7 @@ pub fn run() {
             commands::config::set_config,
             commands::config::detect_emudeck,
             commands::config::get_config_path,
+            commands::config::set_fullscreen,
             commands::library::get_systems,
             commands::library::get_games,
             commands::library::get_game,
@@ -34,10 +35,19 @@ pub fn run() {
             commands::scraper::delete_scraper,
             commands::scraper::run_scrape_job,
             commands::scraper::cancel_scrape_job,
+            commands::scraper::import_esde_credentials,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;
             app.manage(db);
+
+            // Apply saved fullscreen preference (overrides compiled default)
+            if let Ok(config) = services::config_service::load_config() {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_fullscreen(config.general.fullscreen);
+                }
+            }
+
             log::info!("Cubi Frontend initialized");
             Ok(())
         })

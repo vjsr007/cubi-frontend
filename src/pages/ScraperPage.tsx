@@ -7,6 +7,7 @@ import { useLibraryStore } from '../stores/libraryStore';
 import { ScraperList } from '../components/scraper/ScraperList';
 import { ScraperForm } from '../components/scraper/ScraperForm';
 import { ScrapeJobPanel } from '../components/scraper/ScrapeJobPanel';
+import { api } from '../lib/invoke';
 
 export function ScraperPage() {
   const { t } = useI18nStore();
@@ -54,6 +55,36 @@ export function ScraperPage() {
     await updateScraper(s);
   };
 
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  const handleImportEsde = async () => {
+    setImportStatus('Buscando configuración de ES-DE...');
+    try {
+      const creds = await api.importEsdeCredentials();
+      // Apply credentials to the ScreenScraper entry in the DB
+      const ss = scrapers.find((s) => s.id === 'screenscraper');
+      if (ss) {
+        const updated = {
+          ...ss,
+          username: creds.screenscraper_username ?? ss.username,
+          password: creds.screenscraper_password ?? ss.password,
+        };
+        await updateScraper(updated);
+        const parts: string[] = [];
+        if (creds.screenscraper_username) parts.push(`usuario: ${creds.screenscraper_username}`);
+        if (creds.screenscraper_password) parts.push('contraseña importada');
+        if (creds.active_scraper) parts.push(`scraper activo en ES-DE: ${creds.active_scraper}`);
+        setImportStatus(parts.length > 0
+          ? `✅ Importado — ${parts.join(', ')}`
+          : '⚠️ ES-DE encontrado pero las credenciales están vacías');
+      } else {
+        setImportStatus('⚠️ Scraper ScreenScraper no encontrado en la lista');
+      }
+    } catch (err) {
+      setImportStatus(`❌ ${err}`);
+    }
+  };
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
@@ -73,6 +104,33 @@ export function ScraperPage() {
           ←
         </button>
         <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{t('scraper.title')}</h1>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <button
+            onClick={handleImportEsde}
+            title="Importar credenciales desde EmulationStation / ES-DE"
+            style={{
+              background: 'var(--color-surface-2)',
+              color: 'var(--color-text)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+              padding: '6px 14px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            📥 Importar desde ES-DE
+          </button>
+          {importStatus && (
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 340, textAlign: 'right' }}>
+              {importStatus}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Body: two-panel layout */}

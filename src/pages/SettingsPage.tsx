@@ -41,13 +41,26 @@ export function SettingsPage() {
   const [emudeckPath, setEmudeckPath] = useState('');
   const [detecting, setDetecting] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [fullscreen, setFullscreen] = useState(true);
 
   useEffect(() => {
     if (config) {
       setDataRoot(config.paths.data_root);
       setEmudeckPath(config.paths.emudeck_path);
+      setFullscreen(config.general.fullscreen ?? true);
     }
   }, [config]);
+
+  const handleFullscreenToggle = async (value: boolean) => {
+    if (!config) return;
+    setFullscreen(value);
+    try {
+      await api.setFullscreen(value);
+      await saveConfig({ ...config, general: { ...config.general, fullscreen: value } });
+    } catch (e) {
+      showToast(String(e), 'error');
+    }
+  };
 
   const browse = async (setter: (v: string) => void) => {
     try {
@@ -226,10 +239,51 @@ export function SettingsPage() {
           </button>
         </section>
 
+        {/* Display */}
+        <section style={sectionStyle}>
+          <p style={sectionLabel}>Pantalla</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)', marginBottom: 2 }}>
+                Pantalla completa
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                Iniciar en pantalla completa. Presiona <kbd style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', borderRadius: 4, padding: '0 5px', fontSize: 11 }}>F11</kbd> para alternar en cualquier momento.
+              </div>
+            </div>
+            <button
+              onClick={() => handleFullscreenToggle(!fullscreen)}
+              style={{
+                width: 52,
+                height: 28,
+                borderRadius: 14,
+                border: 'none',
+                background: fullscreen ? 'var(--color-primary)' : 'var(--color-surface-3)',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                flexShrink: 0,
+                marginLeft: 24,
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: 3,
+                left: fullscreen ? 26 : 3,
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }} />
+            </button>
+          </div>
+        </section>
+
         {/* Theme */}
         <section style={sectionStyle}>
-          <p style={sectionLabel}>{t('settings.theme')}</p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <p style={sectionLabel}>{t('settings.theme')}</p>          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {getAllThemes().map((theme) => {
               const active = (config.general.theme || 'default') === theme.id;
               const themeName = t(theme.nameKey);

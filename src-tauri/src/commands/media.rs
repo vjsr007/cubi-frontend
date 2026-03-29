@@ -31,21 +31,42 @@ pub async fn download_system_media(
 }
 
 #[tauri::command]
-pub fn get_game_media(db: State<Database>, game_id: String) -> Result<GameMedia, String> {
+pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> Result<GameMedia, String> {
     let game = db.get_game(&game_id)
         .map_err(|e| e.to_string())?
         .ok_or_else(|| format!("Game not found: {}", game_id))?;
 
     let config = config_service::load_config()?;
-    if config.paths.data_root.is_empty() {
-        return Ok(GameMedia::default());
+
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| e.to_string())?;
+
+    let mut media = if config.paths.data_root.is_empty() {
+        media_service::resolve_game_media(
+            "",
+            &app_data_dir,
+            &game.system_id,
+            &game.file_name,
+        )
+    } else {
+        media_service::resolve_game_media(
+            &config.paths.data_root,
+            &app_data_dir,
+            &game.system_id,
+            &game.file_name,
+        )
+    };
+
+    // Fallback: use DB-stored paths (set by scraper) if resolver didn't find files
+    if media.box_art.is_none() {
+        if let Some(ref p) = game.box_art {
+            if std::path::Path::new(p).exists() {
+                media.box_art = Some(p.clone());
+            }
+        }
     }
 
-    Ok(media_service::resolve_game_media(
-        &config.paths.data_root,
-        &game.system_id,
-        &game.file_name,
-    ))
+    Ok(media)
 }
 
 #[tauri::command]
@@ -79,6 +100,7 @@ pub async fn download_game_media(
     } else {
         media_service::resolve_game_media(
             &config.paths.data_root,
+            &app_data_dir,
             &game.system_id,
             &game.file_name,
         )

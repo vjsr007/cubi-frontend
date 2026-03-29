@@ -16,7 +16,7 @@ fn ss_system_id(system_id: &str) -> Option<u32> {
         "gba"          => Some(12),
         "nds"          => Some(15),
         "3ds"          => Some(17),
-        "gc"           => Some(13),
+        "gc" | "gamecube" | "ngc" => Some(13),
         "wii"          => Some(16),
         "wiiu"         => Some(18),
         "switch"       => Some(225),

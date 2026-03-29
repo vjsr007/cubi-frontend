@@ -187,6 +187,11 @@ async fn scrape_screenscraper(
 
     let media_root = data_dir.join("media");
     let mut box_art_path: Option<String> = None;
+    let rom_stem = std::path::Path::new(&game.file_name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(&game.title);
+    let safe_rom_name = sanitize_filename(rom_stem);
 
     for media in &data.media_urls {
         let is_video = media.format == "mp4" || media.format == "webm";
@@ -198,7 +203,7 @@ async fn scrape_screenscraper(
         let dest_dir = media_root.join(&game.system_id).join(folder);
         let dest_file = dest_dir.join(format!(
             "{}.{}",
-            sanitize_filename(&game.title),
+            safe_rom_name,
             media.format
         ));
 
@@ -263,10 +268,16 @@ async fn scrape_thegamesdb(
         .build()
         .map_err(|e| e.to_string())?;
 
+    let rom_stem_tgdb = std::path::Path::new(&game.file_name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(&game.title);
+    let safe_rom_name_tgdb = sanitize_filename(rom_stem_tgdb);
+
     if want_images {
         if let Some(url) = &data.box_art_front_url {
             let dest = media_root.join(&game.system_id).join("box2dfront")
-                .join(format!("{}.jpg", sanitize_filename(&game.title)));
+                .join(format!("{}.jpg", safe_rom_name_tgdb));
             if !dest.exists() || overwrite {
                 if let Ok(_) = download_url(&client, url, &dest).await {
                     if overwrite || updated.box_art.is_none() {
@@ -277,14 +288,14 @@ async fn scrape_thegamesdb(
         }
         for (i, url) in data.screenshot_urls.iter().enumerate().take(3) {
             let dest = media_root.join(&game.system_id).join("screenshots")
-                .join(format!("{}_{}.jpg", sanitize_filename(&game.title), i));
+                .join(format!("{}_{}.jpg", safe_rom_name_tgdb, i));
             if !dest.exists() || overwrite {
                 let _ = download_url(&client, url, &dest).await;
             }
         }
         for (i, url) in data.fanart_urls.iter().enumerate().take(2) {
             let dest = media_root.join(&game.system_id).join("fanart")
-                .join(format!("{}_{}.jpg", sanitize_filename(&game.title), i));
+                .join(format!("{}_{}.jpg", safe_rom_name_tgdb, i));
             if !dest.exists() || overwrite {
                 let _ = download_url(&client, url, &dest).await;
             }
@@ -314,7 +325,11 @@ async fn scrape_libretro(
     let mut updated = game.clone();
     let mut downloaded = 0u32;
 
-    let safe_name = sanitize_filename(&game.title);
+    let rom_stem_lr = std::path::Path::new(&game.file_name)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(&game.title);
+    let safe_name = sanitize_filename(rom_stem_lr);
 
     // Box art
     if let Some(url) = &urls.box_art_url {

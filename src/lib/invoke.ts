@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia, ScraperConfig, ScrapeJob, ScrapeResult } from '../types';
+import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia, ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials } from '../types';
 
 export const api = {
   // Config
@@ -7,6 +7,7 @@ export const api = {
   setConfig: (config: AppConfig) => invoke<void>('set_config', { config }),
   detectEmudeck: () => invoke<string | null>('detect_emudeck'),
   getConfigPath: () => invoke<string>('get_config_path'),
+  setFullscreen: (fullscreen: boolean) => invoke<void>('set_fullscreen', { fullscreen }),
 
   // Library
   getSystems: () => invoke<SystemInfo[]>('get_systems'),
@@ -34,4 +35,5 @@ export const api = {
   deleteScraper: (id: string) => invoke<void>('delete_scraper', { id }),
   runScrapeJob: (job: ScrapeJob) => invoke<ScrapeResult>('run_scrape_job', { job }),
   cancelScrapeJob: () => invoke<void>('cancel_scrape_job'),
+  importEsdeCredentials: () => invoke<EsDECredentials>('import_esde_credentials'),
 };

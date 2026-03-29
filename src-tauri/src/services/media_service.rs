@@ -16,6 +16,16 @@ fn media_folder_for(data_root: &Path, system_id: &str) -> Option<PathBuf> {
     }
 }
 
+/// Folder where the scraper saves downloaded media: {app_data_dir}/media/{system_id}/
+fn scraped_media_folder(app_data_dir: &Path, system_id: &str) -> Option<PathBuf> {
+    let base = app_data_dir.join("media").join(system_id);
+    if base.exists() {
+        Some(base)
+    } else {
+        None
+    }
+}
+
 fn find_file(dir: &Path, stem: &str, extensions: &[&str]) -> Option<String> {
     for ext in extensions {
         let p = dir.join(format!("{}.{}", stem, ext));
@@ -44,6 +54,7 @@ const VID_EXTS: &[&str] = &["mp4", "avi", "mkv", "webm"];
 
 pub fn resolve_game_media(
     data_root: &str,
+    app_data_dir: &Path,
     system_id: &str,
     file_name: &str,
 ) -> GameMedia {
@@ -54,11 +65,12 @@ pub fn resolve_game_media(
         .unwrap_or(file_name);
 
     let media_base = media_folder_for(root, system_id);
+    let scraped_base = scraped_media_folder(app_data_dir, system_id);
 
+    // Lookup helper: checks EmuDeck/Skraper folder first, then scraped folder
     let lookup = |subfolder: &str, exts: &[&str]| -> Option<String> {
-        media_base.as_ref().and_then(|base| {
-            find_file(&base.join(subfolder), stem, exts)
-        })
+        media_base.as_ref().and_then(|base| find_file(&base.join(subfolder), stem, exts))
+            .or_else(|| scraped_base.as_ref().and_then(|base| find_file(&base.join(subfolder), stem, exts)))
     };
 
     // Box art: try miximages > backcovers (as front sometimes) > roms/*/downloaded_images

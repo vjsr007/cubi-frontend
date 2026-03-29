@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAudio } from '../../hooks/useAudio';
+import { SystemLogo } from '../../components/common/SystemLogo';
 
 interface WheelItem {
   id: string;
@@ -40,10 +41,12 @@ function getBadgeStyle(distance: number, focused: boolean): React.CSSProperties 
 
 function OvalBadge({
   label,
+  systemId,
   focused,
   onClick,
 }: {
   label: string;
+  systemId: string;
   focused: boolean;
   onClick: () => void;
 }) {
@@ -65,25 +68,21 @@ function OvalBadge({
         alignItems: 'center',
         justifyContent: 'center',
         userSelect: 'none',
+        padding: '0 20px',
       }}
     >
-      <span
+      <SystemLogo
+        systemId={systemId}
+        size={28}
+        fallbackText={label}
         style={{
-          fontSize: focused ? 15 : 13,
-          fontWeight: 700,
-          fontFamily: 'system-ui, Arial, sans-serif',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          color: focused ? '#f39c12' : '#ccc',
-          textShadow: focused ? '0 0 10px rgba(243,156,18,0.8)' : 'none',
+          filter: focused
+            ? 'drop-shadow(0 0 8px rgba(243,156,18,0.6)) brightness(1.1)'
+            : 'brightness(0.6)',
+          transition: 'filter 0.25s',
           maxWidth: 200,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
         }}
-      >
-        {label}
-      </span>
+      />
     </div>
   );
 }
@@ -132,6 +131,7 @@ export function WheelCarousel({ items, focusedIndex, onFocusChange, onSelect }: 
           <div key={item.id} style={getBadgeStyle(distance, focused)}>
             <OvalBadge
               label={item.label}
+              systemId={item.id}
               focused={focused}
               onClick={() => {
                 onFocusChange(idx);

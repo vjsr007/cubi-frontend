@@ -1,4 +1,6 @@
 import { useLibraryStore } from '../../stores/libraryStore';
+import { SystemLogo } from '../common/SystemLogo';
+import { SYSTEM_LOGOS } from '../../assets/system-logos';
 
 const SYSTEM_COLORS: Record<string, string> = {
   nes: '#e53e3e', snes: '#6b46c1', n64: '#2b6cb0',
@@ -78,10 +80,22 @@ export function SystemList() {
                 if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent';
               }}
             >
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                background: SYSTEM_COLORS[sys.id] ?? '#888',
-              }} />
+              {SYSTEM_LOGOS[sys.id] ? (
+                <SystemLogo
+                  systemId={sys.id}
+                  size={20}
+                  style={{
+                    flexShrink: 0,
+                    filter: active ? 'brightness(1)' : 'brightness(0.7)',
+                    transition: 'filter 0.15s',
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  background: SYSTEM_COLORS[sys.id] ?? '#888',
+                }} />
+              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {sys.name}

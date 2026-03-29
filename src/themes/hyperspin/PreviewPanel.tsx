@@ -2,6 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { useGameMedia, useSystemMedia, bestImage } from '../../hooks/useMedia';
 import { VideoPreview } from '../../components/media/VideoPreview';
 import { MediaImage } from '../../components/media/MediaImage';
+import { SystemLogo } from '../../components/common/SystemLogo';
 import type { SystemInfo, GameInfo } from '../../types';
 
 interface PreviewPanelProps {
@@ -142,6 +143,19 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
 
       {/* Info */}
       <div style={{ textAlign: 'center', maxWidth: 480, position: 'relative', zIndex: 1 }}>
+        {/* System logo in system mode */}
+        {mode === 'system' && system && (
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <SystemLogo
+              systemId={system.id}
+              size={48}
+              fallbackText={system.name}
+              style={{
+                filter: 'drop-shadow(0 0 12px rgba(243,156,18,0.5)) brightness(1.1)',
+              }}
+            />
+          </div>
+        )}
         {/* Wheel logo if available in system mode */}
         {mode === 'system' && systemMedia?.wheel && (
           <div style={{ marginBottom: 8, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

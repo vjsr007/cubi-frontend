@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AppConfig, SystemInfo, GameInfo, ScanResult } from '../types';
+import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia } from '../types';
 
 export const api = {
   // Config
@@ -20,4 +20,9 @@ export const api = {
   // Launcher
   launchGame: (gameId: string) => invoke<void>('launch_game', { gameId }),
   getEmulatorStatus: (systemId: string) => invoke<string | null>('get_emulator_status', { systemId }),
+
+  // Media
+  getGameMedia: (gameId: string) => invoke<GameMedia>('get_game_media', { gameId }),
+  getSystemMedia: (systemId: string) => invoke<SystemMedia>('get_system_media', { systemId }),
+  downloadGameMedia: (gameId: string) => invoke<GameMedia>('download_game_media', { gameId }),
 };

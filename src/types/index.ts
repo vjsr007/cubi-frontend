@@ -67,3 +67,21 @@ export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'yea
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
 export type Page = 'library' | 'settings' | 'game-detail';
+
+export interface GameMedia {
+  box_art: string | null;
+  back_cover: string | null;
+  screenshot: string | null;
+  title_screen: string | null;
+  fan_art: string | null;
+  wheel: string | null;
+  marquee: string | null;
+  mix_image: string | null;
+  video: string | null;
+}
+
+export interface SystemMedia {
+  fan_art: string | null;
+  wheel: string | null;
+  marquee: string | null;
+}

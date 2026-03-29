@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { useGameMedia, bestImage } from '../../hooks/useMedia';
+import { VideoPreview } from '../media/VideoPreview';
 import type { GameInfo } from '../../types';
 
 interface Props {
@@ -15,7 +17,15 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
   const [imgError, setImgError] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const imgSrc = game.box_art && !imgError ? convertFileSrc(game.box_art) : null;
+  // Fetch rich media — only when hovered or focused for performance
+  const { data: media } = useGameMedia(hovered || isFocused ? game.id : null);
+
+  const showVideo = hovered && !!media?.video;
+
+  // Priority: box_art from storage/downloaded_media > downloaded_images (game.box_art)
+  const richImage = bestImage(media);
+  const imgPath = richImage ?? game.box_art ?? null;
+  const imgSrc = imgPath && !imgError ? convertFileSrc(imgPath) : null;
 
   return (
     <motion.div
@@ -37,9 +47,11 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
         transition: 'transform 0.1s, border-color 0.1s, box-shadow 0.1s',
       }}
     >
-      {/* Box Art */}
+      {/* Box Art / Video on hover */}
       <div style={{ aspectRatio: '3/4', background: 'var(--color-surface-3)', position: 'relative', overflow: 'hidden' }}>
-        {imgSrc ? (
+        {showVideo && media?.video ? (
+          <VideoPreview videoPath={media.video} playing={hovered} style={{ width: '100%', height: '100%' }} />
+        ) : imgSrc ? (
           <img
             src={imgSrc}
             alt={game.title}
@@ -60,8 +72,9 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
         {hovered && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.4)',
+            background: 'rgba(0,0,0,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10,
           }}>
             <button
               onClick={(e) => { e.stopPropagation(); onLaunch(); }}
@@ -80,15 +93,16 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
 
         {/* Badges */}
         {game.favorite && (
-          <div style={{ position: 'absolute', top: 4, right: 4, fontSize: 12, color: '#f59e0b' }}>★</div>
+          <div style={{ position: 'absolute', top: 4, right: 4, fontSize: 12, color: '#f59e0b', zIndex: 11 }}>★</div>
         )}
         {game.play_count > 0 && (
-          <div style={{
-            position: 'absolute', bottom: 4, left: 4,
-            background: 'rgba(0,0,0,0.7)', borderRadius: 4,
-            padding: '1px 5px', fontSize: 10, color: '#fff',
-          }}>
+          <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.7)', borderRadius: 4, padding: '1px 5px', fontSize: 10, color: '#fff', zIndex: 11 }}>
             {game.play_count}×
+          </div>
+        )}
+        {media?.video && !hovered && (
+          <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.7)', borderRadius: 4, padding: '1px 5px', fontSize: 9, color: '#27ae60', zIndex: 11 }}>
+            🎬
           </div>
         )}
 
@@ -96,12 +110,7 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
         {hovered && (
           <button
             onClick={(e) => { e.stopPropagation(); onFavorite(); }}
-            style={{
-              position: 'absolute', top: 4, left: 4,
-              width: 24, height: 24, borderRadius: 4,
-              background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer',
-              fontSize: 12, color: game.favorite ? '#f59e0b' : '#fff',
-            }}
+            style={{ position: 'absolute', top: 4, left: 4, width: 24, height: 24, borderRadius: 4, background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer', fontSize: 12, color: game.favorite ? '#f59e0b' : '#fff', zIndex: 12 }}
             title={game.favorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             {game.favorite ? '★' : '☆'}

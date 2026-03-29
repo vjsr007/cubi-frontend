@@ -1,11 +1,7 @@
 import { useEffect } from 'react';
 import { useConfigStore } from '../../stores/configStore';
 import { useUiStore } from '../../stores/uiStore';
-import { Sidebar } from './Sidebar';
-import { Toast } from '../common/Toast';
-import { LibraryPage } from '../../pages/LibraryPage';
-import { SettingsPage } from '../../pages/SettingsPage';
-import { GameDetailPage } from '../../pages/GameDetailPage';
+import { getTheme } from '../../themes';
 
 export function AppShell() {
   const { loadConfig, config } = useConfigStore();
@@ -22,15 +18,14 @@ export function AppShell() {
     }
   }, [config, currentPage, navigateTo]);
 
-  return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-      <Sidebar />
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {currentPage === 'library' && <LibraryPage />}
-        {currentPage === 'settings' && <SettingsPage />}
-        {currentPage === 'game-detail' && <GameDetailPage />}
-      </main>
-      <Toast />
-    </div>
-  );
+  if (config === null) {
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d' }}>
+        <div style={{ color: '#555', fontSize: 14 }}>Loading...</div>
+      </div>
+    );
+  }
+
+  const theme = getTheme(config.general.theme);
+  return <theme.Component />;
 }

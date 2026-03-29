@@ -5,6 +5,7 @@ import { useLibraryStore } from '../stores/libraryStore';
 import { useUiStore } from '../stores/uiStore';
 import { api } from '../lib/invoke';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { THEMES } from '../themes';
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
@@ -176,6 +177,44 @@ export function SettingsPage() {
             {detecting ? <LoadingSpinner size="sm" /> : '🔍'}
             Auto-detect EmuDeck
           </button>
+        </section>
+
+        {/* Theme */}
+        <section style={sectionStyle}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 0, marginBottom: 16 }}>
+            Theme
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {THEMES.map((theme) => {
+              const active = (config.general.theme || 'default') === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={async () => {
+                    await saveConfig({ ...config, general: { ...config.general, theme: theme.id } });
+                    showToast(`Theme set to ${theme.name}`, 'success');
+                  }}
+                  style={{
+                    background: active ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                    border: active ? '2px solid var(--color-primary)' : '2px solid var(--color-border)',
+                    borderRadius: 10,
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    minWidth: 160,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#fff' : 'var(--color-text)', marginBottom: 4 }}>
+                    {theme.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: active ? 'rgba(255,255,255,0.75)' : 'var(--color-text-muted)' }}>
+                    {theme.description}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         {/* Actions */}

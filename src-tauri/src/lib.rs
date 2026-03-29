@@ -3,6 +3,8 @@ mod models;
 mod services;
 mod db;
 
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::init();
@@ -22,6 +24,9 @@ pub fn run() {
             commands::scanner::scan_library,
             commands::launcher::launch_game,
             commands::launcher::get_emulator_status,
+            commands::media::get_game_media,
+            commands::media::get_system_media,
+            commands::media::download_game_media,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

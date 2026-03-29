@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { toImageSrc } from '../../lib/media';
 import { useGameMedia, bestImage } from '../../hooks/useMedia';
 import { VideoPreview } from '../media/VideoPreview';
 import type { GameInfo } from '../../types';
@@ -26,7 +26,7 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
   // Priority: box_art from storage/downloaded_media > downloaded_images (game.box_art)
   const richImage = bestImage(media);
   const imgPath = richImage ?? game.box_art ?? null;
-  const imgSrc = imgPath && !imgError ? convertFileSrc(imgPath) : null;
+  const imgSrc = !imgError ? toImageSrc(imgPath) : null;
 
   return (
     <motion.div

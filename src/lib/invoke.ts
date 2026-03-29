@@ -1,5 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia, ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials } from '../types';
+import type {
+  AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia,
+  ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials,
+  PcImportGame, PcLibraryStatus, SystemEmulatorInfo,
+} from '../types';
 
 export const api = {
   // Config
@@ -21,6 +25,7 @@ export const api = {
   // Launcher
   launchGame: (gameId: string) => invoke<void>('launch_game', { gameId }),
   getEmulatorStatus: (systemId: string) => invoke<string | null>('get_emulator_status', { systemId }),
+  getAllEmulatorInfo: () => invoke<SystemEmulatorInfo[]>('get_all_emulator_info'),
 
   // Media
   getGameMedia: (gameId: string) => invoke<GameMedia>('get_game_media', { gameId }),
@@ -36,4 +41,22 @@ export const api = {
   runScrapeJob: (job: ScrapeJob) => invoke<ScrapeResult>('run_scrape_job', { job }),
   cancelScrapeJob: () => invoke<void>('cancel_scrape_job'),
   importEsdeCredentials: () => invoke<EsDECredentials>('import_esde_credentials'),
+
+  // PC Games
+  detectPcLibs: () => invoke<PcLibraryStatus>('detect_pc_libs'),
+  importSteamGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_steam_games', { sgdbKey }),
+  importEpicGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_epic_games', { sgdbKey }),
+  importEaGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_ea_games', { sgdbKey }),
+  importGogGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_gog_games', { sgdbKey }),
+  savePcGames: (games: PcImportGame[]) => invoke<number>('save_pc_games', { games }),
+  addPcGame: (
+    title: string,
+    exePath: string,
+    boxArt?: string,
+    developer?: string,
+    publisher?: string,
+    year?: string,
+    genre?: string,
+  ) => invoke<GameInfo>('add_pc_game', { title, exePath, boxArt, developer, publisher, year, genre }),
+  deletePcGame: (gameId: string) => invoke<void>('delete_pc_game', { gameId }),
 };

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { toImageSrc } from '../../lib/media';
 
 interface MediaImageProps {
   path: string | null | undefined;
@@ -27,7 +27,7 @@ export function MediaImage({ path, alt = '', style, fallback, lazy = true }: Med
   // Reset error when path changes
   useEffect(() => { setError(false); }, [path]);
 
-  const src = path && !error ? convertFileSrc(path) : null;
+  const src = !error ? toImageSrc(path) : null;
 
   if (!src) {
     return <div ref={ref} style={style}>{fallback ?? null}</div>;

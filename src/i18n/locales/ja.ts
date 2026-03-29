@@ -90,6 +90,8 @@ export const ja: LocaleStrings = {
   themes: {
     defaultName: 'デフォルト',
     defaultDesc: 'ゲームグリッド付きのクリーンなサイドバー',
+    auroraName: 'Aurora',
+    auroraDesc: 'Xbox 360 Auroraスタイルの3Dカルーセル',
     hyperspinName: 'ハイパースピン',
     hyperspinDesc: 'クラシックなスピニングホイールフロントエンド',
   },

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { toImageSrc } from '../../lib/media';
 import { SystemLogo } from '../common/SystemLogo';
 import type { GameInfo, GameMedia } from '../../types';
 
@@ -55,11 +55,11 @@ export function GameBoxCase({
 
   const frontSrc = useMemo(() => {
     const path = media?.box_art ?? game.box_art;
-    return path ? convertFileSrc(path) : null;
+    return toImageSrc(path);
   }, [media?.box_art, game.box_art]);
 
   const backSrc = useMemo(() => {
-    return media?.back_cover ? convertFileSrc(media.back_cover) : null;
+    return toImageSrc(media?.back_cover);
   }, [media?.back_cover]);
 
   const halfSpine = spineWidth / 2;
@@ -239,7 +239,7 @@ function FrontPlaceholder({ game, systemColor }: { game: GameInfo; systemColor: 
 }
 
 function BackMetadata({ game, media, systemColor }: { game: GameInfo; media: GameMedia | null | undefined; systemColor: string }) {
-  const screenshotSrc = media?.screenshot ? convertFileSrc(media.screenshot) : null;
+  const screenshotSrc = toImageSrc(media?.screenshot);
 
   return (
     <div

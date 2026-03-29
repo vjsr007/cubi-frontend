@@ -92,6 +92,8 @@ export const en: LocaleStrings = {
     defaultDesc: 'Clean sidebar with game grid',
     hyperspinName: 'HyperSpin',
     hyperspinDesc: 'Classic spinning wheel frontend',
+    auroraName: 'Aurora',
+    auroraDesc: 'Xbox 360 Aurora dashboard with 3D CoverFlow carousel',
   },
   common: {
     loading: 'Loading...',

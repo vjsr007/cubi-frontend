@@ -1,4 +1,18 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct EmulatorOverride {
+    /// Custom path to the emulator executable (overrides auto-detection).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exe_path: Option<String>,
+    /// Custom launch arguments (use {rom} as placeholder). Overrides defaults.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_args: Option<String>,
+    /// For RetroArch systems: custom core name or path (e.g. "snes9x_libretro").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub core: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -8,6 +22,9 @@ pub struct AppConfig {
     pub paths: PathsConfig,
     #[serde(default)]
     pub scanner: ScannerConfig,
+    /// Per-system emulator overrides, keyed by system_id (e.g. "nes", "ps2").
+    #[serde(default)]
+    pub emulators: HashMap<String, EmulatorOverride>,
 }
 
 impl Default for AppConfig {
@@ -16,6 +33,7 @@ impl Default for AppConfig {
             general: GeneralConfig::default(),
             paths: PathsConfig::default(),
             scanner: ScannerConfig::default(),
+            emulators: HashMap::new(),
         }
     }
 }
@@ -29,6 +47,10 @@ pub struct GeneralConfig {
     pub language: String,
     #[serde(default = "default_fullscreen")]
     pub fullscreen: bool,
+    /// SteamGridDB API key — used to fetch cover art for PC games.
+    /// Get yours at https://www.steamgriddb.com/profile/preferences/api
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steamgriddb_api_key: Option<String>,
 }
 
 impl Default for GeneralConfig {
@@ -38,6 +60,7 @@ impl Default for GeneralConfig {
             theme: "dark".to_string(),
             language: "en".to_string(),
             fullscreen: true,
+            steamgriddb_api_key: None,
         }
     }
 }

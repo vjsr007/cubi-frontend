@@ -37,6 +37,7 @@ import colecovision from './colecovision.svg';
 import intellivision from './intellivision.svg';
 import wswan from './wswan.svg';
 import wswanc from './wswanc.svg';
+import windows11 from './windows11.svg';
 
 /**
  * Maps system IDs to their SVG logo URLs (Vite static imports).
@@ -82,4 +83,5 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   intellivision,
   wswan,
   wswanc,
+  pc: windows11,
 };

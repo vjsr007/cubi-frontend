@@ -3,9 +3,10 @@ import type { AppConfig } from '../types';
 import { api } from '../lib/invoke';
 
 const defaultConfig: AppConfig = {
-  general: { version: '0.1.0', theme: 'dark', language: 'en' },
+  general: { version: '0.1.0', theme: 'dark', language: 'en', fullscreen: true },
   paths: { data_root: '', emudeck_path: '' },
   scanner: { auto_scan: false, hash_roms: false },
+  emulators: {},
 };
 
 interface ConfigState {

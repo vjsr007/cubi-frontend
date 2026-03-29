@@ -25,6 +25,7 @@ pub fn run() {
             commands::scanner::scan_library,
             commands::launcher::launch_game,
             commands::launcher::get_emulator_status,
+            commands::launcher::get_all_emulator_info,
             commands::media::get_game_media,
             commands::media::get_system_media,
             commands::media::download_game_media,
@@ -36,6 +37,14 @@ pub fn run() {
             commands::scraper::run_scrape_job,
             commands::scraper::cancel_scrape_job,
             commands::scraper::import_esde_credentials,
+            commands::pc_games::detect_pc_libs,
+            commands::pc_games::import_steam_games,
+            commands::pc_games::import_epic_games,
+            commands::pc_games::import_ea_games,
+            commands::pc_games::import_gog_games,
+            commands::pc_games::save_pc_games,
+            commands::pc_games::add_pc_game,
+            commands::pc_games::delete_pc_game,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

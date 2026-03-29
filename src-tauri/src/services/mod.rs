@@ -8,3 +8,5 @@ pub mod screenscraper;
 pub mod thegamesdb;
 pub mod libretro;
 pub mod scraper_service;
+pub mod pc_import_service;
+pub mod steamgriddb;

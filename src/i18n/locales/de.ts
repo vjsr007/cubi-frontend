@@ -90,6 +90,8 @@ export const de: LocaleStrings = {
   themes: {
     defaultName: 'Standard',
     defaultDesc: 'Übersichtliche Seitenleiste mit Spielraster',
+    auroraName: 'Aurora',
+    auroraDesc: 'Xbox 360 Aurora Dashboard mit 3D-Karussell',
     hyperspinName: 'HyperSpin',
     hyperspinDesc: 'Klassisches Frontend mit Drehrad',
   },

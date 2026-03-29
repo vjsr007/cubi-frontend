@@ -57,10 +57,12 @@ pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> R
         )
     };
 
-    // Fallback: use DB-stored paths (set by scraper) if resolver didn't find files
+    // Fallback: use DB-stored paths / URLs (set by scraper) if resolver didn't find files
     if media.box_art.is_none() {
         if let Some(ref p) = game.box_art {
-            if std::path::Path::new(p).exists() {
+            // Remote URLs (Steam CDN, SteamGridDB) are valid — skip filesystem check
+            let is_remote = p.starts_with("http://") || p.starts_with("https://");
+            if is_remote || std::path::Path::new(p).exists() {
                 media.box_art = Some(p.clone());
             }
         }

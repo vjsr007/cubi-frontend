@@ -9,6 +9,8 @@ import { BottomBar } from './BottomBar';
 import { Toast } from '../../components/common/Toast';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { ScraperPage } from '../../pages/ScraperPage';
+import { PcGamesPage } from '../../pages/PcGamesPage';
+import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { useAudio } from '../../hooks/useAudio';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { GameInfo } from '../../types';
@@ -135,6 +137,24 @@ export function HyperSpinTheme() {
 
   if (currentPage === 'scraper') {
     return <ScraperPage />;
+  }
+
+  if (currentPage === 'pc-games') {
+    return (
+      <div style={{ height: '100%', background: '#0d0d0d' }}>
+        <PcGamesPage />
+        <Toast />
+      </div>
+    );
+  }
+
+  if (currentPage === 'emulator-config') {
+    return (
+      <div style={{ height: '100%', background: '#0d0d0d' }}>
+        <EmulatorConfigPage />
+        <Toast />
+      </div>
+    );
   }
 
   return (

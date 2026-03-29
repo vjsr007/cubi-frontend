@@ -278,6 +278,21 @@ impl Database {
         Ok(())
     }
 
+    pub fn delete_game(&self, game_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM games WHERE id = ?1", [game_id])?;
+        Ok(())
+    }
+
+    pub fn update_system_game_count(&self, system_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE systems SET game_count = (SELECT COUNT(*) FROM games WHERE system_id = ?1) WHERE id = ?1",
+            [system_id],
+        )?;
+        Ok(())
+    }
+
     pub fn toggle_favorite(&self, game_id: &str) -> SqlResult<bool> {
         let conn = self.conn.lock().unwrap();
         conn.execute(

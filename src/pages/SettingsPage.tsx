@@ -351,6 +351,20 @@ export function SettingsPage() {
           </button>
           <button
             type="button"
+            onClick={() => navigateTo('emulator-config')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            🎮 Emulator Settings
+          </button>
+          <button
+            type="button"
             onClick={() => navigateTo('scraper')}
             style={{
               ...btnStyle,
@@ -362,6 +376,20 @@ export function SettingsPage() {
             }}
           >
             🕹️ {t('scraper.title')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('pc-games')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            🖥️ PC Games
           </button>
         </div>
       </div>

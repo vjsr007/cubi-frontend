@@ -1,7 +1,31 @@
+export interface EmulatorOverride {
+  /** Custom path to the emulator executable. */
+  exe_path?: string;
+  /** Custom launch args with {rom} placeholder. */
+  extra_args?: string;
+  /** RetroArch core name or path override. */
+  core?: string;
+}
+
+export interface SystemEmulatorInfo {
+  system_id: string;
+  system_name: string;
+  emulator_name: string;
+  detected_path?: string;
+  is_retroarch: boolean;
+  default_core?: string;
+  // user overrides
+  exe_path?: string;
+  extra_args?: string;
+  core?: string;
+}
+
 export interface AppConfig {
   general: GeneralConfig;
   paths: PathsConfig;
   scanner: ScannerConfig;
+  /** Per-system emulator overrides keyed by system_id. */
+  emulators: Record<string, EmulatorOverride>;
 }
 
 export interface GeneralConfig {
@@ -9,6 +33,9 @@ export interface GeneralConfig {
   theme: string;
   language: string;
   fullscreen: boolean;
+  /** SteamGridDB API key — enables cover art for Epic, EA, GOG games.
+   *  Get yours at https://www.steamgriddb.com/profile/preferences/api */
+  steamgriddb_api_key?: string;
 }
 
 export interface PathsConfig {
@@ -67,7 +94,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config';
 
 export interface ScraperConfig {
   id: string;
@@ -113,6 +140,31 @@ export interface EsDECredentials {
   screenscraper_username: string | null;
   screenscraper_password: string | null;
   active_scraper: string | null;
+}
+
+// ── PC Games ──────────────────────────────────────────────────────────
+
+export type PcGameSource = 'steam' | 'epic' | 'ea' | 'gog' | 'manual';
+
+export interface PcImportGame {
+  title: string;
+  /** Exe path or protocol URL */
+  file_path: string;
+  file_size: number;
+  developer?: string;
+  publisher?: string;
+  source: PcGameSource;
+  source_id: string;
+  install_path?: string;
+  box_art?: string;
+}
+
+export interface PcLibraryStatus {
+  steam_found: boolean;
+  steam_path?: string;
+  epic_found: boolean;
+  ea_found: boolean;
+  gog_found: boolean;
 }
 
 export interface GameMedia {

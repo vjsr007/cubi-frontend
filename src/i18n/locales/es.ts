@@ -90,6 +90,8 @@ export const es: LocaleStrings = {
   themes: {
     defaultName: 'Por defecto',
     defaultDesc: 'Barra lateral limpia con rejilla de juegos',
+    auroraName: 'Aurora',
+    auroraDesc: 'Dashboard Aurora de Xbox 360 con carrusel 3D',
     hyperspinName: 'HyperSpin',
     hyperspinDesc: 'Frontend clásico con rueda giratoria',
   },

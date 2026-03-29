@@ -4,6 +4,8 @@ import { LibraryPage } from '../../pages/LibraryPage';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { GameDetailPage } from '../../pages/GameDetailPage';
 import { ScraperPage } from '../../pages/ScraperPage';
+import { PcGamesPage } from '../../pages/PcGamesPage';
+import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -13,10 +15,12 @@ export function DefaultTheme() {
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       <Sidebar />
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {currentPage === 'library' && <LibraryPage />}
-        {currentPage === 'settings' && <SettingsPage />}
-        {currentPage === 'game-detail' && <GameDetailPage />}
-        {currentPage === 'scraper' && <ScraperPage />}
+        {currentPage === 'library'          && <LibraryPage />}
+        {currentPage === 'settings'         && <SettingsPage />}
+        {currentPage === 'game-detail'      && <GameDetailPage />}
+        {currentPage === 'scraper'          && <ScraperPage />}
+        {currentPage === 'pc-games'         && <PcGamesPage />}
+        {currentPage === 'emulator-config'  && <EmulatorConfigPage />}
       </main>
       <Toast />
     </div>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- GOG Galaxy logo: two G shapes flanking an O, cosmic circle motif -->
+  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 2c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8 3.582-8 8-8z"/>
+  <path d="M8.5 9v2h1.75v1H8.5a2.5 2.5 0 0 0 0 5H11a.5.5 0 0 0 .5-.5v-3H10V14h.5v1H8.5a1 1 0 0 1 0-2h2V11H8.5V9h0zm5 0h2.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5H13.5v-1.5H16v-1.5h-2.5v-1H16v-1.5h-2.5V9z"/>
+</svg>

@@ -27,6 +27,7 @@ pub fn run() {
             commands::media::get_game_media,
             commands::media::get_system_media,
             commands::media::download_game_media,
+            commands::media::download_system_media,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

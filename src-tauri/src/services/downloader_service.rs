@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use crate::services::media_service::system_to_media_folder;
 
 const LIBRETRO_BASE: &str = "https://thumbnails.libretro.com";
+const RETROPIE_CARBON_BASE: &str = "https://raw.githubusercontent.com/RetroPie/es-theme-carbon/master";
 
 fn url_encode(s: &str) -> String {
     s.chars()
@@ -114,6 +115,38 @@ async fn download_to_file(url: &str, dest: &Path) -> Result<(), String> {
     }
 
     std::fs::write(dest, &bytes).map_err(|e| e.to_string())
+}
+
+/// Download system logo from RetroPie carbon theme on GitHub
+pub async fn download_system_logo(
+    app_data_dir: &Path,
+    system_id: &str,
+) -> Option<String> {
+    let cache_path = get_cache_dir(app_data_dir)
+        .join("systems")
+        .join(format!("{}_logo.png", sanitize_filename(system_id)));
+
+    if cache_path.exists() {
+        return Some(cache_path.to_string_lossy().to_string());
+    }
+    if let Some(parent) = cache_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+
+    // Try RetroPie carbon theme system art
+    let url = format!("{}/{}/art/system.png", RETROPIE_CARBON_BASE, system_id);
+    log::info!("Downloading system logo: {}", url);
+
+    match download_to_file(&url, &cache_path).await {
+        Ok(()) => {
+            log::info!("Downloaded system logo: {:?}", cache_path);
+            Some(cache_path.to_string_lossy().to_string())
+        }
+        Err(e) => {
+            log::debug!("Failed to download system logo {}: {}", url, e);
+            None
+        }
+    }
 }
 
 /// Download screenshot from Libretro thumbnails

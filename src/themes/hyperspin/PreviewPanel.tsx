@@ -12,7 +12,7 @@ interface PreviewPanelProps {
 }
 
 export function PreviewPanel({ system, game, mode, focused = true }: PreviewPanelProps) {
-  const { data: gameMedia } = useGameMedia(mode === 'game' ? (game?.id ?? null) : null);
+  const { data: gameMedia, isLoading: gameMediaLoading } = useGameMedia(mode === 'game' ? (game?.id ?? null) : null);
   const { data: systemMedia } = useSystemMedia(system?.id ?? null);
 
   const showVideo = mode === 'game' && !!gameMedia?.video && focused;
@@ -108,7 +108,20 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
           }}
         />
 
-        {showVideo && gameMedia?.video ? (
+        {gameMediaLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 48, height: 48,
+              border: '3px solid rgba(243,156,18,0.2)',
+              borderTop: '3px solid #f39c12',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <div style={{ fontSize: 12, color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Loading...
+            </div>
+          </div>
+        ) : showVideo && gameMedia?.video ? (
           <VideoPreview videoPath={gameMedia.video} playing={focused} />
         ) : displayImage ? (
           <MediaImage

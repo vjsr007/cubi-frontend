@@ -25,4 +25,5 @@ export const api = {
   getGameMedia: (gameId: string) => invoke<GameMedia>('get_game_media', { gameId }),
   getSystemMedia: (systemId: string) => invoke<SystemMedia>('get_system_media', { systemId }),
   downloadGameMedia: (gameId: string) => invoke<GameMedia>('download_game_media', { gameId }),
+  downloadSystemMedia: (systemId: string) => invoke<SystemMedia>('download_system_media', { systemId }),
 };

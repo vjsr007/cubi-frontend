@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useAudio } from '../../hooks/useAudio';
 
 interface WheelItem {
   id: string;
@@ -89,23 +90,27 @@ function OvalBadge({
 
 export function WheelCarousel({ items, focusedIndex, onFocusChange, onSelect }: WheelCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { playTick, playEnter } = useAudio();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowUp') {
         e.preventDefault();
+        playTick();
         onFocusChange((focusedIndex - 1 + items.length) % items.length);
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
+        playTick();
         onFocusChange((focusedIndex + 1) % items.length);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        playEnter();
         if (items[focusedIndex]) onSelect(items[focusedIndex].id);
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [focusedIndex, items, onFocusChange, onSelect]);
+  }, [focusedIndex, items, onFocusChange, onSelect, playTick, playEnter]);
 
   return (
     <div

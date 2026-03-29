@@ -8,6 +8,7 @@ import { PreviewPanel } from './PreviewPanel';
 import { BottomBar } from './BottomBar';
 import { Toast } from '../../components/common/Toast';
 import { SettingsPage } from '../../pages/SettingsPage';
+import { useAudio } from '../../hooks/useAudio';
 import type { GameInfo } from '../../types';
 
 type HyperView = 'systems' | 'games';
@@ -25,6 +26,7 @@ export function HyperSpinTheme() {
   // Gamepad polling refs for system wheel
   const rafRef = useRef<number>(0);
   const lastMoveRef = useRef(0);
+  const { playTick, playEnter } = useAudio();
 
   useEffect(() => {
     loadSystems();
@@ -66,11 +68,13 @@ export function HyperSpinTheme() {
         const now = Date.now();
         if (Math.abs(axis) > 0.5 && now - lastMoveRef.current > 150) {
           lastMoveRef.current = now;
+          playTick();
           if (axis < -0.5) setSystemIndex((i) => (i - 1 + systems.length) % systems.length);
           else setSystemIndex((i) => (i + 1) % systems.length);
         }
         if (gp.buttons[0]?.pressed && now - lastMoveRef.current > 300) {
           lastMoveRef.current = now;
+          playEnter();
           setView('games');
         }
         if (gp.buttons[8]?.pressed && now - lastMoveRef.current > 300) {
@@ -82,7 +86,7 @@ export function HyperSpinTheme() {
     }
     rafRef.current = requestAnimationFrame(poll);
     return () => { running = false; cancelAnimationFrame(rafRef.current); };
-  }, [view, systems]);
+  }, [view, systems, playTick, playEnter]);
 
   const handleSelectSystem = (_id: string) => {
     setView('games');

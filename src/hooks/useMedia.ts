@@ -29,9 +29,19 @@ export function useGameMedia(gameId: string | null, enabled = true) {
 export function useSystemMedia(systemId: string | null) {
   return useQuery<SystemMedia>({
     queryKey: ['system-media', systemId],
-    queryFn: () => api.getSystemMedia(systemId!),
+    queryFn: async () => {
+      const local = await api.getSystemMedia(systemId!);
+      const hasMedia = local.fan_art || local.wheel || local.marquee;
+      if (hasMedia) return local;
+      // Auto-download system logo from GitHub (RetroPie carbon theme)
+      try {
+        return await api.downloadSystemMedia(systemId!);
+      } catch {
+        return local;
+      }
+    },
     enabled: !!systemId,
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
     retry: false,
   });
 }

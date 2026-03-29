@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { GameInfo } from '../../types';
+import { useAudio } from '../../hooks/useAudio';
 
 interface GameWheelProps {
   games: GameInfo[];
@@ -86,17 +87,18 @@ export function GameWheel({ games, focusedIndex, onFocusChange, onSelect, onBack
   const rafRef = useRef<number>(0);
   const axisRef = useRef(0);
   const lastMoveRef = useRef(0);
+  const { playTick, playEnter, playBack } = useAudio();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp') { e.preventDefault(); onFocusChange((focusedIndex - 1 + games.length) % games.length); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); onFocusChange((focusedIndex + 1) % games.length); }
-      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (games[focusedIndex]) onSelect(games[focusedIndex]); }
-      else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); onBack(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); playTick(); onFocusChange((focusedIndex - 1 + games.length) % games.length); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); playTick(); onFocusChange((focusedIndex + 1) % games.length); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playEnter(); if (games[focusedIndex]) onSelect(games[focusedIndex]); }
+      else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); playBack(); onBack(); }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [focusedIndex, games, onFocusChange, onSelect, onBack]);
+  }, [focusedIndex, games, onFocusChange, onSelect, onBack, playTick, playEnter, playBack]);
 
   // Gamepad polling
   useEffect(() => {
@@ -111,15 +113,18 @@ export function GameWheel({ games, focusedIndex, onFocusChange, onSelect, onBack
         const now = Date.now();
         if (Math.abs(axis) > 0.5 && now - lastMoveRef.current > 150) {
           lastMoveRef.current = now;
+          playTick();
           if (axis < -0.5) onFocusChange((focusedIndex - 1 + games.length) % games.length);
           else onFocusChange((focusedIndex + 1) % games.length);
         }
         if (gp.buttons[0]?.pressed && now - lastMoveRef.current > 300) {
           lastMoveRef.current = now;
+          playEnter();
           if (games[focusedIndex]) onSelect(games[focusedIndex]);
         }
         if (gp.buttons[1]?.pressed && now - lastMoveRef.current > 300) {
           lastMoveRef.current = now;
+          playBack();
           onBack();
         }
       }
@@ -127,7 +132,7 @@ export function GameWheel({ games, focusedIndex, onFocusChange, onSelect, onBack
     }
     rafRef.current = requestAnimationFrame(poll);
     return () => { running = false; cancelAnimationFrame(rafRef.current); };
-  }, [focusedIndex, games, onFocusChange, onSelect, onBack]);
+  }, [focusedIndex, games, onFocusChange, onSelect, onBack, playTick, playEnter, playBack]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

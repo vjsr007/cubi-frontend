@@ -3,6 +3,33 @@ use crate::db::Database;
 use crate::models::media::{GameMedia, SystemMedia};
 use crate::services::{config_service, media_service, downloader_service};
 
+/// Download system logo from GitHub (RetroPie carbon theme) if not available locally.
+#[tauri::command]
+pub async fn download_system_media(
+    app: AppHandle,
+    system_id: String,
+) -> Result<SystemMedia, String> {
+    let config = config_service::load_config()?;
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| e.to_string())?;
+
+    let mut media = if config.paths.data_root.is_empty() {
+        SystemMedia::default()
+    } else {
+        media_service::resolve_system_media(&config.paths.data_root, &system_id)
+    };
+
+    // Download system logo if no wheel/logo available
+    if media.wheel.is_none() {
+        media.wheel = downloader_service::download_system_logo(
+            &app_data_dir,
+            &system_id,
+        ).await;
+    }
+
+    Ok(media)
+}
+
 #[tauri::command]
 pub fn get_game_media(db: State<Database>, game_id: String) -> Result<GameMedia, String> {
     let game = db.get_game(&game_id)

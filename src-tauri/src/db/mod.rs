@@ -55,8 +55,9 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT INTO games (id, system_id, title, file_path, file_name, file_size,
-              box_art, description, developer, publisher, year, genre, players, rating, favorite)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+              box_art, description, developer, publisher, year, genre, players, rating,
+              play_count, last_played, favorite)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
              ON CONFLICT(id) DO UPDATE SET
                title = excluded.title,
                box_art = excluded.box_art,
@@ -82,6 +83,8 @@ impl Database {
                 game.genre,
                 game.players,
                 game.rating,
+                game.play_count,
+                game.last_played,
                 game.favorite as i32,
             ],
         )?;

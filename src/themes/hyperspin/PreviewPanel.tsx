@@ -16,7 +16,7 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
   const { data: gameMedia, isLoading: gameMediaLoading } = useGameMedia(mode === 'game' ? (game?.id ?? null) : null);
   const { data: systemMedia } = useSystemMedia(system?.id ?? null);
 
-  const showVideo = mode === 'game' && !!gameMedia?.video && focused;
+  const showVideo = mode === 'game' && !!gameMedia?.video;
   const displayImage = mode === 'game'
     ? bestImage(gameMedia) ?? game?.box_art ?? null
     : null;
@@ -123,7 +123,7 @@ export function PreviewPanel({ system, game, mode, focused = true }: PreviewPane
             </div>
           </div>
         ) : showVideo && gameMedia?.video ? (
-          <VideoPreview videoPath={gameMedia.video} playing={focused} />
+          <VideoPreview videoPath={gameMedia.video} playing={true} />
         ) : displayImage ? (
           <MediaImage
             path={displayImage}

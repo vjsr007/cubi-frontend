@@ -3,6 +3,7 @@ use walkdir::WalkDir;
 use crate::db::Database;
 use crate::models::{GameInfo, SystemInfo, ScanProgress, ScanResult};
 use crate::models::system::get_system_registry;
+use crate::services::gamelist_service;
 
 #[tauri::command]
 pub async fn scan_library(
@@ -63,6 +64,15 @@ pub async fn scan_library(
             .map(|e| e.to_lowercase())
             .collect();
 
+        // Parse gamelist.xml if it exists (provides description, genre, etc.)
+        let gamelist_path = path.join("gamelist.xml");
+        let gamelist = if gamelist_path.exists() {
+            log::info!("Parsing gamelist.xml for {}", system_def.name);
+            gamelist_service::parse_gamelist(&gamelist_path)
+        } else {
+            std::collections::HashMap::new()
+        };
+
         let mut games: Vec<GameInfo> = Vec::new();
 
         for file_entry in WalkDir::new(&path)
@@ -95,8 +105,35 @@ pub async fn scan_library(
             hasher.update(file_path_str.as_bytes());
             let id = hasher.finalize().to_hex()[..16].to_string();
 
-            let title = GameInfo::title_from_filename(&file_name);
             let box_art = find_box_art(&path, &file_name);
+
+            // Try to enrich from gamelist.xml metadata
+            let meta = gamelist.get(&file_name);
+
+            let title = meta
+                .and_then(|m| m.name.clone())
+                .unwrap_or_else(|| GameInfo::title_from_filename(&file_name));
+
+            let description = meta.and_then(|m| m.desc.clone());
+            let developer = meta.and_then(|m| m.developer.clone());
+            let publisher = meta.and_then(|m| m.publisher.clone());
+            let genre = meta.and_then(|m| m.genre.clone());
+            let year = meta
+                .and_then(|m| m.releasedate.as_deref())
+                .and_then(gamelist_service::extract_year);
+            let players = meta
+                .and_then(|m| m.players.as_deref())
+                .map(gamelist_service::parse_players)
+                .unwrap_or(1);
+            let rating = meta
+                .and_then(|m| m.rating.as_deref())
+                .map(gamelist_service::parse_rating)
+                .unwrap_or(0.0);
+            let play_count = meta
+                .and_then(|m| m.play_count.as_deref())
+                .and_then(|s| s.parse::<u32>().ok())
+                .unwrap_or(0);
+            let last_played = meta.and_then(|m| m.last_played.clone());
 
             games.push(GameInfo {
                 id,
@@ -106,15 +143,15 @@ pub async fn scan_library(
                 file_name,
                 file_size,
                 box_art,
-                description: None,
-                developer: None,
-                publisher: None,
-                year: None,
-                genre: None,
-                players: 1,
-                rating: 0.0,
-                last_played: None,
-                play_count: 0,
+                description,
+                developer,
+                publisher,
+                year,
+                genre,
+                players,
+                rating,
+                last_played,
+                play_count,
                 favorite: false,
             });
         }

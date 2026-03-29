@@ -1,5 +1,49 @@
 use std::path::{Path, PathBuf};
-use crate::services::media_service::system_to_media_folder;
+
+/// Map system IDs to Libretro thumbnail folder names (used only for download URLs).
+/// These are the naming convention on https://thumbnails.libretro.com
+fn libretro_system_folder(system_id: &str) -> Option<&'static str> {
+    match system_id {
+        "nes" | "famicom" => Some("Nintendo - Nintendo Entertainment System"),
+        "snes" | "sfc" => Some("Nintendo - Super Nintendo Entertainment System"),
+        "n64" => Some("Nintendo - Nintendo 64"),
+        "gb" => Some("Nintendo - Game Boy"),
+        "gbc" => Some("Nintendo - Game Boy Color"),
+        "gba" => Some("Nintendo - Game Boy Advance"),
+        "nds" => Some("Nintendo - Nintendo DS"),
+        "3ds" | "n3ds" => Some("Nintendo - Nintendo 3DS"),
+        "gc" => Some("Nintendo - GameCube"),
+        "wii" => Some("Nintendo - Wii"),
+        "wiiu" => Some("Nintendo - Wii U"),
+        "switch" => Some("Nintendo - Switch"),
+        "megadrive" | "genesis" => Some("Sega - Mega Drive - Genesis"),
+        "mastersystem" => Some("Sega - Master System - Mark III"),
+        "gamegear" => Some("Sega - Game Gear"),
+        "saturn" => Some("Sega - Saturn"),
+        "dreamcast" => Some("Sega - Dreamcast"),
+        "psx" => Some("Sony - PlayStation"),
+        "ps2" => Some("Sony - PlayStation 2"),
+        "ps3" => Some("Sony - PlayStation 3"),
+        "psp" => Some("Sony - PlayStation Portable"),
+        "psvita" => Some("Sony - PlayStation Vita"),
+        "atari2600" => Some("Atari - 2600"),
+        "atari5200" => Some("Atari - 5200"),
+        "atari7800" => Some("Atari - 7800"),
+        "pcengine" => Some("NEC - PC Engine - TurboGrafx-16"),
+        "neogeo" => Some("SNK - Neo Geo"),
+        "ngpc" => Some("SNK - Neo Geo Pocket Color"),
+        "mame" | "arcade" => Some("MAME"),
+        "fbneo" => Some("FinalBurn Neo"),
+        "xbox" => Some("Microsoft - Xbox"),
+        "xbox360" => Some("Microsoft - Xbox 360"),
+        "sg1000" | "sg-1000" => Some("Sega - SG-1000"),
+        "colecovision" => Some("Coleco - ColecoVision"),
+        "intellivision" => Some("Mattel - Intellivision"),
+        "wswan" | "wonderswan" => Some("Bandai - WonderSwan"),
+        "wswanc" | "wonderswancolor" => Some("Bandai - WonderSwan Color"),
+        _ => None,
+    }
+}
 
 const LIBRETRO_BASE: &str = "https://thumbnails.libretro.com";
 const RETROPIE_CARBON_BASE: &str = "https://raw.githubusercontent.com/RetroPie/es-theme-carbon/master";
@@ -40,8 +84,8 @@ pub async fn download_box_art(
     system_id: &str,
     rom_stem: &str,
 ) -> Option<String> {
-    let Some(system_folder) = system_to_media_folder(system_id) else {
-        log::debug!("No media folder mapping for system: {}", system_id);
+    let Some(system_folder) = libretro_system_folder(system_id) else {
+        log::debug!("No Libretro folder mapping for system: {}", system_id);
         return None;
     };
 
@@ -155,7 +199,7 @@ pub async fn download_screenshot(
     system_id: &str,
     rom_stem: &str,
 ) -> Option<String> {
-    let Some(system_folder) = system_to_media_folder(system_id) else { return None };
+    let Some(system_folder) = libretro_system_folder(system_id) else { return None };
 
     let cache_path = get_cache_dir(app_data_dir)
         .join(system_id)

@@ -29,7 +29,7 @@ export function GameGrid() {
       case 'UP':    store.setFocusedGameIndex(Math.max(cur - COLUMNS, 0)); break;
       case 'A': {
         const game = useLibraryStore.getState().getFilteredGames()[cur];
-        if (game) store.launchGame(game.id).catch((e) => showToast(String(e), 'error'));
+        if (game) navigateTo('game-detail', game.id);
         break;
       }
       case 'Y': {
@@ -62,7 +62,7 @@ export function GameGrid() {
         case 'Enter': {
           const games = useLibraryStore.getState().getFilteredGames();
           const game = games[cur];
-          if (game) store.launchGame(game.id).catch((e) => showToast(String(e), 'error'));
+          if (game) navigateTo('game-detail', game.id);
           break;
         }
         case 'f': case 'F': {
@@ -124,7 +124,10 @@ export function GameGrid() {
           <GameCard
             game={game}
             isFocused={index === focused}
-            onClick={() => store.setFocusedGameIndex(index)}
+            onClick={() => {
+              store.setFocusedGameIndex(index);
+              navigateTo('game-detail', game.id);
+            }}
             onLaunch={() => store.launchGame(game.id).catch((e) => showToast(String(e), 'error'))}
             onFavorite={() => store.toggleFavorite(game.id)}
           />

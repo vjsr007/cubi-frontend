@@ -15,12 +15,13 @@ interface Props {
 
 export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Props) {
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   // Fetch rich media — only when hovered or focused for performance
   const { data: media } = useGameMedia(hovered || isFocused ? game.id : null);
 
-  const showVideo = hovered && !!media?.video;
+  const showVideo = (hovered || isFocused) && !!media?.video;
 
   // Priority: box_art from storage/downloaded_media > downloaded_images (game.box_art)
   const richImage = bestImage(media);
@@ -33,7 +34,6 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.12 }}
       onClick={onClick}
-      onDoubleClick={onLaunch}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -50,14 +50,19 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
       {/* Box Art / Video on hover */}
       <div style={{ aspectRatio: '3/4', background: 'var(--color-surface-3)', position: 'relative', overflow: 'hidden' }}>
         {showVideo && media?.video ? (
-          <VideoPreview videoPath={media.video} playing={hovered} style={{ width: '100%', height: '100%' }} />
+          <VideoPreview videoPath={media.video} playing={hovered || isFocused} style={{ width: '100%', height: '100%' }} />
         ) : imgSrc ? (
           <img
             src={imgSrc}
             alt={game.title}
             loading="lazy"
+            onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{
+              width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+              opacity: imgLoaded ? 1 : 0,
+              transition: 'opacity 0.25s ease-in',
+            }}
           />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8 }}>

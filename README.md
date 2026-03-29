@@ -1,8 +1,32 @@
 # Cubi Frontend
 
+[![Release](https://img.shields.io/github/v/release/vjsr007/cubi-frontend?style=flat-square&label=Latest%20Release)](https://github.com/vjsr007/cubi-frontend/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/vjsr007/cubi-frontend/release.yml?style=flat-square&label=Build)](https://github.com/vjsr007/cubi-frontend/actions/workflows/release.yml)
+[![License](https://img.shields.io/github/license/vjsr007/cubi-frontend?style=flat-square)](LICENSE)
+
 A multiplayer emulator frontend built with **Tauri 2 + React 19 + TypeScript + Tailwind CSS 4**. Browse, manage, and launch games across 40+ emulator systems with a gamepad-navigable UI.
 
 Inspired by EmulationStation-DE, Pegasus, and LaunchBox — designed to work alongside EmuDeck on Windows.
+
+---
+
+## Download
+
+Pre-built installers are available on the [Releases page](https://github.com/vjsr007/cubi-frontend/releases/latest).
+
+| Platform | Installer | Notes |
+|---|---|---|
+| **Windows** | [📥 Download `.msi`](https://github.com/vjsr007/cubi-frontend/releases/latest) | Requires WebView2 (pre-installed on Win 10 1803+ / Win 11) |
+| **macOS — Apple Silicon** | [📥 Download `.dmg`](https://github.com/vjsr007/cubi-frontend/releases/latest) | M1/M2/M3/M4 — native arm64 build |
+| **macOS — Intel** | [📥 Download `.dmg`](https://github.com/vjsr007/cubi-frontend/releases/latest) | x86_64 build |
+| **Linux** | [📥 Download `.AppImage`](https://github.com/vjsr007/cubi-frontend/releases/latest) | Portable, no install needed |
+| **Linux (Debian/Ubuntu)** | [📥 Download `.deb`](https://github.com/vjsr007/cubi-frontend/releases/latest) | `sudo dpkg -i cubi-frontend_*.deb` |
+
+> All installers are built automatically by GitHub Actions on every tagged release. See [Build from source](#build-for-production) if you prefer to compile locally.
+
+### macOS first-launch note
+
+macOS may block the app since it is not notarized. Right-click the `.app` → **Open** → **Open** to bypass Gatekeeper on first launch.
 
 ---
 
@@ -58,7 +82,7 @@ During installation select: **Desktop development with C++**
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-org/cubi-frontend.git
+git clone https://github.com/vjsr007/cubi-frontend.git
 cd cubi-frontend
 ```
 
@@ -117,11 +141,28 @@ Then use **Scan Library** to index your ROMs.
 
 ## Build for production
 
+### Local build
+
 ```bash
 npm run tauri build
 ```
 
 Output: `src-tauri/target/release/bundle/`
+
+### Release build (GitHub Actions)
+
+Push a version tag to trigger the automated multi-platform build:
+
+```bash
+# Use the guided release workflow
+/release
+
+# Or manually:
+git tag v0.2.0
+git push origin main --tags
+```
+
+The [release workflow](https://github.com/vjsr007/cubi-frontend/actions/workflows/release.yml) builds Windows (`.msi`), macOS Intel + Apple Silicon (`.dmg`), and Linux (`.AppImage`, `.deb`) in parallel and publishes them to the [Releases page](https://github.com/vjsr007/cubi-frontend/releases).
 
 ---
 

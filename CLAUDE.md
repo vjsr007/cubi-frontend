@@ -107,6 +107,7 @@ REQ (requirement) → DES (design) → TASK (breakdown) → CODE → TEST → RE
 - **Implementor** (`.claude/agents/implementor.md`): Writes code from TASK specs
 - **Reviewer** (`.claude/agents/reviewer.md`): Reviews code, runs tests, checks spec compliance
 - **Designer** (`.claude/agents/designer.md`): UI/UX design, component layouts, theme design
+- **Release Manager** (`.claude/agents/release-manager.md`): Bumps versions across all 3 version files, commits, tags, and pushes to trigger CI builds; invoke via `/release`
 
 ## Key Crates (Cargo.toml)
 ```toml
@@ -185,9 +186,23 @@ cubi-frontend/
 │   ├── stores/                # Zustand stores
 │   ├── lib/                   # Utility functions
 │   └── assets/                # Static assets
+├── .github/
+│   └── workflows/
+│       └── release.yml        # Multi-platform CI/CD build (Windows/macOS/Linux)
 ├── .claude/
 │   ├── agents/                # Sub-agent definitions
+│   │   ├── architect.md
+│   │   ├── designer.md
+│   │   ├── implementor.md
+│   │   ├── reviewer.md
+│   │   └── release-manager.md # Release orchestration (version bump → tag → push)
 │   ├── commands/              # Slash commands
+│   │   ├── spec-design.md
+│   │   ├── spec-implement.md
+│   │   ├── spec-new.md
+│   │   ├── spec-review.md
+│   │   ├── spec-status.md
+│   │   └── release.md         # /release — guided version bump and release
 │   └── skills/                # Custom domain skills
 │       ├── emulator-domain/   # Emulator domain knowledge (40+ systems, BIOS, Media types)
 │       ├── rom-scanner/       # ROM scanning, hashing, system detection
@@ -195,6 +210,7 @@ cubi-frontend/
 │       ├── emulator-launcher/ # Process launching, EmuDeck auto-detect, 21+ emulators
 │       ├── media-manager/     # 58K+ media files, dual locations, thumbnails, caching
 │       ├── theme-engine/      # CSS themes, layouts (grid/list/carousel), CRT effects
-│       └── gamepad-input/     # Gamepad API, spatial nav, haptics, virtual keyboard
+│       ├── gamepad-input/     # Gamepad API, spatial nav, haptics, virtual keyboard
+│       └── version-manager/   # Version files, semver rules, git tagging, CI trigger
 └── public/
 ```

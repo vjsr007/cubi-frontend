@@ -6,4 +6,5 @@ pub mod downloader_service;
 pub mod gamelist_service;
 pub mod screenscraper;
 pub mod thegamesdb;
+pub mod libretro;
 pub mod scraper_service;

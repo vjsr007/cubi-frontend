@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::db::Database;
 use crate::models::{GameInfo, ScrapeFilter, ScrapeJob, ScrapeProgress, ScrapeResult};
-use crate::services::{screenscraper, thegamesdb};
+use crate::services::{screenscraper, thegamesdb, libretro};
 
 pub async fn run_scrape_job(
     app: AppHandle,
@@ -132,6 +132,9 @@ async fn scrape_single_game(
         }
         "thegamesdb" => {
             scrape_thegamesdb(app, config, game, filter, data_dir, overwrite).await
+        }
+        "libretro" => {
+            scrape_libretro(app, game, filter, data_dir, overwrite).await
         }
         other => Err(format!("Scraper '{}' not yet implemented", other)),
     }
@@ -290,6 +293,83 @@ async fn scrape_thegamesdb(
 
     db.upsert_game(&updated).map_err(|e| e.to_string())?;
     Ok(String::new())
+}
+
+async fn scrape_libretro(
+    app: &AppHandle,
+    game: &GameInfo,
+    filter: &ScrapeFilter,
+    data_dir: &std::path::PathBuf,
+    overwrite: bool,
+) -> Result<String, String> {
+    // Libretro only provides images (box art, snaps, titles), no metadata or video
+    let want_images = matches!(filter, ScrapeFilter::All | ScrapeFilter::ImagesOnly | ScrapeFilter::MissingOnly);
+    if !want_images {
+        return Ok("skipped".into());
+    }
+
+    let urls = libretro::get_thumbnail_urls(game)?;
+    let media_root = data_dir.join("media");
+    let db = app.state::<Database>();
+    let mut updated = game.clone();
+    let mut downloaded = 0u32;
+
+    let safe_name = sanitize_filename(&game.title);
+
+    // Box art
+    if let Some(url) = &urls.box_art_url {
+        let dest = media_root.join(&game.system_id).join("box2dfront")
+            .join(format!("{}.png", safe_name));
+        if !dest.exists() || overwrite {
+            match libretro::download_thumbnail(url, &dest).await {
+                Ok(true) => {
+                    downloaded += 1;
+                    if overwrite || updated.box_art.is_none() {
+                        updated.box_art = Some(dest.to_string_lossy().to_string());
+                    }
+                }
+                Ok(false) => {} // 404 — not available
+                Err(e) => log::warn!("Libretro box art download failed for {}: {}", game.title, e),
+            }
+        }
+    }
+
+    // Screenshots (snaps)
+    if let Some(url) = &urls.snap_url {
+        let dest = media_root.join(&game.system_id).join("screenshots")
+            .join(format!("{}.png", safe_name));
+        if !dest.exists() || overwrite {
+            match libretro::download_thumbnail(url, &dest).await {
+                Ok(true) => { downloaded += 1; }
+                Ok(false) => {}
+                Err(e) => log::warn!("Libretro snap download failed for {}: {}", game.title, e),
+            }
+        }
+    }
+
+    // Title screens
+    if let Some(url) = &urls.title_url {
+        let dest = media_root.join(&game.system_id).join("titlescreens")
+            .join(format!("{}.png", safe_name));
+        if !dest.exists() || overwrite {
+            match libretro::download_thumbnail(url, &dest).await {
+                Ok(true) => { downloaded += 1; }
+                Ok(false) => {}
+                Err(e) => log::warn!("Libretro title download failed for {}: {}", game.title, e),
+            }
+        }
+    }
+
+    // Update DB if we got box art
+    if updated.box_art != game.box_art {
+        db.upsert_game(&updated).map_err(|e| e.to_string())?;
+    }
+
+    if downloaded > 0 {
+        Ok(format!("{} thumbnails downloaded", downloaded))
+    } else {
+        Ok("skipped".into())
+    }
 }
 
 async fn download_url(client: &reqwest::Client, url: &str, dest: &Path) -> Result<(), String> {

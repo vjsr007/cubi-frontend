@@ -65,8 +65,10 @@ pub async fn scrape_game(
     };
 
     let api_key = config.api_key.as_deref().unwrap_or("").to_string();
-    // TGDB allows unauthenticated requests with lower rate limits
-    let key_param = if api_key.is_empty() { "".to_string() } else { format!("&apikey={}", api_key) };
+    if api_key.is_empty() {
+        return Err("TheGamesDB requiere un API key. Obtén uno gratis en https://forums.thegamesdb.net/ y configúralo en la sección de Scrappers.".into());
+    }
+    let key_param = format!("&apikey={}", api_key);
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -85,7 +87,11 @@ pub async fn scrape_game(
         .send().await.map_err(|e| e.to_string())?;
 
     if !resp.status().is_success() {
-        return Err(format!("TheGamesDB HTTP {}", resp.status()));
+        let status = resp.status();
+        if status.as_u16() == 418 || status.as_u16() == 403 {
+            return Err("TheGamesDB rechazó la solicitud. Verifica tu API key en la configuración del scraper.".into());
+        }
+        return Err(format!("TheGamesDB HTTP {}", status));
     }
 
     let json: serde_json::Value = resp.json::<serde_json::Value>().await.map_err(|e| e.to_string())?;

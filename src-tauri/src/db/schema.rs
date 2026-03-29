@@ -51,4 +51,10 @@ CREATE TABLE IF NOT EXISTS scrapers (
     credential_hint TEXT,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS system_rom_paths (
+    system_id TEXT PRIMARY KEY,
+    custom_path TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
 ";

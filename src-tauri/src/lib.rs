@@ -45,6 +45,10 @@ pub fn run() {
             commands::pc_games::save_pc_games,
             commands::pc_games::add_pc_game,
             commands::pc_games::delete_pc_game,
+            commands::rom_paths::get_system_registry_list,
+            commands::rom_paths::get_rom_path_overrides,
+            commands::rom_paths::set_rom_path_override,
+            commands::rom_paths::delete_rom_path_override,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

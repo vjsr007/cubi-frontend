@@ -391,6 +391,20 @@ export function SettingsPage() {
           >
             🖥️ PC Games
           </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('rom-paths')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            📁 ROM Paths
+          </button>
         </div>
       </div>
     </div>

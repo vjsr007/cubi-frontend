@@ -306,4 +306,40 @@ impl Database {
         )?;
         Ok(new_val != 0)
     }
+
+    // ── System ROM Path Overrides ─────────────────────────────────────
+
+    /// Get all per-system ROM path overrides as HashMap<system_id, custom_path>
+    pub fn get_rom_path_overrides(&self) -> SqlResult<std::collections::HashMap<String, String>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT system_id, custom_path FROM system_rom_paths"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows.into_iter().collect())
+    }
+
+    /// Set (upsert) a custom ROM path for a specific system
+    pub fn set_rom_path_override(&self, system_id: &str, custom_path: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO system_rom_paths (system_id, custom_path)
+             VALUES (?1, ?2)
+             ON CONFLICT(system_id) DO UPDATE SET custom_path = excluded.custom_path",
+            rusqlite::params![system_id, custom_path],
+        )?;
+        Ok(())
+    }
+
+    /// Remove a custom ROM path override for a system (reverts to default)
+    pub fn delete_rom_path_override(&self, system_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM system_rom_paths WHERE system_id = ?1",
+            [system_id],
+        )?;
+        Ok(())
+    }
 }

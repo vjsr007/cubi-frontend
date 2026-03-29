@@ -3,6 +3,7 @@ import type {
   AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia,
   ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials,
   PcImportGame, PcLibraryStatus, SystemEmulatorInfo,
+  SystemDefInfo, RomPathOverride,
 } from '../types';
 
 export const api = {
@@ -59,4 +60,12 @@ export const api = {
     genre?: string,
   ) => invoke<GameInfo>('add_pc_game', { title, exePath, boxArt, developer, publisher, year, genre }),
   deletePcGame: (gameId: string) => invoke<void>('delete_pc_game', { gameId }),
+
+  // ROM Path Overrides
+  getSystemRegistryList: () => invoke<SystemDefInfo[]>('get_system_registry_list'),
+  getRomPathOverrides: () => invoke<RomPathOverride[]>('get_rom_path_overrides'),
+  setRomPathOverride: (systemId: string, customPath: string) =>
+    invoke<void>('set_rom_path_override', { systemId, customPath }),
+  deleteRomPathOverride: (systemId: string) =>
+    invoke<void>('delete_rom_path_override', { systemId }),
 };

@@ -94,7 +94,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths';
 
 export interface ScraperConfig {
   id: string;
@@ -183,4 +183,18 @@ export interface SystemMedia {
   fan_art: string | null;
   wheel: string | null;
   marquee: string | null;
+}
+
+// ── ROM Path Overrides ────────────────────────────────────────────────
+
+export interface SystemDefInfo {
+  id: string;
+  name: string;
+  full_name: string;
+  folder_names: string[];
+}
+
+export interface RomPathOverride {
+  system_id: string;
+  custom_path: string;
 }

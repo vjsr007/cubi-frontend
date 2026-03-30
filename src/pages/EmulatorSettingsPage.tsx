@@ -49,7 +49,7 @@ function SettingControl({ def, value, onChange }: SettingControlProps) {
   const isLocked = def.locked;
   const display = isLocked ? def.default_value : value;
 
-  if (def.setting_type === 'Bool') {
+  if (def.setting_type === 'bool') {
     return (
       <div
         style={{
@@ -106,7 +106,7 @@ function SettingControl({ def, value, onChange }: SettingControlProps) {
     );
   }
 
-  if (def.setting_type === 'Select' && def.options) {
+  if (def.setting_type === 'select' && def.options) {
     return (
       <div
         style={{
@@ -148,7 +148,7 @@ function SettingControl({ def, value, onChange }: SettingControlProps) {
     );
   }
 
-  if (def.setting_type === 'Range') {
+  if (def.setting_type === 'range') {
     const min = def.range_min ?? 0;
     const max = def.range_max ?? 100;
     const numVal = parseInt(display) || min;

@@ -213,7 +213,7 @@ fn bb(profile_id: &str, action: &str, button_index: i32) -> ButtonBinding {
 /// Get the correct exporter strategy for the given emulator name.
 pub fn get_exporter(emulator_name: &str) -> Box<dyn EmulatorExporter> {
     match emulator_name.to_lowercase().as_str() {
-        "retroarch"   => Box::new(exporters::RetroArchExporter),
+        "retroarch"   => Box::new(exporters::RetroArchExporter::default()),
         "dolphin"     => Box::new(exporters::DolphinExporter),
         "pcsx2"       => Box::new(exporters::Pcsx2Exporter),
         "duckstation" => Box::new(exporters::DuckStationExporter),

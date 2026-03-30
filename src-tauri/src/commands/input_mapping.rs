@@ -2,6 +2,29 @@ use tauri::State;
 use crate::db::Database;
 use crate::models::{InputProfile, ButtonBinding, SystemProfileAssignment, ControllerType, all_actions, button_label};
 use crate::services::input_mapping_service::{DefaultPresets, get_exporter};
+use crate::services::exporters::{RetroArchExporter, EmulatorExporter};
+
+/// Reads `input_joypad_driver` from an existing retroarch.cfg text.
+/// Falls back to the platform default when the key is absent or empty.
+fn detect_retroarch_driver(cfg_text: &str) -> String {
+    for line in cfg_text.lines() {
+        let t = line.trim();
+        if t.starts_with("input_joypad_driver") {
+            if let Some(pos) = t.find('=') {
+                let val = t[pos + 1..].trim().trim_matches('"').trim();
+                if !val.is_empty() {
+                    return val.to_string();
+                }
+            }
+        }
+    }
+    // Default: xinput on Windows (native Xbox controller driver),
+    //          sdl2 on Linux/macOS.
+    #[cfg(target_os = "windows")]
+    { "xinput".to_string() }
+    #[cfg(not(target_os = "windows"))]
+    { "sdl2".to_string() }
+}
 
 // ── Profile CRUD ────────────────────────────────────────────────────────────
 
@@ -149,20 +172,16 @@ pub fn export_profile_for_emulator(
 }
 
 /// Writes the selected profile's input bindings directly into
-/// `%APPDATA%\RetroArch\retroarch.cfg` by patching only the input keys.
-/// Returns the absolute path of the file written.
+/// RetroArch config by patching only the input keys. Detects EmuDeck portable
+/// install automatically. Returns the absolute path of the file written.
 #[tauri::command]
 pub fn write_profile_to_retroarch(
     db: State<'_, Database>,
     profile_id: String,
 ) -> Result<String, String> {
     let bindings = db.get_profile_bindings(&profile_id).map_err(|e| e.to_string())?;
-    let exporter = get_exporter("retroarch");
-    let input_text = exporter.export(&bindings);
 
-    let cfg_path = std::env::var_os("APPDATA")
-        .map(|p| std::path::PathBuf::from(p).join("RetroArch").join("retroarch.cfg"))
-        .ok_or_else(|| "APPDATA environment variable not found".to_string())?;
+    let cfg_path = resolve_retroarch_cfg_path()?;
 
     // Read existing config; keep every line that isn't an input binding we'll replace.
     let existing = if cfg_path.exists() {
@@ -171,16 +190,44 @@ pub fn write_profile_to_retroarch(
         String::new()
     };
 
+    // Detect which joypad driver RetroArch is already using so we write
+    // matching button indices (xinput vs sdl2 have different numbering).
+    let driver = detect_retroarch_driver(&existing);
+    let exporter = RetroArchExporter { driver };
+    let input_text = exporter.export(&bindings);
+
     let kept: String = existing
         .lines()
         .filter(|l| {
             let t = l.trim_start();
-            !t.starts_with("input_player1_")
-                && !t.starts_with("input_enable_hotkey_btn")
-                && !t.starts_with("input_save_state_btn")
-                && !t.starts_with("input_load_state_btn")
-                && !t.starts_with("input_toggle_fast_forward_btn")
-                && !t.starts_with("input_screenshot_btn")
+            !t.starts_with("input_player1_b_btn")
+                && !t.starts_with("input_player1_a_btn")
+                && !t.starts_with("input_player1_x_btn")
+                && !t.starts_with("input_player1_y_btn")
+                && !t.starts_with("input_player1_b_axis")
+                && !t.starts_with("input_player1_a_axis")
+                && !t.starts_with("input_player1_x_axis")
+                && !t.starts_with("input_player1_y_axis")
+                && !t.starts_with("input_player1_l_btn")
+                && !t.starts_with("input_player1_r_btn")
+                && !t.starts_with("input_player1_l2")
+                && !t.starts_with("input_player1_r2")
+                && !t.starts_with("input_player1_l3")
+                && !t.starts_with("input_player1_r3")
+                && !t.starts_with("input_player1_start")
+                && !t.starts_with("input_player1_select")
+                && !t.starts_with("input_player1_up")
+                && !t.starts_with("input_player1_down")
+                && !t.starts_with("input_player1_left")
+                && !t.starts_with("input_player1_right")
+                && !t.starts_with("input_player1_joypad_index")
+                && !t.starts_with("input_enable_hotkey")
+                && !t.starts_with("input_save_state")
+                && !t.starts_with("input_load_state")
+                && !t.starts_with("input_toggle_fast_forward")
+                && !t.starts_with("input_screenshot")
+                && !t.starts_with("input_joypad_driver")
+                && !t.starts_with("input_autoconfig_enable")
                 && !t.starts_with("input_driver =")
                 && !t.starts_with("input_driver=")
                 && !t.starts_with("# RetroArch input config")
@@ -222,12 +269,35 @@ fn strip_ini_section(text: &str, section_header: &str) -> String {
     result.join("\n")
 }
 
+fn resolve_retroarch_cfg_path() -> Result<std::path::PathBuf, String> {
+    // 1. EmuDeck portable install: config lives next to retroarch.exe
+    if let Ok(cfg) = crate::services::config_service::load_config() {
+        let emudeck = &cfg.paths.emudeck_path;
+        if !emudeck.is_empty() {
+            for rel_dir in &["RetroArch", "RetroArch-Win64"] {
+                let exe = std::path::PathBuf::from(emudeck)
+                    .join(rel_dir)
+                    .join("retroarch.exe");
+                if exe.exists() {
+                    let cfg_path = exe.with_file_name("retroarch.cfg");
+                    log::info!("RetroArch cfg (EmuDeck portable): {}", cfg_path.display());
+                    return Ok(cfg_path);
+                }
+            }
+        }
+    }
+    // 2. Standard AppData location
+    let appdata = std::env::var_os("APPDATA")
+        .ok_or_else(|| "APPDATA not found".to_string())?;
+    let p = std::path::PathBuf::from(appdata).join("RetroArch").join("retroarch.cfg");
+    log::info!("RetroArch cfg (standard): {}", p.display());
+    Ok(p)
+}
+
 fn resolve_emulator_config_path(emulator_name: &str) -> Result<(std::path::PathBuf, Option<&'static str>), String> {
     match emulator_name.to_lowercase().as_str() {
         "retroarch" => {
-            let appdata = std::env::var_os("APPDATA")
-                .ok_or_else(|| "APPDATA not found".to_string())?;
-            let p = std::path::PathBuf::from(appdata).join("RetroArch").join("retroarch.cfg");
+            let p = resolve_retroarch_cfg_path()?;
             Ok((p, None)) // RetroArch uses line-based patching
         }
         "dolphin" => {
@@ -262,8 +332,6 @@ pub fn write_profile_to_emulator(
     emulator_name: String,
 ) -> Result<String, String> {
     let bindings = db.get_profile_bindings(&profile_id).map_err(|e| e.to_string())?;
-    let exporter = get_exporter(&emulator_name);
-    let new_config = exporter.export(&bindings);
 
     let (cfg_path, section_header) = resolve_emulator_config_path(&emulator_name)?;
 
@@ -277,19 +345,50 @@ pub fn write_profile_to_emulator(
         String::new()
     };
 
+    // For RetroArch, detect the active joypad driver so we write matching
+    // button indices.  For other emulators, use the generic exporter.
+    let new_config = if section_header.is_none() && emulator_name.to_lowercase() == "retroarch" {
+        let driver = detect_retroarch_driver(&existing);
+        RetroArchExporter { driver }.export(&bindings)
+    } else {
+        get_exporter(&emulator_name).export(&bindings)
+    };
+
     let mut out = match section_header {
         None => {
-            // RetroArch: strip individual input_ lines
+            // RetroArch: strip individual input_ binding lines, keep everything else
             existing
                 .lines()
                 .filter(|l| {
                     let t = l.trim_start();
-                    !t.starts_with("input_player1_")
-                        && !t.starts_with("input_enable_hotkey_btn")
-                        && !t.starts_with("input_save_state_btn")
-                        && !t.starts_with("input_load_state_btn")
-                        && !t.starts_with("input_toggle_fast_forward_btn")
-                        && !t.starts_with("input_screenshot_btn")
+                    !t.starts_with("input_player1_b_btn")
+                        && !t.starts_with("input_player1_a_btn")
+                        && !t.starts_with("input_player1_x_btn")
+                        && !t.starts_with("input_player1_y_btn")
+                        && !t.starts_with("input_player1_b_axis")
+                        && !t.starts_with("input_player1_a_axis")
+                        && !t.starts_with("input_player1_x_axis")
+                        && !t.starts_with("input_player1_y_axis")
+                        && !t.starts_with("input_player1_l_btn")
+                        && !t.starts_with("input_player1_r_btn")
+                        && !t.starts_with("input_player1_l2")
+                        && !t.starts_with("input_player1_r2")
+                        && !t.starts_with("input_player1_l3")
+                        && !t.starts_with("input_player1_r3")
+                        && !t.starts_with("input_player1_start")
+                        && !t.starts_with("input_player1_select")
+                        && !t.starts_with("input_player1_up")
+                        && !t.starts_with("input_player1_down")
+                        && !t.starts_with("input_player1_left")
+                        && !t.starts_with("input_player1_right")
+                        && !t.starts_with("input_player1_joypad_index")
+                        && !t.starts_with("input_enable_hotkey")
+                        && !t.starts_with("input_save_state")
+                        && !t.starts_with("input_load_state")
+                        && !t.starts_with("input_toggle_fast_forward")
+                        && !t.starts_with("input_screenshot")
+                        && !t.starts_with("input_joypad_driver")
+                        && !t.starts_with("input_autoconfig_enable")
                         && !t.starts_with("input_driver =")
                         && !t.starts_with("input_driver=")
                         && !t.starts_with("# RetroArch input config")

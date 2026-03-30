@@ -211,6 +211,7 @@ cubi-frontend/
 │       ├── media-manager/     # 58K+ media files, dual locations, thumbnails, caching
 │       ├── theme-engine/      # CSS themes, layouts (grid/list/carousel), CRT effects
 │       ├── gamepad-input/     # Gamepad API, spatial nav, haptics, virtual keyboard
-│       └── version-manager/   # Version files, semver rules, git tagging, CI trigger
+│       ├── version-manager/   # Version files, semver rules, git tagging, CI trigger
+│       └── pc-metadata-scraper/ # PC enhanced metadata: Steam Store, IGDB, SteamGridDB, MobyGames, PCGamingWiki, YouTube/yt-dlp, web scraper (chromiumoxide)
 └── public/
 ```

@@ -3,7 +3,7 @@ pub mod schema;
 use rusqlite::{Connection, Result as SqlResult};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
-use crate::models::{GameInfo, SystemInfo, ScraperConfig, default_scrapers};
+use crate::models::{GameInfo, GameInfoPatch, SystemInfo, ScraperConfig, default_scrapers};
 
 pub struct Database {
     pub conn: Mutex<Connection>,
@@ -19,6 +19,7 @@ impl Database {
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
         let db = Database { conn: Mutex::new(conn) };
         db.initialize()?;
+        db.run_migrations()?;
         Ok(db)
     }
 
@@ -26,6 +27,7 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(schema::CREATE_SCHEMA)?;
         drop(conn);
+        let _ = self.run_migrations();
         self.seed_default_scrapers();
         self.seed_default_input_profiles();
         self.seed_emulator_setting_definitions();
@@ -42,7 +44,40 @@ impl Database {
         crate::services::emulator_settings_service::seed_setting_definitions(self);
     }
 
-    /// Seed default scrapers if the table is empty
+    fn run_migrations(&self) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let version: i64 = conn
+            .query_row("SELECT version FROM schema_version", [], |r| r.get(0))
+            .unwrap_or(1);
+
+        if version < 2 {
+            log::info!("Running DB migration v2: PC metadata columns");
+            let stmts = [
+                "ALTER TABLE games ADD COLUMN hero_art TEXT",
+                "ALTER TABLE games ADD COLUMN logo TEXT",
+                "ALTER TABLE games ADD COLUMN background_art TEXT",
+                "ALTER TABLE games ADD COLUMN screenshots TEXT",
+                "ALTER TABLE games ADD COLUMN trailer_url TEXT",
+                "ALTER TABLE games ADD COLUMN trailer_local TEXT",
+                "ALTER TABLE games ADD COLUMN metacritic_score INTEGER",
+                "ALTER TABLE games ADD COLUMN tags TEXT",
+                "ALTER TABLE games ADD COLUMN website TEXT",
+                "ALTER TABLE games ADD COLUMN pcgamingwiki_url TEXT",
+                "ALTER TABLE games ADD COLUMN igdb_id INTEGER",
+                "UPDATE schema_version SET version = 2",
+            ];
+            for stmt in &stmts {
+                if let Err(e) = conn.execute_batch(stmt) {
+                    if !e.to_string().contains("duplicate column") {
+                        log::warn!("Migration v2 stmt (ignored): {} — {}", stmt, e);
+                    }
+                }
+            }
+            log::info!("DB migration v2 complete");
+        }
+        Ok(())
+    }
+
     fn seed_default_scrapers(&self) {
         let conn = self.conn.lock().unwrap();
         let count: i64 = conn
@@ -53,8 +88,8 @@ impl Database {
                 let supports_json = serde_json::to_string(&s.supports).unwrap_or_default();
                 let _ = conn.execute(
                     "INSERT OR IGNORE INTO scrapers
-                     (id, name, url, api_key, username, password, enabled, priority,
-                      supports, requires_credentials, credential_hint)
+                     (id,name,url,api_key,username,password,enabled,priority,
+                      supports,requires_credentials,credential_hint)
                      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",
                     rusqlite::params![
                         s.id, s.name, s.url,
@@ -68,6 +103,8 @@ impl Database {
             }
         }
     }
+
+    // ── Scrapers ────────────────────────────────────────────────────────
 
     pub fn get_scrapers(&self) -> SqlResult<Vec<ScraperConfig>> {
         let conn = self.conn.lock().unwrap();
@@ -129,6 +166,8 @@ impl Database {
         Ok(())
     }
 
+    // ── Systems ─────────────────────────────────────────────────────────
+
     pub fn upsert_system(&self, system: &SystemInfo) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -147,46 +186,6 @@ impl Database {
                 serde_json::to_string(&system.extensions).unwrap_or_default(),
                 system.game_count,
                 system.rom_path,
-            ],
-        )?;
-        Ok(())
-    }
-
-    pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
-        let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "INSERT INTO games (id, system_id, title, file_path, file_name, file_size,
-              box_art, description, developer, publisher, year, genre, players, rating,
-              play_count, last_played, favorite)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
-             ON CONFLICT(id) DO UPDATE SET
-               title = excluded.title,
-               box_art = excluded.box_art,
-               description = excluded.description,
-               developer = excluded.developer,
-               publisher = excluded.publisher,
-               year = excluded.year,
-               genre = excluded.genre,
-               players = excluded.players,
-               rating = excluded.rating",
-            rusqlite::params![
-                game.id,
-                game.system_id,
-                game.title,
-                game.file_path,
-                game.file_name,
-                game.file_size,
-                game.box_art,
-                game.description,
-                game.developer,
-                game.publisher,
-                game.year,
-                game.genre,
-                game.players,
-                game.rating,
-                game.play_count,
-                game.last_played,
-                game.favorite as i32,
             ],
         )?;
         Ok(())
@@ -213,72 +212,197 @@ impl Database {
         Ok(systems)
     }
 
+    // ── Games ────────────────────────────────────────────────────────────
+
+    fn row_to_game(row: &rusqlite::Row) -> rusqlite::Result<GameInfo> {
+        let screenshots_json: Option<String> = row.get(20)?;
+        let screenshots = screenshots_json.as_deref()
+            .and_then(|j| serde_json::from_str(j).ok());
+        let tags_json: Option<String> = row.get(24)?;
+        let tags = tags_json.as_deref()
+            .and_then(|j| serde_json::from_str(j).ok());
+        Ok(GameInfo {
+            id: row.get(0)?,
+            system_id: row.get(1)?,
+            title: row.get(2)?,
+            file_path: row.get(3)?,
+            file_name: row.get(4)?,
+            file_size: row.get::<_, i64>(5)? as u64,
+            box_art: row.get(6)?,
+            description: row.get(7)?,
+            developer: row.get(8)?,
+            publisher: row.get(9)?,
+            year: row.get(10)?,
+            genre: row.get(11)?,
+            players: row.get::<_, i64>(12)? as u32,
+            rating: row.get(13)?,
+            last_played: row.get(14)?,
+            play_count: row.get::<_, i64>(15)? as u32,
+            favorite: row.get::<_, i32>(16)? != 0,
+            hero_art: row.get(17)?,
+            logo: row.get(18)?,
+            background_art: row.get(19)?,
+            screenshots,
+            trailer_url: row.get(21)?,
+            trailer_local: row.get(22)?,
+            metacritic_score: row.get::<_, Option<i64>>(23)?.map(|v| v as i32),
+            tags,
+            website: row.get(25)?,
+            pcgamingwiki_url: row.get(26)?,
+            igdb_id: row.get(27)?,
+        })
+    }
+
+    const GAME_COLS: &'static str =
+        "id, system_id, title, file_path, file_name, file_size,
+         box_art, description, developer, publisher, year, genre,
+         players, rating, last_played, play_count, favorite,
+         hero_art, logo, background_art, screenshots, trailer_url,
+         trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id";
+
+    pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let screenshots_json = game.screenshots.as_ref()
+            .and_then(|v| serde_json::to_string(v).ok());
+        let tags_json = game.tags.as_ref()
+            .and_then(|v| serde_json::to_string(v).ok());
+        conn.execute(
+            "INSERT INTO games (
+               id, system_id, title, file_path, file_name, file_size,
+               box_art, description, developer, publisher, year, genre,
+               players, rating, play_count, last_played, favorite,
+               hero_art, logo, background_art, screenshots, trailer_url,
+               trailer_local, metacritic_score, tags, website,
+               pcgamingwiki_url, igdb_id)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,
+                     ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28)
+             ON CONFLICT(id) DO UPDATE SET
+               title=excluded.title, box_art=excluded.box_art,
+               description=excluded.description, developer=excluded.developer,
+               publisher=excluded.publisher, year=excluded.year,
+               genre=excluded.genre, players=excluded.players,
+               rating=excluded.rating,
+               hero_art=excluded.hero_art, logo=excluded.logo,
+               background_art=excluded.background_art,
+               screenshots=excluded.screenshots,
+               trailer_url=excluded.trailer_url, trailer_local=excluded.trailer_local,
+               metacritic_score=excluded.metacritic_score, tags=excluded.tags,
+               website=excluded.website, pcgamingwiki_url=excluded.pcgamingwiki_url,
+               igdb_id=excluded.igdb_id",
+            rusqlite::params![
+                game.id, game.system_id, game.title, game.file_path,
+                game.file_name, game.file_size as i64,
+                game.box_art, game.description, game.developer, game.publisher,
+                game.year, game.genre,
+                game.players as i64, game.rating,
+                game.play_count as i64, game.last_played, game.favorite as i32,
+                game.hero_art, game.logo, game.background_art,
+                screenshots_json, game.trailer_url, game.trailer_local,
+                game.metacritic_score, tags_json, game.website,
+                game.pcgamingwiki_url, game.igdb_id,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Apply partial update — only sets provided fields
+    pub fn patch_game(&self, game_id: &str, patch: &GameInfoPatch) -> SqlResult<()> {
+        if patch.is_empty() { return Ok(()); }
+        let mut sets: Vec<String> = Vec::new();
+        let mut values: Vec<rusqlite::types::Value> = Vec::new();
+        let mut i = 1usize;
+
+        macro_rules! push {
+            ($opt:expr, $col:literal) => {
+                if let Some(ref v) = $opt {
+                    sets.push(format!(concat!($col, " = ?{}"), i));
+                    values.push(rusqlite::types::Value::Text(v.clone()));
+                    i += 1;
+                }
+            };
+            (int $opt:expr, $col:literal) => {
+                if let Some(v) = $opt {
+                    sets.push(format!(concat!($col, " = ?{}"), i));
+                    values.push(rusqlite::types::Value::Integer(v as i64));
+                    i += 1;
+                }
+            };
+            (real $opt:expr, $col:literal) => {
+                if let Some(v) = $opt {
+                    sets.push(format!(concat!($col, " = ?{}"), i));
+                    values.push(rusqlite::types::Value::Real(v as f64));
+                    i += 1;
+                }
+            };
+            (json $opt:expr, $col:literal) => {
+                if let Some(ref v) = $opt {
+                    if let Ok(json) = serde_json::to_string(v) {
+                        sets.push(format!(concat!($col, " = ?{}"), i));
+                        values.push(rusqlite::types::Value::Text(json));
+                        i += 1;
+                    }
+                }
+            };
+        }
+
+        push!(patch.title, "title");
+        push!(patch.box_art, "box_art");
+        push!(patch.description, "description");
+        push!(patch.developer, "developer");
+        push!(patch.publisher, "publisher");
+        push!(patch.year, "year");
+        push!(patch.genre, "genre");
+        push!(int patch.players, "players");
+        push!(real patch.rating, "rating");
+        push!(patch.hero_art, "hero_art");
+        push!(patch.logo, "logo");
+        push!(patch.background_art, "background_art");
+        push!(patch.trailer_url, "trailer_url");
+        push!(patch.trailer_local, "trailer_local");
+        push!(int patch.metacritic_score, "metacritic_score");
+        push!(int patch.igdb_id, "igdb_id");
+        push!(patch.website, "website");
+        push!(patch.pcgamingwiki_url, "pcgamingwiki_url");
+        push!(json patch.screenshots, "screenshots");
+        push!(json patch.tags, "tags");
+
+        if sets.is_empty() { return Ok(()); }
+        values.push(rusqlite::types::Value::Text(game_id.to_string()));
+
+        let sql = format!("UPDATE games SET {} WHERE id = ?{}", sets.join(", "), i);
+        let conn = self.conn.lock().unwrap();
+        conn.execute(&sql, rusqlite::params_from_iter(values.iter()))?;
+        Ok(())
+    }
+
     pub fn get_games(&self, system_id: &str) -> SqlResult<Vec<GameInfo>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT id, system_id, title, file_path, file_name, file_size,
-              box_art, description, developer, publisher, year, genre,
-              players, rating, last_played, play_count, favorite
-             FROM games WHERE system_id = ?1 ORDER BY title"
-        )?;
-        let games = stmt.query_map([system_id], |row| {
-            Ok(GameInfo {
-                id: row.get(0)?,
-                system_id: row.get(1)?,
-                title: row.get(2)?,
-                file_path: row.get(3)?,
-                file_name: row.get(4)?,
-                file_size: row.get(5)?,
-                box_art: row.get(6)?,
-                description: row.get(7)?,
-                developer: row.get(8)?,
-                publisher: row.get(9)?,
-                year: row.get(10)?,
-                genre: row.get(11)?,
-                players: row.get(12)?,
-                rating: row.get(13)?,
-                last_played: row.get(14)?,
-                play_count: row.get(15)?,
-                favorite: row.get::<_, i32>(16)? != 0,
-            })
-        })?.collect::<SqlResult<Vec<_>>>()?;
-        Ok(games)
+        let sql = format!(
+            "SELECT {} FROM games WHERE system_id = ?1 ORDER BY title",
+            Self::GAME_COLS
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let result = stmt.query_map([system_id], Self::row_to_game)?
+            .collect::<SqlResult<Vec<_>>>();
+        result
     }
 
     pub fn get_game(&self, game_id: &str) -> SqlResult<Option<GameInfo>> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT id, system_id, title, file_path, file_name, file_size,
-              box_art, description, developer, publisher, year, genre,
-              players, rating, last_played, play_count, favorite
-             FROM games WHERE id = ?1"
-        )?;
-        let result = stmt.query_row([game_id], |row| {
-            Ok(GameInfo {
-                id: row.get(0)?,
-                system_id: row.get(1)?,
-                title: row.get(2)?,
-                file_path: row.get(3)?,
-                file_name: row.get(4)?,
-                file_size: row.get(5)?,
-                box_art: row.get(6)?,
-                description: row.get(7)?,
-                developer: row.get(8)?,
-                publisher: row.get(9)?,
-                year: row.get(10)?,
-                genre: row.get(11)?,
-                players: row.get(12)?,
-                rating: row.get(13)?,
-                last_played: row.get(14)?,
-                play_count: row.get(15)?,
-                favorite: row.get::<_, i32>(16)? != 0,
-            })
-        });
-        match result {
-            Ok(game) => Ok(Some(game)),
+        let sql = format!(
+            "SELECT {} FROM games WHERE id = ?1",
+            Self::GAME_COLS
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        match stmt.query_row([game_id], Self::row_to_game) {
+            Ok(g) => Ok(Some(g)),
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn get_pc_games(&self) -> SqlResult<Vec<GameInfo>> {
+        self.get_games("pc")
     }
 
     pub fn update_play_stats(&self, game_id: &str) -> SqlResult<()> {

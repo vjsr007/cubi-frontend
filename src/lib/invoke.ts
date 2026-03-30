@@ -6,6 +6,7 @@ import type {
   SystemDefInfo, RomPathOverride,
   InputProfile, ButtonBinding, SystemProfileAssignment, ActionInfo,
   SettingDefinition, EmulatorSettingValue, ConfigWriterInfo,
+  PcMetadataConfig, PcToolsStatus, PcScrapeResult,
 } from '../types';
 
 export const api = {
@@ -63,6 +64,7 @@ export const api = {
   ) => invoke<GameInfo>('add_pc_game', { title, exePath, boxArt, developer, publisher, year, genre }),
   deletePcGame: (gameId: string) => invoke<void>('delete_pc_game', { gameId }),
 
+<<<<<<< HEAD
   // ROM Path Overrides
   getSystemRegistryList: () => invoke<SystemDefInfo[]>('get_system_registry_list'),
   getRomPathOverrides: () => invoke<RomPathOverride[]>('get_rom_path_overrides'),
@@ -110,4 +112,11 @@ export const api = {
     invoke<void>('reset_emulator_settings', { emulatorName }),
   previewEmulatorConfig: (emulatorName: string) =>
     invoke<string>('preview_emulator_config', { emulatorName }),
+
+  // PC Metadata Scraper (REQ-015)
+  checkPcScraperTools: () => invoke<PcToolsStatus>('check_pc_scraper_tools'),
+  getPcMetadataConfig: () => invoke<PcMetadataConfig>('get_pc_metadata_config'),
+  savePcMetadataConfig: (pcMetadata: PcMetadataConfig) => invoke<void>('save_pc_metadata_config', { pcMetadata }),
+  scrapeSinglePcGame: (gameId: string) => invoke<PcScrapeResult>('scrape_single_pc_game', { gameId }),
+  runPcMetadataJob: (gameIds?: string[]) => invoke<PcScrapeResult[]>('run_pc_metadata_job', { gameIds }),
 };

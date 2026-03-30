@@ -5,7 +5,21 @@
       "Bash(npx tsc:*)",
       "Bash(npm run:*)",
       "Bash(cargo check:*)",
-      "Bash(where cargo:*)"
+      "Bash(where cargo:*)",
+      "Bash(/c/Program Files/nodejs/npm.cmd run build)",
+      "Bash(cmd.exe /c \"cd c:\\\\projects\\\\cubi-frontend && npm run build 2>&1\")",
+      "Bash(cmd.exe /c \"cd /d c:\\\\projects\\\\cubi-frontend && npx tsc --noEmit 2>&1\")",
+      "Bash(cmd.exe /c \"cd /d c:\\\\projects\\\\cubi-frontend\\\\src-tauri && cargo check 2>&1\")",
+      "Bash(cmd.exe /c \"cd /d c:\\\\projects\\\\cubi-frontend\\\\src-tauri && cargo check 2>&1 && echo BUILD_OK\")",
+      "Bash(powershell.exe -Command \"Set-Location ''c:\\\\projects\\\\cubi-frontend\\\\src-tauri''; cargo check 2>&1 | Out-String\")",
+      "Bash(cmd.exe /c \"cd /d c:\\\\projects\\\\cubi-frontend && where cargo 2>&1 && where npm 2>&1\")",
+      "Bash(cmd.exe /c \"set PATH=%PATH%;%USERPROFILE%\\\\.cargo\\\\bin && cd /d c:\\\\projects\\\\cubi-frontend && where cargo 2>&1\")",
+      "Bash(cmd.exe /c \"dir %USERPROFILE%\\\\.cargo\\\\bin\\\\cargo.exe 2>&1\")",
+      "Bash(cmd.exe /c \"dir C:\\\\Users\\\\vjsan\\\\.cargo\\\\bin\\\\cargo.exe 2>&1\")",
+      "Bash(cmd.exe /c \"dir C:\\\\Users\\\\vjsan\\\\.cargo\\\\bin\\\\ 2>&1 | head -5\")",
+      "Bash(cmd.exe /c \"where /r C:\\\\Users\\\\vjsan cargo.exe 2>&1\")",
+      "Bash(export PATH=\"$PATH:/c/Users/vjsan/.cargo/bin\")",
+      "Bash(cargo --version)"
     ]
   }
 }

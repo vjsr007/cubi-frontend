@@ -104,4 +104,25 @@ CREATE TABLE IF NOT EXISTS emulator_settings (
     value TEXT NOT NULL,
     PRIMARY KEY (emulator_name, setting_key)
 );
+
+CREATE TABLE IF NOT EXISTS schema_version (
+    version INTEGER PRIMARY KEY
+);
+INSERT OR IGNORE INTO schema_version VALUES (1);
+";
+
+/// Migration v2: PC enhanced metadata columns
+pub const MIGRATION_V2: &str = "
+ALTER TABLE games ADD COLUMN hero_art TEXT;
+ALTER TABLE games ADD COLUMN logo TEXT;
+ALTER TABLE games ADD COLUMN background_art TEXT;
+ALTER TABLE games ADD COLUMN screenshots TEXT;
+ALTER TABLE games ADD COLUMN trailer_url TEXT;
+ALTER TABLE games ADD COLUMN trailer_local TEXT;
+ALTER TABLE games ADD COLUMN metacritic_score INTEGER;
+ALTER TABLE games ADD COLUMN tags TEXT;
+ALTER TABLE games ADD COLUMN website TEXT;
+ALTER TABLE games ADD COLUMN pcgamingwiki_url TEXT;
+ALTER TABLE games ADD COLUMN igdb_id INTEGER;
+UPDATE schema_version SET version = 2;
 ";

@@ -70,6 +70,11 @@ pub fn run() {
             commands::emulator_settings::set_emulator_setting,
             commands::emulator_settings::reset_emulator_settings,
             commands::emulator_settings::preview_emulator_config,
+            commands::pc_scraper::check_pc_scraper_tools,
+            commands::pc_scraper::get_pc_metadata_config,
+            commands::pc_scraper::save_pc_metadata_config,
+            commands::pc_scraper::scrape_single_pc_game,
+            commands::pc_scraper::run_pc_metadata_job,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

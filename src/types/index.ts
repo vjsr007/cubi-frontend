@@ -76,6 +76,18 @@ export interface GameInfo {
   last_played?: string;
   play_count: number;
   favorite: boolean;
+  // PC Enhanced Metadata (REQ-015)
+  hero_art?: string;
+  logo?: string;
+  background_art?: string;
+  screenshots?: string[];
+  trailer_url?: string;
+  trailer_local?: string;
+  metacritic_score?: number;
+  tags?: string[];
+  website?: string;
+  pcgamingwiki_url?: string;
+  igdb_id?: number;
 }
 
 export interface ScanProgress {
@@ -166,6 +178,52 @@ export interface PcLibraryStatus {
   ea_found: boolean;
   gog_found: boolean;
 }
+
+// ── PC Metadata Scraper (REQ-015) ─────────────────────────────────────
+
+export interface PcMetadataConfig {
+  igdb_client_id?: string;
+  igdb_client_secret?: string;
+  mobygames_api_key?: string;
+  youtube_api_key?: string;
+  steamgriddb_api_key?: string;
+  max_screenshots: number;
+  download_trailers: boolean;
+  use_headless_browser: boolean;
+  enabled_sources: string[];
+}
+
+export interface PcToolsStatus {
+  ytdlp_available: boolean;
+  ytdlp_path?: string;
+  chrome_available: boolean;
+  chrome_path?: string;
+}
+
+export interface PcScrapeResult {
+  game_id: string;
+  title: string;
+  ok: boolean;
+  error?: string;
+  fields_updated: number;
+}
+
+export interface PcScrapeProgress {
+  current: number;
+  total: number;
+  game_title: string;
+  source: string;
+  done: boolean;
+}
+
+export type PcMetadataSource =
+  | 'steam_store'
+  | 'igdb'
+  | 'steamgriddb'
+  | 'mobygames'
+  | 'pcgamingwiki'
+  | 'youtube'
+  | 'web_scraper';
 
 export interface GameMedia {
   box_art: string | null;

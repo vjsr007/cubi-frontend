@@ -83,7 +83,88 @@ pub async fn fetch_grid_by_name(name: &str, api_key: &str) -> Option<String> {
     fetch_grids_for_id(game_id, api_key, &client).await
 }
 
+// ── Extended asset types (TASK-015-04) ────────────────────────────────
+
+/// Fetch hero/banner image URL (1920×620) by Steam appid.
+pub async fn fetch_hero_by_steam_appid(appid: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_appid(appid, api_key, &client).await?;
+    fetch_asset_for_id("heroes", game_id, api_key, &client).await
+}
+
+/// Fetch hero/banner image URL (1920×620) by game title.
+pub async fn fetch_hero_by_name(name: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_name(name, api_key, &client).await?;
+    fetch_asset_for_id("heroes", game_id, api_key, &client).await
+}
+
+/// Fetch logo URL (transparent PNG) by Steam appid.
+pub async fn fetch_logo_by_steam_appid(appid: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_appid(appid, api_key, &client).await?;
+    fetch_asset_for_id("logos", game_id, api_key, &client).await
+}
+
+/// Fetch logo URL (transparent PNG) by game title.
+pub async fn fetch_logo_by_name(name: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_name(name, api_key, &client).await?;
+    fetch_asset_for_id("logos", game_id, api_key, &client).await
+}
+
+/// Fetch background art URL by Steam appid.
+pub async fn fetch_background_by_steam_appid(appid: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_appid(appid, api_key, &client).await?;
+    fetch_asset_for_id("backgrounds", game_id, api_key, &client).await
+}
+
+/// Fetch background art URL by game title.
+pub async fn fetch_background_by_name(name: &str, api_key: &str) -> Option<String> {
+    let client = build_client()?;
+    let game_id = resolve_game_id_by_name(name, api_key, &client).await?;
+    fetch_asset_for_id("backgrounds", game_id, api_key, &client).await
+}
+
 // ── Internal helpers ───────────────────────────────────────────────────
+
+async fn resolve_game_id_by_appid(appid: &str, api_key: &str, client: &Client) -> Option<u64> {
+    let resp = client
+        .get(format!("{BASE_URL}/games/steam/{appid}"))
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .ok()?;
+    let game: SgdbResponse<SgdbGame> = resp.json().await.ok()?;
+    if !game.success { return None; }
+    Some(game.data?.id)
+}
+
+async fn resolve_game_id_by_name(name: &str, api_key: &str, client: &Client) -> Option<u64> {
+    let encoded = utf8_percent_encode(name, NON_ALPHANUMERIC).to_string();
+    let resp = client
+        .get(format!("{BASE_URL}/search/autocomplete/{encoded}"))
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .ok()?;
+    let search: SgdbResponse<Vec<SgdbGame>> = resp.json().await.ok()?;
+    if !search.success { return None; }
+    Some(search.data?.into_iter().next()?.id)
+}
+
+async fn fetch_asset_for_id(asset_type: &str, game_id: u64, api_key: &str, client: &Client) -> Option<String> {
+    let resp = client
+        .get(format!("{BASE_URL}/{asset_type}/game/{game_id}?limit=1"))
+        .bearer_auth(api_key)
+        .send()
+        .await
+        .ok()?;
+    let result: SgdbResponse<Vec<SgdbGrid>> = resp.json().await.ok()?;
+    if !result.success { return None; }
+    result.data?.into_iter().next().map(|g| g.url)
+}
 
 fn build_client() -> Option<Client> {
     Client::builder()

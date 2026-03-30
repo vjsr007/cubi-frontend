@@ -87,16 +87,10 @@ pub fn save_pc_games(
             file_name: import.title.clone(),
             file_size: import.file_size,
             box_art: import.box_art.clone(),
-            description: None,
             developer: import.developer.clone(),
             publisher: import.publisher.clone(),
-            year: None,
-            genre: None,
             players: 1,
-            rating: 0.0,
-            last_played: None,
-            play_count: 0,
-            favorite: false,
+            ..Default::default()
         };
         if db.upsert_game(&game).is_ok() {
             count += 1;
@@ -139,16 +133,12 @@ pub fn add_pc_game(
         file_name,
         file_size,
         box_art,
-        description: None,
         developer,
         publisher,
         year,
         genre,
         players: 1,
-        rating: 0.0,
-        last_played: None,
-        play_count: 0,
-        favorite: false,
+        ..Default::default()
     };
 
     db.upsert_game(&game).map_err(|e| e.to_string())?;

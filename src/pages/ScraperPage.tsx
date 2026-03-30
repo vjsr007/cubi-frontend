@@ -7,7 +7,10 @@ import { useLibraryStore } from '../stores/libraryStore';
 import { ScraperList } from '../components/scraper/ScraperList';
 import { ScraperForm } from '../components/scraper/ScraperForm';
 import { ScrapeJobPanel } from '../components/scraper/ScrapeJobPanel';
+import { PcScraperSettings } from '../components/pc_scraper/PcScraperSettings';
 import { api } from '../lib/invoke';
+
+type Tab = 'scrapers' | 'pc_games';
 
 export function ScraperPage() {
   const { t } = useI18nStore();
@@ -55,6 +58,7 @@ export function ScraperPage() {
     await updateScraper(s);
   };
 
+  const [activeTab, setActiveTab] = useState<Tab>('scrapers');
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
   const handleImportEsde = async () => {
@@ -85,6 +89,13 @@ export function ScraperPage() {
     }
   };
 
+  const tabBtnStyle = (tab: Tab): React.CSSProperties => ({
+    padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+    border: 'none', cursor: 'pointer',
+    background: activeTab === tab ? 'var(--color-primary)' : 'transparent',
+    color: activeTab === tab ? '#fff' : 'var(--color-text-muted)',
+  });
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
@@ -104,70 +115,86 @@ export function ScraperPage() {
           ←
         </button>
         <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{t('scraper.title')}</h1>
+
+        {/* Tab switcher */}
+        <div style={{ display: 'flex', gap: 4, marginLeft: 16, background: 'var(--color-surface-2)', borderRadius: 24, padding: 3 }}>
+          <button style={tabBtnStyle('scrapers')} onClick={() => setActiveTab('scrapers')}>Emuladores</button>
+          <button style={tabBtnStyle('pc_games')} onClick={() => setActiveTab('pc_games')}>PC Games</button>
+        </div>
+
         <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <button
-            onClick={handleImportEsde}
-            title="Importar credenciales desde EmulationStation / ES-DE"
-            style={{
-              background: 'var(--color-surface-2)',
-              color: 'var(--color-text)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 8,
-              padding: '6px 14px',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            📥 Importar desde ES-DE
-          </button>
-          {importStatus && (
-            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 340, textAlign: 'right' }}>
-              {importStatus}
-            </span>
-          )}
-        </div>
+
+        {activeTab === 'scrapers' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <button
+              onClick={handleImportEsde}
+              title="Importar credenciales desde EmulationStation / ES-DE"
+              style={{
+                background: 'var(--color-surface-2)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 8,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              📥 Importar desde ES-DE
+            </button>
+            {importStatus && (
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 340, textAlign: 'right' }}>
+                {importStatus}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Body: two-panel layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left: Scraper list */}
-        <div style={{
-          width: 300, minWidth: 260, borderRight: '1px solid var(--color-border)',
-          padding: 16, background: 'var(--color-surface)', overflowY: 'auto',
-        }}>
-          {loading ? (
-            <p style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>{t('common.loading')}</p>
-          ) : (
-            <ScraperList
-              scrapers={scrapers}
-              selectedId={selectedId}
-              onSelect={(id) => { setSelectedId(id); setShowForm(false); }}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onToggle={handleToggle}
-              onAdd={handleAdd}
-            />
-          )}
-        </div>
+      {/* Body */}
+      {activeTab === 'scrapers' ? (
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left: Scraper list */}
+          <div style={{
+            width: 300, minWidth: 260, borderRight: '1px solid var(--color-border)',
+            padding: 16, background: 'var(--color-surface)', overflowY: 'auto',
+          }}>
+            {loading ? (
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>{t('common.loading')}</p>
+            ) : (
+              <ScraperList
+                scrapers={scrapers}
+                selectedId={selectedId}
+                onSelect={(id) => { setSelectedId(id); setShowForm(false); }}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggle={handleToggle}
+                onAdd={handleAdd}
+              />
+            )}
+          </div>
 
-        {/* Right: Form OR job panel */}
+          {/* Right: Form OR job panel */}
+          <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
+            {showForm ? (
+              <ScraperForm
+                initial={editingForm}
+                onSave={handleFormSave}
+                onCancel={() => setShowForm(false)}
+              />
+            ) : (
+              <ScrapeJobPanel selectedScraper={selectedScraper} />
+            )}
+          </div>
+        </div>
+      ) : (
         <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
-          {showForm ? (
-            <ScraperForm
-              initial={editingForm}
-              onSave={handleFormSave}
-              onCancel={() => setShowForm(false)}
-            />
-          ) : (
-            <ScrapeJobPanel selectedScraper={selectedScraper} />
-          )}
+          <PcScraperSettings />
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -25,6 +25,8 @@ pub struct AppConfig {
     /// Per-system emulator overrides, keyed by system_id (e.g. "nes", "ps2").
     #[serde(default)]
     pub emulators: HashMap<String, EmulatorOverride>,
+    #[serde(default)]
+    pub pc_metadata: PcMetadataConfig,
 }
 
 impl Default for AppConfig {
@@ -34,6 +36,7 @@ impl Default for AppConfig {
             paths: PathsConfig::default(),
             scanner: ScannerConfig::default(),
             emulators: HashMap::new(),
+            pc_metadata: PcMetadataConfig::default(),
         }
     }
 }
@@ -91,6 +94,52 @@ impl Default for ScannerConfig {
         Self {
             auto_scan: false,
             hash_roms: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PcMetadataConfig {
+    #[serde(default)]
+    pub igdb_client_id: Option<String>,
+    #[serde(default)]
+    pub igdb_client_secret: Option<String>,
+    #[serde(default)]
+    pub mobygames_api_key: Option<String>,
+    #[serde(default)]
+    pub youtube_api_key: Option<String>,
+    #[serde(default)]
+    pub steamgriddb_api_key: Option<String>,
+    #[serde(default = "default_max_screenshots")]
+    pub max_screenshots: u32,
+    #[serde(default)]
+    pub download_trailers: bool,
+    #[serde(default)]
+    pub use_headless_browser: bool,
+    #[serde(default = "default_enabled_sources")]
+    pub enabled_sources: Vec<String>,
+}
+
+fn default_max_screenshots() -> u32 { 5 }
+fn default_enabled_sources() -> Vec<String> {
+    vec![
+        "steam_store".into(), "igdb".into(), "steamgriddb".into(),
+        "pcgamingwiki".into(), "youtube".into(), "web_scraper".into(),
+    ]
+}
+
+impl Default for PcMetadataConfig {
+    fn default() -> Self {
+        Self {
+            igdb_client_id: None,
+            igdb_client_secret: None,
+            mobygames_api_key: None,
+            youtube_api_key: None,
+            steamgriddb_api_key: None,
+            max_screenshots: 5,
+            download_trailers: false,
+            use_headless_browser: false,
+            enabled_sources: default_enabled_sources(),
         }
     }
 }

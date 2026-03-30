@@ -21,3 +21,8 @@ pub fn get_game(db: State<Database>, game_id: String) -> Result<Option<GameInfo>
 pub fn toggle_favorite(db: State<Database>, game_id: String) -> Result<bool, String> {
     db.toggle_favorite(&game_id).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn get_all_games(db: State<Database>) -> Result<Vec<GameInfo>, String> {
+    db.get_all_games().map_err(|e| e.to_string())
+}

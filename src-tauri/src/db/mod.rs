@@ -405,6 +405,18 @@ impl Database {
         self.get_games("pc")
     }
 
+    pub fn get_all_games(&self) -> SqlResult<Vec<GameInfo>> {
+        let conn = self.conn.lock().unwrap();
+        let sql = format!(
+            "SELECT {} FROM games ORDER BY title",
+            Self::GAME_COLS
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let result = stmt.query_map([], Self::row_to_game)?
+            .collect::<SqlResult<Vec<_>>>();
+        result
+    }
+
     pub fn update_play_stats(&self, game_id: &str) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(

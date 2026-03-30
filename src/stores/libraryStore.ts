@@ -66,12 +66,20 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   selectSystem: async (systemId: string) => {
-    set({ selectedSystemId: systemId, isLoadingGames: true, focusedGameIndex: 0 });
+    // Clear previous games immediately so the grid resets at once
+    set({ selectedSystemId: systemId, isLoadingGames: true, focusedGameIndex: 0, games: [] });
     try {
-      const games = await api.getGames(systemId);
-      set({ games, isLoadingGames: false });
+      const games = systemId === '__all__'
+        ? await api.getAllGames()
+        : await api.getGames(systemId);
+      // Guard against race conditions: only apply if this is still the active selection
+      if (get().selectedSystemId === systemId) {
+        set({ games, isLoadingGames: false });
+      }
     } catch (e) {
-      set({ isLoadingGames: false, error: String(e) });
+      if (get().selectedSystemId === systemId) {
+        set({ isLoadingGames: false, error: String(e) });
+      }
     }
   },
 

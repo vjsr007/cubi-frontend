@@ -8,6 +8,7 @@ import { api } from '../lib/invoke';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { getAllThemes } from '../themes';
 import { SUPPORTED_LANGUAGES } from '../i18n';
+import type { Page } from '../types';
 
 const inputStyle: React.CSSProperties = {
   flex: 1,
@@ -317,8 +318,47 @@ export function SettingsPage() {
           </div>
         </section>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 10 }}>
+        {/* Quick Navigation */}
+        <section style={sectionStyle}>
+          <p style={sectionLabel}>Acceso Rápido</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
+            {([
+              { icon: '🎮', label: 'Emulator Config',          page: 'emulator-config'    },
+              { icon: '⚙️', label: 'Emulator Settings',        page: 'emulator-settings'  },
+              { icon: '🕹️', label: t('scraper.title'),         page: 'scraper'            },
+              { icon: '🖥️', label: 'PC Games',                 page: 'pc-games'           },
+              { icon: '📁', label: 'ROM Paths',                page: 'rom-paths'          },
+              { icon: '🎛️', label: 'Input Mapping',            page: 'input-mapping'      },
+            ] as { icon: string; label: string; page: Page }[]).map(({ icon, label, page }) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => navigateTo(page)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '12px 14px',
+                  background: 'var(--color-surface-2)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  color: 'var(--color-text)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  textAlign: 'left',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+              >
+                <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+                <span style={{ lineHeight: 1.3 }}>{label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Primary Actions */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={handleSave}
             style={{
@@ -348,90 +388,6 @@ export function SettingsPage() {
             }}
           >
             {isScanning ? scanProgress : t('settings.scanLibrary')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('emulator-config')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            🎮 Emulator Settings
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('scraper')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            🕹️ {t('scraper.title')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('pc-games')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            🖥️ PC Games
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('rom-paths')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            📁 ROM Paths
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('input-mapping')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            🕹️ Input Mapping
-          </button>
-          <button
-            type="button"
-            onClick={() => navigateTo('emulator-settings')}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            ⚙️ General Emulator Settings
           </button>
         </div>
       </div>

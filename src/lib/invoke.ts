@@ -20,6 +20,7 @@ export const api = {
   // Library
   getSystems: () => invoke<SystemInfo[]>('get_systems'),
   getGames: (systemId: string) => invoke<GameInfo[]>('get_games', { systemId }),
+  getAllGames: () => invoke<GameInfo[]>('get_all_games'),
   getGame: (gameId: string) => invoke<GameInfo | null>('get_game', { gameId }),
   toggleFavorite: (gameId: string) => invoke<boolean>('toggle_favorite', { gameId }),
 
@@ -93,8 +94,14 @@ export const api = {
     invoke<void>('set_system_profile_assignment', { systemId, profileId }),
   deleteSystemProfileAssignment: (systemId: string) =>
     invoke<void>('delete_system_profile_assignment', { systemId }),
+  assignProfileToAllSystems: (profileId: string) =>
+    invoke<number>('assign_profile_to_all_systems', { profileId }),
   exportProfileForEmulator: (profileId: string, emulatorName: string) =>
     invoke<string>('export_profile_for_emulator', { profileId, emulatorName }),
+  writeProfileToRetroarch: (profileId: string) =>
+    invoke<string>('write_profile_to_retroarch', { profileId }),
+  writeProfileToEmulator: (profileId: string, emulatorName: string) =>
+    invoke<string>('write_profile_to_emulator', { profileId, emulatorName }),
   getAllActions: () => invoke<ActionInfo[]>('get_all_actions'),
   getButtonLabel: (buttonIndex: number) => invoke<string>('get_button_label', { buttonIndex }),
 

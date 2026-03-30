@@ -38,10 +38,18 @@ import intellivision from './intellivision.svg';
 import wswan from './wswan.svg';
 import wswanc from './wswanc.svg';
 import windows11 from './windows11.svg';
+import cps1 from './cps1.svg';
+import cps2 from './cps2.svg';
+import cps3 from './cps3.svg';
+import amiga from './amiga.svg';
+import atarist from './atarist.svg';
+import atarilynx from './atarilynx.svg';
+import msx from './msx.svg';
+import c64 from './c64.svg';
 
 /**
  * Maps system IDs to their SVG logo URLs (Vite static imports).
- * Source: Siddy212/canvas-es-de (CC0 1.0 Universal — public domain)
+ * Sources: Siddy212/canvas-es-de (CC0); anthonycaccese/art-book-next-es-de (CC0)
  */
 export const SYSTEM_LOGOS: Record<string, string> = {
   nes,
@@ -84,4 +92,12 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   wswan,
   wswanc,
   pc: windows11,
+  cps1,
+  cps2,
+  cps3,
+  amiga,
+  atarist,
+  atarilynx,
+  msx,
+  c64,
 };

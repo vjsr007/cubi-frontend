@@ -393,7 +393,8 @@ export function EmulatorSettingsPage() {
   if (activeWriter) {
     for (const def of definitions) {
       if (activeWriter.supported_settings.includes(def.key)) {
-        groupedSettings[def.category as SettingCategory].push(def);
+        const bucket = groupedSettings[def.category as SettingCategory];
+        if (bucket) bucket.push(def);
       }
     }
   }
@@ -419,7 +420,9 @@ export function EmulatorSettingsPage() {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          flexWrap: 'wrap',
+          gap: 8,
+          rowGap: 8,
           flexShrink: 0,
         }}
       >

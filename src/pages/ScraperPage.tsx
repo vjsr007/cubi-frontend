@@ -104,7 +104,7 @@ export function ScraperPage() {
     }}>
       {/* Header */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
+        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, rowGap: 8, padding: '14px 20px',
         borderBottom: '1px solid var(--color-border)',
         background: 'var(--color-surface)',
       }}>

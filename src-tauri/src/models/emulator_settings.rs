@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 // ── Setting Type ──────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum SettingType {
     Bool,
     Select,
@@ -31,6 +32,7 @@ impl SettingType {
 // ── Setting Category ──────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum SettingCategory {
     Video,
     Audio,

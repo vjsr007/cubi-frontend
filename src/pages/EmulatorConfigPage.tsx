@@ -316,7 +316,9 @@ export function EmulatorConfigPage() {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          flexWrap: 'wrap',
+          gap: 8,
+          rowGap: 8,
           flexShrink: 0,
         }}
       >

@@ -121,11 +121,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = ['UI', 'Game', 'Hotkey'];
 
 const EMULATORS_EXPORT = [
-  { name: 'RetroArch', id: 'retroarch' },
-  { name: 'Dolphin', id: 'dolphin' },
-  { name: 'PCSX2', id: 'pcsx2' },
-  { name: 'DuckStation', id: 'duckstation' },
-  { name: 'Generic JSON', id: 'generic' },
+  { name: 'RetroArch', id: 'retroarch', canWrite: true },
+  { name: 'Dolphin', id: 'dolphin', canWrite: true },
+  { name: 'PCSX2', id: 'pcsx2', canWrite: true },
+  { name: 'DuckStation', id: 'duckstation', canWrite: true },
+  { name: 'Generic JSON', id: 'generic', canWrite: false },
 ];
 
 // ── Button Capture Modal ──────────────────────────────────────────────
@@ -421,6 +421,11 @@ export function InputMappingPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [exportPreview, setExportPreview] = useState<{ emulator: string; content: string } | null>(null);
 
+  // Global apply
+  const [globalApplyId, setGlobalApplyId] = useState<string>('');
+  const [applyingAll, setApplyingAll] = useState(false);
+  const [writingEmulator, setWritingEmulator] = useState<string | null>(null);
+
   // Tab
   const [activeTab, setActiveTab] = useState('UI');
 
@@ -433,6 +438,12 @@ export function InputMappingPage() {
       if (profs.length > 0 && (!selectedProfileId || !profs.find((p) => p.id === selectedProfileId))) {
         setSelectedProfileId(profs[0].id);
       }
+      // Default global-apply to Xbox built-in
+      setGlobalApplyId((prev) => {
+        if (prev) return prev;
+        const xbox = profs.find((p) => p.id === 'builtin-xbox');
+        return xbox ? xbox.id : (profs[0]?.id ?? '');
+      });
     } catch (e) {
       showToast(String(e), 'error');
     } finally {
@@ -541,6 +552,48 @@ export function InputMappingPage() {
       showToast('Assignment updated', 'success');
     } catch (e) {
       showToast(String(e), 'error');
+    }
+  };
+
+  const handleApplyToAll = async () => {
+    const pid = globalApplyId || (profiles.length > 0 ? profiles[0].id : '');
+    if (!pid) return;
+    setApplyingAll(true);
+    try {
+      const count = await api.assignProfileToAllSystems(pid);
+      await loadAssignments();
+      const name = profiles.find((p) => p.id === pid)?.name ?? pid;
+      showToast(`"${name}" applied to ${count} systems`, 'success');
+    } catch (e) {
+      showToast(String(e), 'error');
+    } finally {
+      setApplyingAll(false);
+    }
+  };
+
+  const handleWriteToRetroarch = async () => {
+    if (!selectedProfileId) return;
+    setWritingEmulator('retroarch');
+    try {
+      const path = await api.writeProfileToEmulator(selectedProfileId, 'retroarch');
+      showToast(`Written to ${path}`, 'success');
+    } catch (e) {
+      showToast(String(e), 'error');
+    } finally {
+      setWritingEmulator(null);
+    }
+  };
+
+  const handleWriteToEmulator = async (emulatorId: string, emulatorName: string) => {
+    if (!selectedProfileId) return;
+    setWritingEmulator(emulatorId);
+    try {
+      const path = await api.writeProfileToEmulator(selectedProfileId, emulatorId);
+      showToast(`✓ ${emulatorName}: written to ${path}`, 'success');
+    } catch (e) {
+      showToast(String(e), 'error');
+    } finally {
+      setWritingEmulator(null);
     }
   };
 
@@ -735,6 +788,41 @@ export function InputMappingPage() {
           </div>
         </section>
 
+        {/* ── Apply Profile to All Systems ── */}
+        <section
+          style={{
+            background: 'var(--color-surface, #1a1a2e)',
+            border: '2px solid var(--color-primary, #3b82f6)',
+            borderRadius: 12,
+            padding: 20,
+          }}
+        >
+          <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>🎮 Apply Profile to All Systems</h2>
+          <p style={{ color: 'var(--color-text-secondary, #888)', fontSize: 12, margin: '0 0 14px' }}>
+            Select a profile and assign it to every system at once. This replaces any per-system override.
+          </p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={globalApplyId || (profiles.length > 0 ? profiles[0].id : '')}
+              onChange={(e) => setGlobalApplyId(e.target.value)}
+              style={selectStyle}
+            >
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.controller_type}){p.is_builtin ? ' [built-in]' : ''}
+                </option>
+              ))}
+            </select>
+            <button
+              style={{ ...btnPrimary, opacity: applyingAll ? 0.6 : 1 }}
+              disabled={applyingAll || profiles.length === 0}
+              onClick={handleApplyToAll}
+            >
+              {applyingAll ? '⏳ Applying…' : '✓ Apply to All Systems'}
+            </button>
+          </div>
+        </section>
+
         {/* ── Per-System Assignments ── */}
         <section
           style={{
@@ -812,19 +900,53 @@ export function InputMappingPage() {
           }}
         >
           <h2 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>Export to Emulator</h2>
-          <p style={{ color: 'var(--color-text-secondary, #888)', fontSize: 12, margin: '0 0 16px' }}>
+          <p style={{ color: 'var(--color-text-secondary, #888)', fontSize: 12, margin: '0 0 8px' }}>
             Generate a configuration file for the selected profile in emulator-native format.
           </p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              background: 'rgba(59,130,246,0.08)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 8,
+              padding: '10px 14px',
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.6)',
+              marginBottom: 14,
+            }}
+          >
+            ℹ️ <strong style={{ color: 'rgba(255,255,255,0.85)' }}>Preview</strong> muestra el texto
+            de configuración.{' '}
+            <strong style={{ color: '#60a5fa' }}>💾 Write</strong> aplica los cambios directamente
+            al archivo de configuración del emulador instalado en esta PC.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {EMULATORS_EXPORT.map((emu) => (
-              <button
-                key={emu.id}
-                style={{ ...btnStyle, padding: '8px 16px' }}
-                onClick={() => handleExport(emu.id, emu.name)}
-                disabled={!selectedProfileId}
-              >
-                📄 {emu.name}
-              </button>
+              <div key={emu.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ width: 110, fontSize: 13, color: 'rgba(255,255,255,0.75)', flexShrink: 0 }}>
+                  {emu.name}
+                </span>
+                <button
+                  style={{ ...btnStyle, padding: '6px 14px', fontSize: 12 }}
+                  onClick={() => handleExport(emu.id, emu.name)}
+                  disabled={!selectedProfileId}
+                >
+                  📄 Preview
+                </button>
+                {emu.canWrite && (
+                  <button
+                    style={{
+                      ...btnPrimary,
+                      padding: '6px 14px',
+                      fontSize: 12,
+                      opacity: writingEmulator === emu.id || !selectedProfileId ? 0.6 : 1,
+                    }}
+                    disabled={writingEmulator !== null || !selectedProfileId}
+                    onClick={() => handleWriteToEmulator(emu.id, emu.name)}
+                  >
+                    {writingEmulator === emu.id ? '⏳ Escribiendo…' : '💾 Write'}
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </section>

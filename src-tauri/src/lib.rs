@@ -65,6 +65,7 @@ pub fn run() {
             commands::input_mapping::export_profile_for_emulator,
             commands::input_mapping::write_profile_to_retroarch,
             commands::input_mapping::write_profile_to_emulator,
+            commands::input_mapping::get_retroarch_cfg_path,
             commands::input_mapping::get_all_actions,
             commands::input_mapping::get_button_label,
             commands::emulator_settings::get_setting_definitions,

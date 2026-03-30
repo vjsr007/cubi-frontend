@@ -269,29 +269,59 @@ fn strip_ini_section(text: &str, section_header: &str) -> String {
     result.join("\n")
 }
 
-fn resolve_retroarch_cfg_path() -> Result<std::path::PathBuf, String> {
-    // 1. EmuDeck portable install: config lives next to retroarch.exe
-    if let Ok(cfg) = crate::services::config_service::load_config() {
-        let emudeck = &cfg.paths.emudeck_path;
-        if !emudeck.is_empty() {
-            for rel_dir in &["RetroArch", "RetroArch-Win64"] {
-                let exe = std::path::PathBuf::from(emudeck)
-                    .join(rel_dir)
-                    .join("retroarch.exe");
-                if exe.exists() {
-                    let cfg_path = exe.with_file_name("retroarch.cfg");
-                    log::info!("RetroArch cfg (EmuDeck portable): {}", cfg_path.display());
-                    return Ok(cfg_path);
-                }
-            }
+/// Given an emudeck root path, find retroarch.cfg sitting next to retroarch.exe.
+fn find_retroarch_in_emudeck(emudeck: &str) -> Option<std::path::PathBuf> {
+    if emudeck.is_empty() { return None; }
+    for rel_dir in &["RetroArch", "RetroArch-Win64"] {
+        let exe = std::path::PathBuf::from(emudeck)
+            .join(rel_dir)
+            .join("retroarch.exe");
+        if exe.exists() {
+            return Some(exe.with_file_name("retroarch.cfg"));
+        }
+        // Some EmuDeck layouts: emudeck_path already points to RetroArch dir
+        let exe2 = std::path::PathBuf::from(emudeck).join("retroarch.exe");
+        if exe2.exists() {
+            return Some(exe2.with_file_name("retroarch.cfg"));
         }
     }
-    // 2. Standard AppData location
+    None
+}
+
+fn resolve_retroarch_cfg_path() -> Result<std::path::PathBuf, String> {
+    // 1. EmuDeck portable: use stored emudeck_path from app config
+    if let Ok(cfg) = crate::services::config_service::load_config() {
+        if let Some(p) = find_retroarch_in_emudeck(&cfg.paths.emudeck_path) {
+            log::info!("RetroArch cfg (stored emudeck): {}", p.display());
+            return Ok(p);
+        }
+    }
+
+    // 2. EmuDeck portable: auto-detect even when not configured in settings
+    if let Some(detected) = crate::services::config_service::detect_emudeck() {
+        if let Some(p) = find_retroarch_in_emudeck(&detected) {
+            log::info!("RetroArch cfg (auto-detected emudeck): {}", p.display());
+            return Ok(p);
+        }
+    }
+
+    // 3. Standard AppData location (non-EmuDeck / standalone RetroArch install)
     let appdata = std::env::var_os("APPDATA")
         .ok_or_else(|| "APPDATA not found".to_string())?;
     let p = std::path::PathBuf::from(appdata).join("RetroArch").join("retroarch.cfg");
     log::info!("RetroArch cfg (standard): {}", p.display());
     Ok(p)
+}
+
+/// Returns the resolved RetroArch config path and whether that file currently exists.
+/// Used by the frontend to inform the user before they click "Write".
+#[tauri::command]
+pub fn get_retroarch_cfg_path() -> Result<serde_json::Value, String> {
+    let path = resolve_retroarch_cfg_path()?;
+    Ok(serde_json::json!({
+        "path": path.to_string_lossy(),
+        "exists": path.exists(),
+    }))
 }
 
 fn resolve_emulator_config_path(emulator_name: &str) -> Result<(std::path::PathBuf, Option<&'static str>), String> {

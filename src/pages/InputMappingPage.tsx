@@ -425,6 +425,7 @@ export function InputMappingPage() {
   const [globalApplyId, setGlobalApplyId] = useState<string>('');
   const [applyingAll, setApplyingAll] = useState(false);
   const [writingEmulator, setWritingEmulator] = useState<string | null>(null);
+  const [retroarchCfgPath, setRetroarchCfgPath] = useState<{ path: string; exists: boolean } | null>(null);
 
   // Tab
   const [activeTab, setActiveTab] = useState('UI');
@@ -473,6 +474,7 @@ export function InputMappingPage() {
   useEffect(() => {
     loadProfiles();
     loadAssignments();
+    api.getRetroarchCfgPath().then(setRetroarchCfgPath).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -576,6 +578,8 @@ export function InputMappingPage() {
     setWritingEmulator('retroarch');
     try {
       const path = await api.writeProfileToEmulator(selectedProfileId, 'retroarch');
+      // Refresh detected path in case it changed
+      api.getRetroarchCfgPath().then(setRetroarchCfgPath).catch(() => {});
       showToast(`Written to ${path}`, 'success');
     } catch (e) {
       showToast(String(e), 'error');
@@ -921,7 +925,8 @@ export function InputMappingPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {EMULATORS_EXPORT.map((emu) => (
-              <div key={emu.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div key={emu.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ width: 110, fontSize: 13, color: 'rgba(255,255,255,0.75)', flexShrink: 0 }}>
                   {emu.name}
                 </span>
@@ -945,6 +950,17 @@ export function InputMappingPage() {
                   >
                     {writingEmulator === emu.id ? '⏳ Escribiendo…' : '💾 Write'}
                   </button>
+                )}
+                </div>
+                {emu.id === 'retroarch' && retroarchCfgPath && (
+                  <div style={{
+                    fontSize: 11,
+                    color: retroarchCfgPath.exists ? '#4ade80' : '#f59e0b',
+                    paddingLeft: 118,
+                    fontFamily: 'Consolas, monospace',
+                  }}>
+                    {retroarchCfgPath.exists ? '✓' : '⚠ no existe aún:'} {retroarchCfgPath.path}
+                  </div>
                 )}
               </div>
             ))}

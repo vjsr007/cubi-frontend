@@ -102,6 +102,8 @@ export const api = {
     invoke<string>('write_profile_to_retroarch', { profileId }),
   writeProfileToEmulator: (profileId: string, emulatorName: string) =>
     invoke<string>('write_profile_to_emulator', { profileId, emulatorName }),
+  getRetroarchCfgPath: () =>
+    invoke<{ path: string; exists: boolean }>('get_retroarch_cfg_path'),
   getAllActions: () => invoke<ActionInfo[]>('get_all_actions'),
   getButtonLabel: (buttonIndex: number) => invoke<string>('get_button_label', { buttonIndex }),
 

@@ -64,7 +64,6 @@ export const api = {
   ) => invoke<GameInfo>('add_pc_game', { title, exePath, boxArt, developer, publisher, year, genre }),
   deletePcGame: (gameId: string) => invoke<void>('delete_pc_game', { gameId }),
 
-<<<<<<< HEAD
   // ROM Path Overrides
   getSystemRegistryList: () => invoke<SystemDefInfo[]>('get_system_registry_list'),
   getRomPathOverrides: () => invoke<RomPathOverride[]>('get_rom_path_overrides'),

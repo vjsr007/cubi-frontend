@@ -12,3 +12,5 @@ pub mod pc_import_service;
 pub mod steamgriddb;
 pub mod input_mapping_service;
 pub mod exporters;
+pub mod emulator_settings_service;
+pub mod config_writers;

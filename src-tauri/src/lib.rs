@@ -63,6 +63,13 @@ pub fn run() {
             commands::input_mapping::export_profile_for_emulator,
             commands::input_mapping::get_all_actions,
             commands::input_mapping::get_button_label,
+            commands::emulator_settings::get_setting_definitions,
+            commands::emulator_settings::get_config_writers_info,
+            commands::emulator_settings::get_emulator_settings,
+            commands::emulator_settings::get_all_emulator_settings,
+            commands::emulator_settings::set_emulator_setting,
+            commands::emulator_settings::reset_emulator_settings,
+            commands::emulator_settings::preview_emulator_config,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

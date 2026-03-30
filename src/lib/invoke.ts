@@ -5,6 +5,7 @@ import type {
   PcImportGame, PcLibraryStatus, SystemEmulatorInfo,
   SystemDefInfo, RomPathOverride,
   InputProfile, ButtonBinding, SystemProfileAssignment, ActionInfo,
+  SettingDefinition, EmulatorSettingValue, ConfigWriterInfo,
 } from '../types';
 
 export const api = {
@@ -95,4 +96,18 @@ export const api = {
     invoke<string>('export_profile_for_emulator', { profileId, emulatorName }),
   getAllActions: () => invoke<ActionInfo[]>('get_all_actions'),
   getButtonLabel: (buttonIndex: number) => invoke<string>('get_button_label', { buttonIndex }),
+
+  // Emulator General Settings
+  getSettingDefinitions: () => invoke<SettingDefinition[]>('get_setting_definitions'),
+  getConfigWritersInfo: () => invoke<ConfigWriterInfo[]>('get_config_writers_info'),
+  getEmulatorSettings: (emulatorName: string) =>
+    invoke<EmulatorSettingValue[]>('get_emulator_settings', { emulatorName }),
+  getAllEmulatorSettings: () =>
+    invoke<EmulatorSettingValue[]>('get_all_emulator_settings'),
+  setEmulatorSetting: (emulatorName: string, settingKey: string, value: string) =>
+    invoke<void>('set_emulator_setting', { emulatorName, settingKey, value }),
+  resetEmulatorSettings: (emulatorName: string) =>
+    invoke<void>('reset_emulator_settings', { emulatorName }),
+  previewEmulatorConfig: (emulatorName: string) =>
+    invoke<string>('preview_emulator_config', { emulatorName }),
 };

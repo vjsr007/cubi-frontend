@@ -28,12 +28,18 @@ impl Database {
         drop(conn);
         self.seed_default_scrapers();
         self.seed_default_input_profiles();
+        self.seed_emulator_setting_definitions();
         Ok(())
     }
 
     /// Seed built-in input profiles (Xbox, PlayStation, Nintendo) if none exist
     fn seed_default_input_profiles(&self) {
         crate::services::input_mapping_service::DefaultPresets::seed(self);
+    }
+
+    /// Seed all canonical emulator setting definitions
+    fn seed_emulator_setting_definitions(&self) {
+        crate::services::emulator_settings_service::seed_setting_definitions(self);
     }
 
     /// Seed default scrapers if the table is empty
@@ -502,6 +508,124 @@ impl Database {
     pub fn delete_system_profile_assignment(&self, system_id: &str) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM system_profile_assignments WHERE system_id = ?1", [system_id])?;
+        Ok(())
+    }
+
+    // ── Emulator Setting Definitions ──────────────────────────────────
+
+    pub fn upsert_setting_definition(&self, def: &crate::models::SettingDefinition) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let options_json = def.options.as_ref().map(|o| serde_json::to_string(o).unwrap_or_default());
+        conn.execute(
+            "INSERT INTO emulator_setting_defs
+             (key, display_name, description, setting_type, options_json, range_min, range_max,
+              default_value, category, sort_order, locked)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
+             ON CONFLICT(key) DO UPDATE SET
+               display_name=excluded.display_name, description=excluded.description,
+               setting_type=excluded.setting_type, options_json=excluded.options_json,
+               range_min=excluded.range_min, range_max=excluded.range_max,
+               default_value=excluded.default_value, category=excluded.category,
+               sort_order=excluded.sort_order, locked=excluded.locked",
+            rusqlite::params![
+                def.key,
+                def.display_name,
+                def.description,
+                def.setting_type.as_str(),
+                options_json,
+                def.range_min,
+                def.range_max,
+                def.default_value,
+                def.category.as_str(),
+                def.sort_order,
+                def.locked as i32,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_setting_definitions(&self) -> SqlResult<Vec<crate::models::SettingDefinition>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT key, display_name, description, setting_type, options_json,
+                    range_min, range_max, default_value, category, sort_order, locked
+             FROM emulator_setting_defs ORDER BY sort_order"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            let options_json: Option<String> = row.get(4)?;
+            let options: Option<Vec<String>> = options_json.and_then(|j| serde_json::from_str(&j).ok());
+            Ok(crate::models::SettingDefinition {
+                key: row.get(0)?,
+                display_name: row.get(1)?,
+                description: row.get(2)?,
+                setting_type: crate::models::SettingType::from_str(&row.get::<_, String>(3)?),
+                options,
+                range_min: row.get(5)?,
+                range_max: row.get(6)?,
+                default_value: row.get(7)?,
+                category: crate::models::SettingCategory::from_str(&row.get::<_, String>(8)?),
+                sort_order: row.get(9)?,
+                locked: row.get::<_, i32>(10)? != 0,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    // ── Per-Emulator Setting Values ───────────────────────────────────
+
+    pub fn get_emulator_settings(&self, emulator_name: &str) -> SqlResult<Vec<crate::models::EmulatorSettingValue>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT emulator_name, setting_key, value FROM emulator_settings WHERE emulator_name = ?1"
+        )?;
+        let rows = stmt.query_map([emulator_name], |row| {
+            Ok(crate::models::EmulatorSettingValue {
+                emulator_name: row.get(0)?,
+                setting_key: row.get(1)?,
+                value: row.get(2)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn get_all_emulator_settings(&self) -> SqlResult<Vec<crate::models::EmulatorSettingValue>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT emulator_name, setting_key, value FROM emulator_settings ORDER BY emulator_name, setting_key"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::EmulatorSettingValue {
+                emulator_name: row.get(0)?,
+                setting_key: row.get(1)?,
+                value: row.get(2)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn set_emulator_setting(&self, emulator_name: &str, setting_key: &str, value: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO emulator_settings (emulator_name, setting_key, value)
+             VALUES (?1, ?2, ?3)
+             ON CONFLICT(emulator_name, setting_key) DO UPDATE SET value = excluded.value",
+            rusqlite::params![emulator_name, setting_key, value],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_emulator_settings(&self, emulator_name: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM emulator_settings WHERE emulator_name = ?1", [emulator_name])?;
+        Ok(())
+    }
+
+    pub fn delete_emulator_setting(&self, emulator_name: &str, setting_key: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM emulator_settings WHERE emulator_name = ?1 AND setting_key = ?2",
+            rusqlite::params![emulator_name, setting_key],
+        )?;
         Ok(())
     }
 }

@@ -7,3 +7,4 @@ pub mod scraper;
 pub mod pc_games;
 pub mod rom_paths;
 pub mod input_mapping;
+pub mod emulator_settings;

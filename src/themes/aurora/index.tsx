@@ -16,6 +16,9 @@ import { SettingsPage } from '../../pages/SettingsPage';
 import { ScraperPage } from '../../pages/ScraperPage';
 import { PcGamesPage } from '../../pages/PcGamesPage';
 import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
+import { RomPathsPage } from '../../pages/RomPathsPage';
+import { InputMappingPage } from '../../pages/InputMappingPage';
+import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import './aurora.css';
 
 type AuroraView = 'systems' | 'games';
@@ -114,7 +117,7 @@ export function AuroraTheme() {
   // ── Keyboard handler ──────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config') return;
+      if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings') return;
       switch (e.key) {
         case 'ArrowLeft':  e.preventDefault(); navigateItem(-1); break;
         case 'ArrowRight': e.preventDefault(); navigateItem(1);  break;
@@ -137,7 +140,7 @@ export function AuroraTheme() {
 
   // ── Gamepad polling ───────────────────────────────────────
   useEffect(() => {
-    if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config') {
+    if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings') {
       isRunning.current = false;
       cancelAnimationFrame(rafRef.current);
       return;
@@ -313,6 +316,30 @@ export function AuroraTheme() {
     return (
       <div style={{ height: '100%' }}>
         <PcGamesPage />
+      </div>
+    );
+  }
+
+  if (currentPage === 'rom-paths') {
+    return (
+      <div style={{ height: '100%' }}>
+        <RomPathsPage />
+      </div>
+    );
+  }
+
+  if (currentPage === 'input-mapping') {
+    return (
+      <div style={{ height: '100%' }}>
+        <InputMappingPage />
+      </div>
+    );
+  }
+
+  if (currentPage === 'emulator-settings') {
+    return (
+      <div style={{ height: '100%' }}>
+        <EmulatorSettingsPage />
       </div>
     );
   }

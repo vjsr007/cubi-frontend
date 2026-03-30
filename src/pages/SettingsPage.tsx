@@ -419,6 +419,20 @@ export function SettingsPage() {
           >
             🕹️ Input Mapping
           </button>
+          <button
+            type="button"
+            onClick={() => navigateTo('emulator-settings')}
+            style={{
+              ...btnStyle,
+              borderRadius: 10,
+              padding: '10px 24px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            ⚙️ General Emulator Settings
+          </button>
         </div>
       </div>
     </div>

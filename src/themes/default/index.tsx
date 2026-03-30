@@ -8,6 +8,7 @@ import { PcGamesPage } from '../../pages/PcGamesPage';
 import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { RomPathsPage } from '../../pages/RomPathsPage';
 import { InputMappingPage } from '../../pages/InputMappingPage';
+import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -25,6 +26,7 @@ export function DefaultTheme() {
         {currentPage === 'emulator-config'  && <EmulatorConfigPage />}
         {currentPage === 'rom-paths'         && <RomPathsPage />}
         {currentPage === 'input-mapping'    && <InputMappingPage />}
+        {currentPage === 'emulator-settings' && <EmulatorSettingsPage />}
       </main>
       <Toast />
     </div>

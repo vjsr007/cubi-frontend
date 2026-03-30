@@ -83,4 +83,25 @@ CREATE TABLE IF NOT EXISTS system_profile_assignments (
     profile_id TEXT NOT NULL,
     FOREIGN KEY (profile_id) REFERENCES input_profiles(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS emulator_setting_defs (
+    key TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    setting_type TEXT NOT NULL,
+    options_json TEXT,
+    range_min INTEGER,
+    range_max INTEGER,
+    default_value TEXT NOT NULL,
+    category TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    locked INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS emulator_settings (
+    emulator_name TEXT NOT NULL,
+    setting_key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (emulator_name, setting_key)
+);
 ";

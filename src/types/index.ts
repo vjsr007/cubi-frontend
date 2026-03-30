@@ -94,7 +94,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping' | 'emulator-settings';
 
 export interface ScraperConfig {
   id: string;
@@ -228,4 +228,36 @@ export interface SystemProfileAssignment {
 export interface ActionInfo {
   name: string;
   category: string; // 'UI' | 'Game' | 'Hotkey'
+}
+
+// ── Emulator General Settings ─────────────────────────────────────────
+
+export type SettingType = 'bool' | 'select' | 'range';
+export type SettingCategory = 'video' | 'audio' | 'system' | 'performance';
+
+export interface SettingDefinition {
+  key: string;
+  display_name: string;
+  description: string;
+  setting_type: SettingType;
+  options?: string[];
+  range_min?: number;
+  range_max?: number;
+  default_value: string;
+  category: SettingCategory;
+  sort_order: number;
+  locked: boolean;
+}
+
+export interface EmulatorSettingValue {
+  emulator_name: string;
+  setting_key: string;
+  value: string;
+}
+
+export interface ConfigWriterInfo {
+  emulator_name: string;
+  config_format: string;
+  supported_settings: string[];
+  default_config_path?: string;
 }

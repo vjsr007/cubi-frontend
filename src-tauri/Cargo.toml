@@ -1,6 +1,6 @@
 [package]
 name = "cubi-frontend"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [lib]
@@ -23,6 +23,7 @@ tokio = { version = "1", features = ["full"] }
 blake3 = "1"
 quick-xml = "0.36"
 directories = "5"
+dirs = "5"
 thiserror = "2"
 log = "0.4"
 env_logger = "0.11"

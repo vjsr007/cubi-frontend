@@ -132,9 +132,7 @@ pub async fn delete_game_media(
 /// Search YouTube for game videos.
 #[tauri::command]
 pub async fn search_youtube(query: String) -> Result<Vec<YoutubeSearchResult>, String> {
-    // Use Invidious (no API key required)
-    let results = search_invidious_multiple(&query).await?;
-    Ok(results)
+    search_youtube_multi(&query).await
 }
 
 /// Download a YouTube video as the game's trailer.
@@ -228,14 +226,80 @@ fn get_db_media_path(game: &GameInfo, media_type: &str) -> Option<String> {
 }
 
 /// Invidious instances to try in order (public, no auth required).
+/// These are frequently unreliable; yt-dlp search is preferred when available.
 const INVIDIOUS_INSTANCES: &[&str] = &[
+    "https://iv.melmac.space",
+    "https://invidious.materialio.us",
     "https://invidious.fdn.fr",
     "https://iv.ggtyler.dev",
-    "https://invidious.perennialte.ch",
     "https://invidious.privacyredirect.com",
-    "https://vid.puffyan.us",
-    "https://inv.nadeko.net",
+    "https://invidious.perennialte.ch",
 ];
+
+/// Search YouTube: tries yt-dlp first (reliable), falls back to Invidious instances.
+async fn search_youtube_multi(query: &str) -> Result<Vec<YoutubeSearchResult>, String> {
+    // Try yt-dlp search first (most reliable)
+    if let Some(ytdlp) = youtube_service::check_ytdlp() {
+        match search_via_ytdlp(&ytdlp, query).await {
+            Ok(results) if !results.is_empty() => {
+                log::info!("YouTube search via yt-dlp returned {} results", results.len());
+                return Ok(results);
+            }
+            Ok(_) => log::warn!("yt-dlp search returned no results, trying Invidious"),
+            Err(e) => log::warn!("yt-dlp search failed: {}, trying Invidious", e),
+        }
+    }
+
+    // Fallback: Invidious instances
+    search_invidious_multiple(query).await
+}
+
+/// Use yt-dlp to search YouTube — works even when all Invidious instances are down.
+async fn search_via_ytdlp(
+    ytdlp: &std::path::Path,
+    query: &str,
+) -> Result<Vec<YoutubeSearchResult>, String> {
+    let search_query = format!("ytsearch8:{}", query);
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        tokio::process::Command::new(ytdlp)
+            .args([
+                "--dump-json",
+                "--flat-playlist",
+                "--no-download",
+                "--no-warnings",
+                &search_query,
+            ])
+            .output(),
+    )
+    .await
+    .map_err(|_| "yt-dlp search timeout".to_string())?
+    .map_err(|e| format!("yt-dlp exec: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("yt-dlp search failed: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let results: Vec<YoutubeSearchResult> = stdout
+        .lines()
+        .filter_map(|line| {
+            let json: serde_json::Value = serde_json::from_str(line).ok()?;
+            let video_id = json["id"].as_str()?.to_string();
+            let title = json["title"].as_str().unwrap_or("").to_string();
+            if video_id.is_empty() { return None; }
+            Some(YoutubeSearchResult {
+                url: format!("https://www.youtube.com/watch?v={}", video_id),
+                video_id,
+                title,
+            })
+        })
+        .take(8)
+        .collect();
+
+    Ok(results)
+}
 
 /// Search Invidious for multiple results, trying multiple instances on failure.
 async fn search_invidious_multiple(query: &str) -> Result<Vec<YoutubeSearchResult>, String> {
@@ -271,7 +335,22 @@ async fn search_invidious_multiple(query: &str) -> Result<Vec<YoutubeSearchResul
             continue;
         }
 
-        let json: serde_json::Value = match resp.json().await {
+        let text = match resp.text().await {
+            Ok(t) => t,
+            Err(e) => {
+                last_err = format!("{}: read error: {}", instance, e);
+                continue;
+            }
+        };
+
+        // Skip HTML responses (some instances redirect to a web page)
+        if text.trim_start().starts_with('<') {
+            last_err = format!("{}: returned HTML instead of JSON", instance);
+            log::warn!("Invidious instance {} returned HTML", instance);
+            continue;
+        }
+
+        let json: serde_json::Value = match serde_json::from_str(&text) {
             Ok(j) => j,
             Err(e) => {
                 last_err = format!("{}: parse error: {}", instance, e);

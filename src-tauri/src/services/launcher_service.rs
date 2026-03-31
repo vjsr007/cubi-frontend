@@ -380,6 +380,13 @@ fn write_retroarch_override_cfg(system_id: &str) -> Result<String, String> {
             .map_err(|e| format!("Failed to write N64 override: {e}"))?;
     }
 
+    // NDS: melonDS core requires the OpenGL compatibility context (`gl`).
+    // Using vulkan, d3d, or even glcore causes a frozen/black screen with audio.
+    if system_id == "nds" {
+        writeln!(f, "video_driver = \"gl\"")
+            .map_err(|e| format!("Failed to write NDS override: {e}"))?;
+    }
+
     Ok(cfg_path.to_string_lossy().to_string())
 }
 

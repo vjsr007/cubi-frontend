@@ -6,12 +6,12 @@ use tokio::time::{sleep, Duration};
 
 const YT_SEARCH: &str = "https://www.googleapis.com/youtube/v3/search";
 const INVIDIOUS_INSTANCES: &[&str] = &[
+    "https://iv.melmac.space/api/v1/search",
+    "https://invidious.materialio.us/api/v1/search",
     "https://invidious.fdn.fr/api/v1/search",
     "https://iv.ggtyler.dev/api/v1/search",
-    "https://invidious.perennialte.ch/api/v1/search",
     "https://invidious.privacyredirect.com/api/v1/search",
-    "https://vid.puffyan.us/api/v1/search",
-    "https://inv.nadeko.net/api/v1/search",
+    "https://invidious.perennialte.ch/api/v1/search",
 ];
 const UA: &str = "cubi-frontend/0.5";
 
@@ -90,7 +90,13 @@ async fn search_invidious(query: &str) -> Result<Option<VideoResult>, String> {
             Err(_) => continue,
         };
         if !resp.status().is_success() { continue; }
-        let json: serde_json::Value = match resp.json().await {
+        let text = match resp.text().await {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+        // Skip HTML responses (some instances redirect to web pages)
+        if text.trim_start().starts_with('<') { continue; }
+        let json: serde_json::Value = match serde_json::from_str(&text) {
             Ok(j) => j,
             Err(_) => continue,
         };

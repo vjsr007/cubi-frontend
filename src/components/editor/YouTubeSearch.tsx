@@ -14,17 +14,26 @@ export function YouTubeSearch({ gameId, gameTitle, onDownloaded, onError }: Prop
   const [query, setQuery] = useState(gameTitle + ' trailer');
   const [results, setResults] = useState<YoutubeSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
   const { t } = useI18nStore();
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setSearching(true);
+    setSearchError(null);
+    setResults([]);
     try {
       const res = await api.searchYoutube(query.trim());
       setResults(res);
     } catch (e) {
-      onError(String(e));
+      const msg = String(e);
+      // Show a user-friendly message instead of raw instance URLs
+      if (msg.includes('Invidious') || msg.includes('HTTP')) {
+        setSearchError(t('editor.youtubeNoResults') + ' (API unavailable — install yt-dlp for reliable search)');
+      } else {
+        setSearchError(msg);
+      }
     } finally {
       setSearching(false);
     }
@@ -109,7 +118,13 @@ export function YouTubeSearch({ gameId, gameTitle, onDownloaded, onError }: Prop
         </div>
       )}
 
-      {results.length === 0 && !searching && query && (
+      {searchError && (
+        <p style={{ fontSize: 11, color: 'var(--color-error, #ef4444)', margin: 0 }}>
+          {searchError}
+        </p>
+      )}
+
+      {results.length === 0 && !searching && !searchError && query && (
         <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: 0 }}>
           {t('editor.youtubeNoResults')}
         </p>

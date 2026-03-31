@@ -1,5 +1,6 @@
 import { useUiStore } from '../../stores/uiStore';
 import type { Page } from '../../types';
+import cubiLogo from '../../assets/cubi-logo.png';
 
 const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
   { id: 'library', label: 'Library', icon: '⊞' },
@@ -24,23 +25,17 @@ export function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div
+      <img
+        src={cubiLogo}
+        alt="Cubi"
         style={{
-          width: 36,
-          height: 36,
+          width: 40,
+          height: 40,
           borderRadius: 10,
-          background: 'var(--color-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           marginBottom: 12,
-          fontSize: 18,
-          fontWeight: 800,
-          color: '#fff',
+          objectFit: 'contain',
         }}
-      >
-        C
-      </div>
+      />
 
       {NAV_ITEMS.map((item) => (
         <button

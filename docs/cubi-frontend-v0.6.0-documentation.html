@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cubi Frontend v0.6.0 — Project Documentation &amp; SDD Compliance Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 15mm;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 15mm;
+  }
+  h1 { font-size: 26pt; color: #0f3460; margin-bottom: 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 16pt; color: #16213e; margin-top: 28px; margin-bottom: 10px; border-bottom: 3px solid #e94560; padding-bottom: 4px; page-break-after: avoid; }
+  h3 { font-size: 13pt; color: #0f3460; margin-top: 16px; margin-bottom: 6px; page-break-after: avoid; }
+  h4 { font-size: 11pt; color: #533483; margin-top: 12px; margin-bottom: 4px; }
+  p { margin-bottom: 8px; }
+  .subtitle { font-size: 13pt; color: #533483; margin-bottom: 2px; }
+  .meta { font-size: 9pt; color: #666; margin-bottom: 20px; }
+  .cover { text-align: center; padding: 40px 0 30px; page-break-after: always; }
+  .cover h1 { font-size: 36pt; margin-bottom: 8px; }
+  .cover .logo { font-size: 72pt; margin-bottom: 16px; }
+  .cover .version { font-size: 20pt; color: #e94560; font-weight: bold; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 10pt; }
+  th { background: #16213e; color: #fff; padding: 6px 10px; text-align: left; font-weight: 600; }
+  td { padding: 5px 10px; border-bottom: 1px solid #e0e0e0; }
+  tr:nth-child(even) { background: #f8f9fa; }
+  tr:hover { background: #eef1f6; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 8pt; font-weight: 600; text-transform: uppercase; }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-yellow { background: #fff3cd; color: #856404; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-blue { background: #cce5ff; color: #004085; }
+  .badge-purple { background: #e8d5f5; color: #4a1a7a; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 20px; }
+  .stat-card { background: linear-gradient(135deg, #16213e, #0f3460); color: #fff; padding: 14px; border-radius: 8px; text-align: center; }
+  .stat-card .number { font-size: 24pt; font-weight: 700; color: #e94560; }
+  .stat-card .label { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; }
+  .toc { page-break-after: always; }
+  .toc ul { list-style: none; padding-left: 0; }
+  .toc li { padding: 4px 0; border-bottom: 1px dotted #ccc; }
+  .toc li a { text-decoration: none; color: #0f3460; }
+  .toc li a:hover { color: #e94560; }
+  .toc .section-num { font-weight: 700; color: #e94560; margin-right: 8px; }
+  code { background: #f0f0f5; padding: 1px 5px; border-radius: 3px; font-size: 9.5pt; font-family: 'Cascadia Code', 'Fira Code', monospace; }
+  .file-tree { font-family: 'Cascadia Code', monospace; font-size: 9pt; background: #1a1a2e; color: #a0d2db; padding: 14px; border-radius: 6px; margin: 8px 0; white-space: pre; overflow-x: auto; line-height: 1.5; }
+  .compliance-ok { color: #28a745; font-weight: 600; }
+  .compliance-warn { color: #ffc107; font-weight: 600; }
+  .compliance-fail { color: #dc3545; font-weight: 600; }
+  .section { page-break-inside: avoid; }
+  .gap-item { background: #fff3cd; border-left: 4px solid #ffc107; padding: 8px 12px; margin: 6px 0; border-radius: 0 4px 4px 0; }
+  .gap-resolved { background: #d4edda; border-left: 4px solid #28a745; padding: 8px 12px; margin: 6px 0; border-radius: 0 4px 4px 0; }
+  .flow-diagram { background: #f0f4ff; border: 1px solid #b8c9e8; border-radius: 8px; padding: 16px; text-align: center; margin: 12px 0; font-size: 10pt; }
+  .flow-arrow { color: #e94560; font-weight: bold; font-size: 14pt; margin: 0 6px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 16px 0; }
+  @media print {
+    body { padding: 0; }
+    .stat-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .file-tree { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .flow-diagram { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= COVER PAGE ======================= -->
+<div class="cover">
+  <div class="logo">🎮</div>
+  <h1>Cubi Frontend</h1>
+  <div class="version">v0.6.0</div>
+  <p class="subtitle">Multiplayer Emulator Frontend</p>
+  <p class="subtitle">Tauri 2 + React 19 + TypeScript + Tailwind CSS 4</p>
+  <br><br>
+  <p style="font-size: 14pt; font-weight: 600;">Project Documentation<br>&amp; SDD Compliance Report</p>
+  <br><br>
+  <p class="meta" style="font-size: 11pt;">
+    Author: vjsr007<br>
+    Repository: github.com/vjsr007/cubi-frontend<br>
+    Generated: March 31, 2026<br>
+    License: Private
+  </p>
+</div>
+
+<!-- ======================= TABLE OF CONTENTS ======================= -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ul>
+    <li><a href="#s1"><span class="section-num">1</span> Executive Summary</a></li>
+    <li><a href="#s2"><span class="section-num">2</span> Project Overview &amp; Architecture</a></li>
+    <li><a href="#s3"><span class="section-num">3</span> Tech Stack &amp; Dependencies</a></li>
+    <li><a href="#s4"><span class="section-num">4</span> Project Statistics</a></li>
+    <li><a href="#s5"><span class="section-num">5</span> Feature Inventory</a></li>
+    <li><a href="#s6"><span class="section-num">6</span> Spec-Driven Development (SDD) Methodology</a></li>
+    <li><a href="#s7"><span class="section-num">7</span> SDD Compliance Audit</a></li>
+    <li><a href="#s8"><span class="section-num">8</span> Specification Coverage Matrix</a></li>
+    <li><a href="#s9"><span class="section-num">9</span> Database Schema</a></li>
+    <li><a href="#s10"><span class="section-num">10</span> Frontend Architecture</a></li>
+    <li><a href="#s11"><span class="section-num">11</span> Backend Architecture</a></li>
+    <li><a href="#s12"><span class="section-num">12</span> Supported Systems (38 Platforms)</a></li>
+    <li><a href="#s13"><span class="section-num">13</span> Internationalization (6 Languages)</a></li>
+    <li><a href="#s14"><span class="section-num">14</span> Theme Engine</a></li>
+    <li><a href="#s15"><span class="section-num">15</span> Release History</a></li>
+    <li><a href="#s16"><span class="section-num">16</span> SDD Gap Resolution Report</a></li>
+    <li><a href="#s17"><span class="section-num">17</span> Appendix: File Structure</a></li>
+  </ul>
+</div>
+
+<!-- ======================= 1. EXECUTIVE SUMMARY ======================= -->
+<h2 id="s1">1. Executive Summary</h2>
+
+<p><strong>Cubi Frontend</strong> is a feature-rich multiplayer emulator frontend comparable to EmulationStation-DE, Pegasus, and LaunchBox. It provides a beautiful, gamepad-navigable interface for browsing, managing, and launching games across <strong>38 gaming platforms</strong> from a single unified library.</p>
+
+<p>Built on <strong>Tauri 2</strong> (Rust backend) with <strong>React 19</strong> (TypeScript frontend), the application delivers native performance with a modern web UI. Key highlights of v0.6.0:</p>
+
+<ul style="margin: 8px 0 8px 24px;">
+  <li><strong>Steam Store Integration</strong> — reviews, metadata, and game linking</li>
+  <li><strong>3 Themes</strong> — Default grid, Aurora (Xbox 360 3D carousel), HyperSpin (spinning wheel)</li>
+  <li><strong>Metadata Editor</strong> — full game info editing with YouTube video search &amp; download</li>
+  <li><strong>Multi-Source Scraper</strong> — ScreenScraper, TheGamesDB, IGDB, SteamGridDB, MobyGames</li>
+  <li><strong>8 Emulator Config Writers</strong> — RetroArch, Dolphin, PCSX2, DuckStation, PPSSPP, RPCS3, xemu, Ryujinx</li>
+  <li><strong>6 Languages</strong> — English, Spanish, German, French, Japanese, Portuguese</li>
+  <li><strong>Gamepad Navigation</strong> — full controller support with spatial navigation</li>
+</ul>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="number">125K+</div><div class="label">Lines of Code</div></div>
+  <div class="stat-card"><div class="number">38</div><div class="label">Game Systems</div></div>
+  <div class="stat-card"><div class="number">21</div><div class="label">Feature Specs</div></div>
+  <div class="stat-card"><div class="number">114</div><div class="label">Spec Documents</div></div>
+</div>
+
+<!-- ======================= 2. ARCHITECTURE ======================= -->
+<h2 id="s2">2. Project Overview &amp; Architecture</h2>
+
+<h3>2.1 High-Level Architecture</h3>
+<div class="flow-diagram">
+  <strong>React 19 UI</strong> (Pages, Components, Stores)
+  <span class="flow-arrow">→</span>
+  <strong>Tauri IPC</strong> (invoke / events)
+  <span class="flow-arrow">→</span>
+  <strong>Rust Backend</strong> (Commands → Services → DB)
+  <span class="flow-arrow">→</span>
+  <strong>SQLite</strong>
+</div>
+
+<h3>2.2 Portable Folder Architecture</h3>
+<p>All user game data lives in a <strong>single portable folder</strong> (e.g., <code>E:\Emulation</code>). Emulators are installed separately (e.g., via EmuDeck). The data structure:</p>
+<div class="file-tree">{DATA_ROOT}/
+├── roms/{system}/             # ROM files per system (38 systems)
+│   ├── gamelist.xml           # Metadata from scrapers
+│   └── downloaded_images/     # Per-game box art
+├── bios/                      # BIOS files
+├── saves/                     # Save states per emulator
+├── storage/downloaded_media/  # Scraped media (13 types × 38 systems)
+└── tools/launchers/           # Launch scripts (.ps1 files)</div>
+
+<h3>2.3 Key Design Principles</h3>
+<ul style="margin: 4px 0 8px 24px;">
+  <li>Never assume emulators are inside the data folder</li>
+  <li>Support multiple data roots (USB, NAS, etc.)</li>
+  <li>Auto-detect EmuDeck paths, allow custom paths</li>
+  <li>All paths configurable via TOML config</li>
+  <li>Gamepad as primary input method</li>
+</ul>
+
+<!-- ======================= 3. TECH STACK ======================= -->
+<h2 id="s3">3. Tech Stack &amp; Dependencies</h2>
+
+<div class="two-col">
+<div>
+  <h3>Backend (Rust)</h3>
+  <table>
+    <tr><th>Crate</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>tauri</td><td>2.x</td><td>App framework</td></tr>
+    <tr><td>rusqlite</td><td>0.31</td><td>SQLite (bundled)</td></tr>
+    <tr><td>serde / serde_json</td><td>1.x</td><td>Serialization</td></tr>
+    <tr><td>tokio</td><td>1.x</td><td>Async runtime</td></tr>
+    <tr><td>reqwest</td><td>0.12</td><td>HTTP client</td></tr>
+    <tr><td>walkdir</td><td>2.x</td><td>Directory scanning</td></tr>
+    <tr><td>blake3</td><td>1.x</td><td>ROM hashing</td></tr>
+    <tr><td>quick-xml</td><td>0.36</td><td>XML parsing</td></tr>
+    <tr><td>scraper</td><td>0.20</td><td>HTML scraping</td></tr>
+    <tr><td>chrono</td><td>0.4</td><td>Date/time</td></tr>
+    <tr><td>image</td><td>0.25</td><td>Image processing</td></tr>
+    <tr><td>uuid</td><td>1.x</td><td>Unique IDs</td></tr>
+  </table>
+  <p><strong>Total Rust dependencies: 26</strong></p>
+</div>
+<div>
+  <h3>Frontend (TypeScript)</h3>
+  <table>
+    <tr><th>Package</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>react</td><td>^19.0</td><td>UI framework</td></tr>
+    <tr><td>react-dom</td><td>^19.0</td><td>DOM rendering</td></tr>
+    <tr><td>@tauri-apps/api</td><td>^2.0</td><td>Tauri bridge</td></tr>
+    <tr><td>@tanstack/react-query</td><td>^5.0</td><td>Data fetching</td></tr>
+    <tr><td>zustand</td><td>^5.0</td><td>State mgmt</td></tr>
+    <tr><td>framer-motion</td><td>^11.0</td><td>Animations</td></tr>
+    <tr><td>tailwindcss</td><td>^4.0</td><td>Styling</td></tr>
+    <tr><td>typescript</td><td>~5.6</td><td>Type system</td></tr>
+    <tr><td>vite</td><td>^6.0</td><td>Build tool</td></tr>
+    <tr><td>vitest</td><td>^2.0</td><td>Testing</td></tr>
+  </table>
+  <p><strong>Total NPM dependencies: 16</strong></p>
+</div>
+</div>
+
+<!-- ======================= 4. PROJECT STATISTICS ======================= -->
+<h2 id="s4">4. Project Statistics</h2>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="number">93</div><div class="label">Rust Files (.rs)</div></div>
+  <div class="stat-card"><div class="number">80</div><div class="label">TypeScript Files</div></div>
+  <div class="stat-card"><div class="number">112K</div><div class="label">Lines of Rust</div></div>
+  <div class="stat-card"><div class="number">13.5K</div><div class="label">Lines of TS/TSX</div></div>
+</div>
+
+<table>
+  <tr><th>Category</th><th>Count</th><th>Details</th></tr>
+  <tr><td>Pages</td><td>9</td><td>Library, GameDetail, Settings, Scraper, Emulator, InputMapping, RomPaths, PcGames, EmulatorConfig</td></tr>
+  <tr><td>Components</td><td>25</td><td>Across 8 categories (library, editor, media, steam, scraper, layout, common, pc_scraper)</td></tr>
+  <tr><td>Tauri Commands</td><td>14</td><td>Backend IPC modules</td></tr>
+  <tr><td>Service Modules</td><td>41</td><td>Core services + config writers + exporters + web scrapers</td></tr>
+  <tr><td>Zustand Stores</td><td>6</td><td>config, i18n, library, scraper, translation, ui</td></tr>
+  <tr><td>Database Tables</td><td>10</td><td>3 migration versions</td></tr>
+  <tr><td>Config Writers</td><td>8</td><td>RetroArch, Dolphin, PCSX2, DuckStation, PPSSPP, RPCS3, xemu, Ryujinx</td></tr>
+  <tr><td>Themes</td><td>3</td><td>Default, Aurora (Xbox 360), HyperSpin</td></tr>
+  <tr><td>Languages</td><td>6</td><td>en, es, de, fr, ja, pt (188 keys each = 1,128 total strings)</td></tr>
+  <tr><td>Game Systems</td><td>38</td><td>Nintendo(11), Sony(4), Sega(5), Microsoft(1), Arcade(8), Classic(6), Atari(4), Other(4)</td></tr>
+  <tr><td>Git Commits</td><td>34</td><td>9 version tags (v0.1.0 → v0.6.0)</td></tr>
+  <tr><td>Spec Documents</td><td>114</td><td>23 REQ + 20 DES + 68 TASK + 3 templates</td></tr>
+</table>
+
+<!-- ======================= 5. FEATURE INVENTORY ======================= -->
+<h2 id="s5">5. Feature Inventory</h2>
+
+<table>
+  <tr><th>#</th><th>Feature</th><th>Status</th><th>REQ</th><th>Description</th></tr>
+  <tr><td>1</td><td>Project Bootstrap</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-001</td><td>Tauri 2 + React 19 project setup, build pipeline</td></tr>
+  <tr><td>2</td><td>Configuration System</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-002</td><td>TOML config, data root, EmuDeck paths</td></tr>
+  <tr><td>3</td><td>ROM Scanner</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-003</td><td>Directory walking, system detection, blake3 hashing</td></tr>
+  <tr><td>4</td><td>Game Library UI</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-004</td><td>Grid/list views, filtering, search, favorites</td></tr>
+  <tr><td>5</td><td>Game Launch System</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-005</td><td>Emulator spawning, EmuDeck auto-detect</td></tr>
+  <tr><td>6</td><td>Theme Engine</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-006</td><td>CSS custom properties, theme registry, 3 themes</td></tr>
+  <tr><td>7</td><td>Media Manager</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-007</td><td>58K+ media indexing, thumbnails, lazy loading</td></tr>
+  <tr><td>8</td><td>Media Downloader</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-008</td><td>Libretro thumbnail auto-download, caching</td></tr>
+  <tr><td>9</td><td>System Logos</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-009</td><td>SVG logos for 38 systems</td></tr>
+  <tr><td>10</td><td>3D Box Detail View</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-010</td><td>CSS 3D transform game box with flip animation</td></tr>
+  <tr><td>11</td><td>Localization</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-011</td><td>6 languages, metadata translation API</td></tr>
+  <tr><td>12</td><td>Scraper System</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-012</td><td>CRUD scrapers, multi-source, job progress</td></tr>
+  <tr><td>13</td><td>Aurora Theme</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-013</td><td>Xbox 360 Aurora dashboard with 3D CoverFlow</td></tr>
+  <tr><td>14</td><td>Release Management</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-014</td><td>CI/CD, multi-platform builds, version management</td></tr>
+  <tr><td>15</td><td>PC Enhanced Metadata</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-015</td><td>Steam, IGDB, SteamGridDB, MobyGames, PCGamingWiki, YouTube</td></tr>
+  <tr><td>16</td><td>Gamepad Mapping</td><td><span class="badge badge-yellow">In Progress</span></td><td>REQ-016</td><td>Button mapping, profiles, system assignments</td></tr>
+  <tr><td>17</td><td>Emulator Settings</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-017</td><td>10 canonical settings, 8 emulator config writers</td></tr>
+  <tr><td>18</td><td>Metadata Editor</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-018</td><td>Edit metadata, import media, YouTube search</td></tr>
+  <tr><td>19</td><td>Library UX</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-019</td><td>Grid zoom, list view, search autocomplete</td></tr>
+  <tr><td>20</td><td>Scraper Improvements</td><td><span class="badge badge-yellow">Approved</span></td><td>REQ-020</td><td>ES-DE parity: fallback chains, rate limiting</td></tr>
+  <tr><td>21</td><td>Steam Integration</td><td><span class="badge badge-green">Implemented</span></td><td>REQ-021</td><td>Steam reviews, metadata, search &amp; link</td></tr>
+</table>
+
+<!-- ======================= 6. SDD METHODOLOGY ======================= -->
+<h2 id="s6">6. Spec-Driven Development (SDD) Methodology</h2>
+
+<h3>6.1 Workflow Cycle</h3>
+<div class="flow-diagram">
+  <strong>REQ</strong> (Requirement)
+  <span class="flow-arrow">→</span>
+  <strong>DES</strong> (Design)
+  <span class="flow-arrow">→</span>
+  <strong>TASK</strong> (Breakdown)
+  <span class="flow-arrow">→</span>
+  <strong>CODE</strong>
+  <span class="flow-arrow">→</span>
+  <strong>TEST</strong>
+  <span class="flow-arrow">→</span>
+  <strong>REVIEW</strong>
+</div>
+
+<h3>6.2 SDD Rules</h3>
+<table>
+  <tr><th>Rule</th><th>Description</th></tr>
+  <tr><td><strong>1. Never code without a spec</strong></td><td>Every feature starts as a REQ, gets a DES, then TASKs</td></tr>
+  <tr><td><strong>2. Specs are source of truth</strong></td><td>If code diverges from spec, update spec first</td></tr>
+  <tr><td><strong>3. One TASK per commit</strong></td><td>Each task maps to a single, reviewable commit</td></tr>
+  <tr><td><strong>4. Tests before implementation</strong></td><td>Write test stubs in DES phase, implement in CODE phase</td></tr>
+</table>
+
+<h3>6.3 Spec Numbering Convention</h3>
+<table>
+  <tr><th>Type</th><th>Format</th><th>Example</th><th>Purpose</th></tr>
+  <tr><td>Requirement</td><td><code>REQ-XXX</code></td><td>REQ-021</td><td>What needs to be built</td></tr>
+  <tr><td>Design</td><td><code>DES-XXX</code></td><td>DES-021</td><td>How it will be implemented</td></tr>
+  <tr><td>Task</td><td><code>TASK-XXX-YY</code></td><td>TASK-021-03</td><td>Individual work units linked to DES</td></tr>
+</table>
+
+<h3>6.4 Spec Document Statistics</h3>
+<div class="stat-grid">
+  <div class="stat-card"><div class="number">23</div><div class="label">Requirements (REQ)</div></div>
+  <div class="stat-card"><div class="number">20</div><div class="label">Designs (DES)</div></div>
+  <div class="stat-card"><div class="number">68</div><div class="label">Tasks (TASK)</div></div>
+  <div class="stat-card"><div class="number">3</div><div class="label">Templates</div></div>
+</div>
+
+<!-- ======================= 7. SDD COMPLIANCE AUDIT ======================= -->
+<h2 id="s7">7. SDD Compliance Audit</h2>
+
+<p>This section evaluates every feature against the SDD methodology requirements. A feature is <strong>fully compliant</strong> when it has REQ + DES + TASK specs.</p>
+
+<h3>7.1 Compliance Summary</h3>
+<table>
+  <tr><th>Compliance Level</th><th>Count</th><th>Percentage</th></tr>
+  <tr><td><span class="compliance-ok">&#10003; Full (REQ + DES + TASK)</span></td><td>18</td><td>85.7%</td></tr>
+  <tr><td><span class="compliance-warn">&#9888; Partial (missing DES or TASK)</span></td><td>3</td><td>14.3%</td></tr>
+  <tr><td><span class="compliance-fail">&#10007; None (code without specs)</span></td><td>0</td><td>0%</td></tr>
+</table>
+
+<h3>7.2 Previously Identified Gaps (Now Resolved)</h3>
+
+<div class="gap-resolved">
+  <strong>REQ-008 (Media Downloader)</strong> — Was missing DES. <span class="badge badge-green">RESOLVED</span> → DES-008 created retroactively
+</div>
+<div class="gap-resolved">
+  <strong>REQ-012 (Scraper System)</strong> — Was missing DES. <span class="badge badge-green">RESOLVED</span> → DES-012 created retroactively
+</div>
+<div class="gap-resolved">
+  <strong>REQ-017 (Emulator Settings)</strong> — Had DES, was missing TASKs. <span class="badge badge-green">RESOLVED</span> → TASK-017-01 through TASK-017-04 created
+</div>
+<div class="gap-resolved">
+  <strong>REQ-019 (Library UX)</strong> — Had DES, was missing TASKs. <span class="badge badge-green">RESOLVED</span> → TASK-019-01 created
+</div>
+<div class="gap-resolved">
+  <strong>REQ-020 (Scraper Improvements)</strong> — Was missing DES. <span class="badge badge-green">RESOLVED</span> → DES-020 created
+</div>
+<div class="gap-resolved">
+  <strong>REQ-021 (Steam Integration)</strong> — Had DES, was missing TASKs. <span class="badge badge-green">RESOLVED</span> → TASK-021-01 through TASK-021-05 created
+</div>
+
+<!-- ======================= 8. COVERAGE MATRIX ======================= -->
+<h2 id="s8">8. Specification Coverage Matrix</h2>
+
+<table>
+  <tr><th>Feature</th><th>REQ</th><th>DES</th><th>TASKs</th><th>Implemented</th><th>Compliance</th></tr>
+  <tr><td>Project Bootstrap</td><td><span class="badge badge-green">REQ-001</span></td><td><span class="badge badge-green">DES-001</span></td><td><span class="badge badge-green">3</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Configuration</td><td><span class="badge badge-green">REQ-002</span></td><td><span class="badge badge-green">DES-002</span></td><td><span class="badge badge-green">3</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>ROM Scanner</td><td><span class="badge badge-green">REQ-003</span></td><td><span class="badge badge-green">DES-003</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Library UI</td><td><span class="badge badge-green">REQ-004</span></td><td><span class="badge badge-green">DES-004</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Game Launch</td><td><span class="badge badge-green">REQ-005</span></td><td><span class="badge badge-green">DES-005</span></td><td><span class="badge badge-green">3</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Theme Engine</td><td><span class="badge badge-green">REQ-006</span></td><td><span class="badge badge-green">DES-006</span></td><td><span class="badge badge-green">6</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Media Manager</td><td><span class="badge badge-green">REQ-007</span></td><td><span class="badge badge-green">DES-007</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Media Downloader</td><td><span class="badge badge-green">REQ-008</span></td><td><span class="badge badge-green">DES-008</span></td><td><span class="badge badge-green">2</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>System Logos</td><td><span class="badge badge-green">REQ-009</span></td><td><span class="badge badge-green">DES-009</span></td><td><span class="badge badge-green">4</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>3D Box View</td><td><span class="badge badge-green">REQ-010</span></td><td><span class="badge badge-green">DES-010</span></td><td><span class="badge badge-green">3</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Localization</td><td><span class="badge badge-green">REQ-011</span></td><td><span class="badge badge-green">DES-011</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Scraper System</td><td><span class="badge badge-green">REQ-012</span></td><td><span class="badge badge-green">DES-012</span></td><td><span class="badge badge-green">4</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Aurora Theme</td><td><span class="badge badge-green">REQ-013</span></td><td><span class="badge badge-green">DES-013</span></td><td><span class="badge badge-green">1</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Release Mgmt</td><td><span class="badge badge-green">REQ-014</span></td><td><span class="badge badge-green">DES-014</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>PC Metadata</td><td><span class="badge badge-green">REQ-015</span></td><td><span class="badge badge-green">DES-015</span></td><td><span class="badge badge-green">13</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Gamepad Mapping</td><td><span class="badge badge-green">REQ-016</span></td><td><span class="badge badge-green">DES-016</span></td><td><span class="badge badge-green">1</span></td><td><span class="badge badge-yellow">Partial</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Emulator Settings</td><td><span class="badge badge-green">REQ-017</span></td><td><span class="badge badge-green">DES-017</span></td><td><span class="badge badge-green">4</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Metadata Editor</td><td><span class="badge badge-green">REQ-018</span></td><td><span class="badge badge-green">DES-018</span></td><td><span class="badge badge-green">2</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Library UX</td><td><span class="badge badge-green">REQ-019</span></td><td><span class="badge badge-green">DES-019</span></td><td><span class="badge badge-green">1</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+  <tr><td>Scraper Improve</td><td><span class="badge badge-green">REQ-020</span></td><td><span class="badge badge-green">DES-020</span></td><td><span class="badge badge-yellow">0</span></td><td><span class="badge badge-yellow">Partial</span></td><td class="compliance-warn">&#9888; Partial</td></tr>
+  <tr><td>Steam Integration</td><td><span class="badge badge-green">REQ-021</span></td><td><span class="badge badge-green">DES-021</span></td><td><span class="badge badge-green">5</span></td><td><span class="badge badge-green">Yes</span></td><td class="compliance-ok">&#10003; Full</td></tr>
+</table>
+
+<p><strong>Note:</strong> REQ-020 (Scraper Improvements) remains at partial compliance — it has REQ + DES but no TASKs yet because it is still in the APPROVED stage, not yet implemented. This is expected per SDD workflow: TASKs are created at implementation time.</p>
+
+<!-- ======================= 9. DATABASE SCHEMA ======================= -->
+<h2 id="s9">9. Database Schema</h2>
+
+<h3>9.1 Tables Overview</h3>
+<table>
+  <tr><th>Table</th><th>Migration</th><th>Purpose</th><th>Key Columns</th></tr>
+  <tr><td><code>systems</code></td><td>v1</td><td>Gaming platform definitions</td><td>id, name, full_name, extensions, rom_path</td></tr>
+  <tr><td><code>games</code></td><td>v1+v2+v3</td><td>Individual game entries</td><td>id, system_id, title, file_path, box_art, steam_app_id, ...</td></tr>
+  <tr><td><code>scrapers</code></td><td>v1</td><td>Scraper configurations</td><td>id, name, url, api_key, priority, supports</td></tr>
+  <tr><td><code>system_rom_paths</code></td><td>v1</td><td>Custom ROM paths per system</td><td>system_id, custom_path</td></tr>
+  <tr><td><code>input_profiles</code></td><td>v1</td><td>Controller input profiles</td><td>id, name, controller_type, is_builtin</td></tr>
+  <tr><td><code>input_bindings</code></td><td>v1</td><td>Button/axis bindings</td><td>profile_id, action, button_index, axis_index</td></tr>
+  <tr><td><code>system_profile_assignments</code></td><td>v1</td><td>System ↔ profile links</td><td>system_id, profile_id</td></tr>
+  <tr><td><code>emulator_setting_defs</code></td><td>v1</td><td>Canonical setting definitions</td><td>key, display_name, setting_type, default_value</td></tr>
+  <tr><td><code>emulator_settings</code></td><td>v1</td><td>Per-emulator setting values</td><td>emulator_name, setting_key, value</td></tr>
+  <tr><td><code>game_steam_data</code></td><td>v3</td><td>Steam metadata cache</td><td>game_id, steam_app_id, reviews_json, categories</td></tr>
+</table>
+
+<h3>9.2 Migration History</h3>
+<table>
+  <tr><th>Version</th><th>Changes</th><th>Feature</th></tr>
+  <tr><td>v1</td><td>Base schema — 9 tables, indexes on games</td><td>Core platform</td></tr>
+  <tr><td>v2</td><td>+11 columns on games (hero_art, logo, trailer, tags, igdb_id, etc.)</td><td>REQ-015 PC Metadata</td></tr>
+  <tr><td>v3</td><td>+steam_app_id on games, +game_steam_data table</td><td>REQ-021 Steam</td></tr>
+</table>
+
+<!-- ======================= 10. FRONTEND ARCHITECTURE ======================= -->
+<h2 id="s10">10. Frontend Architecture</h2>
+
+<h3>10.1 Pages (9)</h3>
+<table>
+  <tr><th>Page</th><th>Route</th><th>Feature</th></tr>
+  <tr><td>LibraryPage</td><td>/</td><td>Main game library with grid/list views</td></tr>
+  <tr><td>GameDetailPage</td><td>/game/:id</td><td>Game info, metadata editor, Steam section</td></tr>
+  <tr><td>SettingsPage</td><td>/settings</td><td>App configuration, scan controls</td></tr>
+  <tr><td>ScraperPage</td><td>/scrapers</td><td>Scraper management &amp; job execution</td></tr>
+  <tr><td>EmulatorSettingsPage</td><td>/emulators</td><td>Emulator list &amp; canonical settings</td></tr>
+  <tr><td>EmulatorConfigPage</td><td>/emulator/:name</td><td>Per-emulator detailed config</td></tr>
+  <tr><td>InputMappingPage</td><td>/input</td><td>Gamepad button mapping profiles</td></tr>
+  <tr><td>RomPathsPage</td><td>/rom-paths</td><td>Per-system ROM path overrides</td></tr>
+  <tr><td>PcGamesPage</td><td>/pc-games</td><td>PC game management &amp; import</td></tr>
+</table>
+
+<h3>10.2 Component Categories (25 components)</h3>
+<table>
+  <tr><th>Category</th><th>Components</th><th>Count</th></tr>
+  <tr><td>Library</td><td>FilterBar, GameBoxCase, GameCard, GameGrid, GameList, SystemList</td><td>6</td></tr>
+  <tr><td>Editor</td><td>MediaSlot, MetadataEditor, TagEditor, YouTubeSearch</td><td>4</td></tr>
+  <tr><td>Steam</td><td>SteamInfo, SteamReviews, SteamSearchModal, SteamSection</td><td>4</td></tr>
+  <tr><td>Scraper</td><td>ScrapeJobPanel, ScraperForm, ScraperList</td><td>3</td></tr>
+  <tr><td>Layout</td><td>AppShell, Sidebar</td><td>2</td></tr>
+  <tr><td>Media</td><td>MediaImage, VideoPreview</td><td>2</td></tr>
+  <tr><td>Common</td><td>LoadingSpinner, SystemLogo, Toast</td><td>3</td></tr>
+  <tr><td>PC Scraper</td><td>PcScraperSettings</td><td>1</td></tr>
+</table>
+
+<h3>10.3 State Management</h3>
+<table>
+  <tr><th>Store</th><th>Purpose</th><th>Key State</th></tr>
+  <tr><td>libraryStore</td><td>Library filters &amp; view</td><td>selectedSystem, viewMode, gridColumns, sortBy, searchQuery</td></tr>
+  <tr><td>configStore</td><td>App configuration</td><td>dataRoot, emudeckPath, autoScan, hashRoms</td></tr>
+  <tr><td>i18nStore</td><td>Language selection</td><td>locale, t() function</td></tr>
+  <tr><td>scraperStore</td><td>Active scrape job</td><td>isRunning, progress, currentGame</td></tr>
+  <tr><td>translationStore</td><td>Metadata translation</td><td>translations cache, translating state</td></tr>
+  <tr><td>uiStore</td><td>UI state</td><td>sidebarOpen, theme</td></tr>
+</table>
+
+<!-- ======================= 11. BACKEND ARCHITECTURE ======================= -->
+<h2 id="s11">11. Backend Architecture</h2>
+
+<h3>11.1 Command Modules (14)</h3>
+<table>
+  <tr><th>Module</th><th>Commands</th><th>Feature</th></tr>
+  <tr><td>config.rs</td><td>get_config, save_config</td><td>REQ-002</td></tr>
+  <tr><td>scanner.rs</td><td>scan_library, get_systems</td><td>REQ-003</td></tr>
+  <tr><td>library.rs</td><td>get_games, get_game</td><td>REQ-004</td></tr>
+  <tr><td>launcher.rs</td><td>launch_game</td><td>REQ-005</td></tr>
+  <tr><td>media.rs</td><td>get_game_media</td><td>REQ-007</td></tr>
+  <tr><td>scraper.rs</td><td>CRUD scrapers, run_scrape</td><td>REQ-012</td></tr>
+  <tr><td>input_mapping.rs</td><td>profiles, bindings, assignments</td><td>REQ-016</td></tr>
+  <tr><td>emulator_settings.rs</td><td>get/set/reset/apply settings</td><td>REQ-017</td></tr>
+  <tr><td>metadata_editor.rs</td><td>update_metadata, import_media, YouTube</td><td>REQ-018</td></tr>
+  <tr><td>pc_games.rs</td><td>PC game management</td><td>REQ-015</td></tr>
+  <tr><td>pc_scraper.rs</td><td>PC metadata scraping</td><td>REQ-015</td></tr>
+  <tr><td>rom_paths.rs</td><td>per-system ROM path overrides</td><td>REQ-015</td></tr>
+  <tr><td>steam_integration.rs</td><td>search, link, fetch, refresh Steam</td><td>REQ-021</td></tr>
+</table>
+
+<h3>11.2 Service Modules (41)</h3>
+<div class="two-col">
+<div>
+  <h4>Core Services (23)</h4>
+  <ul style="font-size: 9pt; margin-left: 16px;">
+    <li>config_service.rs</li>
+    <li>scanner_service.rs</li>
+    <li>launcher_service.rs</li>
+    <li>media_service.rs</li>
+    <li>media_import_service.rs</li>
+    <li>downloader_service.rs</li>
+    <li>scraper_service.rs</li>
+    <li>screenscraper.rs</li>
+    <li>thegamesdb.rs</li>
+    <li>libretro.rs</li>
+    <li>gamelist_service.rs</li>
+    <li>emulator_settings_service.rs</li>
+    <li>input_mapping_service.rs</li>
+    <li>steam_store_service.rs</li>
+    <li>igdb_service.rs</li>
+    <li>steamgriddb.rs</li>
+    <li>mobygames_service.rs</li>
+    <li>pcgamingwiki_service.rs</li>
+    <li>youtube_service.rs</li>
+    <li>search_service.rs</li>
+    <li>pc_metadata_orchestrator.rs</li>
+    <li>pc_import_service.rs</li>
+  </ul>
+</div>
+<div>
+  <h4>Config Writers (8)</h4>
+  <ul style="font-size: 9pt; margin-left: 16px;">
+    <li>retroarch.rs</li>
+    <li>dolphin.rs</li>
+    <li>pcsx2.rs</li>
+    <li>duckstation.rs</li>
+    <li>ppsspp.rs</li>
+    <li>rpcs3.rs</li>
+    <li>xemu.rs</li>
+    <li>ryujinx.rs</li>
+  </ul>
+  <h4>Exporters (5)</h4>
+  <ul style="font-size: 9pt; margin-left: 16px;">
+    <li>generic_json.rs</li>
+    <li>retroarch.rs</li>
+    <li>dolphin.rs</li>
+    <li>duckstation.rs</li>
+    <li>pcsx2.rs</li>
+  </ul>
+  <h4>Web Scrapers (2)</h4>
+  <ul style="font-size: 9pt; margin-left: 16px;">
+    <li>html_scraper.rs</li>
+    <li>headless_scraper.rs</li>
+  </ul>
+</div>
+</div>
+
+<!-- ======================= 12. SUPPORTED SYSTEMS ======================= -->
+<h2 id="s12">12. Supported Systems (38 Platforms)</h2>
+
+<div class="two-col">
+<div>
+<h3>Nintendo (11)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>NES</td><td>.nes, .fds, .zip, .7z</td></tr>
+  <tr><td>SNES</td><td>.sfc, .smc, .zip, .7z</td></tr>
+  <tr><td>N64</td><td>.n64, .z64, .v64, .zip</td></tr>
+  <tr><td>Game Boy</td><td>.gb, .sgb, .zip</td></tr>
+  <tr><td>Game Boy Color</td><td>.gbc, .zip</td></tr>
+  <tr><td>GBA</td><td>.gba, .zip</td></tr>
+  <tr><td>NDS</td><td>.nds, .zip</td></tr>
+  <tr><td>GameCube</td><td>.iso, .rvz, .gcz</td></tr>
+  <tr><td>Wii</td><td>.iso, .rvz, .wbfs</td></tr>
+  <tr><td>Wii U</td><td>.rpx, .wud, .wux</td></tr>
+  <tr><td>Switch</td><td>.nsp, .xci, .nro</td></tr>
+</table>
+
+<h3>Sony (4)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>PlayStation</td><td>.cue, .bin, .iso, .chd</td></tr>
+  <tr><td>PS2</td><td>.iso, .chd, .cso</td></tr>
+  <tr><td>PS3</td><td>.iso, .pkg</td></tr>
+  <tr><td>PSP</td><td>.iso, .cso, .pbp</td></tr>
+</table>
+
+<h3>Microsoft (1)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>Xbox</td><td>.iso, .xbe</td></tr>
+</table>
+</div>
+<div>
+<h3>Sega (5)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>Genesis</td><td>.md, .bin, .gen</td></tr>
+  <tr><td>Master System</td><td>.sms, .zip</td></tr>
+  <tr><td>Saturn</td><td>.cue, .iso, .chd</td></tr>
+  <tr><td>Dreamcast</td><td>.cdi, .iso, .chd</td></tr>
+  <tr><td>Game Gear</td><td>.gg, .zip</td></tr>
+</table>
+
+<h3>Arcade (8)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>Arcade/MAME</td><td>.zip, .7z, .chd</td></tr>
+  <tr><td>FBNeo</td><td>.zip, .7z</td></tr>
+  <tr><td>Neo Geo</td><td>.zip, .7z</td></tr>
+  <tr><td>CPS-1/2/3</td><td>.zip, .7z</td></tr>
+</table>
+
+<h3>Classic Computers (6)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>Amiga</td><td>.adf, .lha, .hdf</td></tr>
+  <tr><td>MSX</td><td>.rom, .dsk, .cas</td></tr>
+  <tr><td>C64</td><td>.d64, .t64, .prg</td></tr>
+  <tr><td>Atari ST</td><td>.st, .msa</td></tr>
+  <tr><td>PC Engine</td><td>.pce, .cue, .chd</td></tr>
+</table>
+
+<h3>Atari (4) + Other (4)</h3>
+<table>
+  <tr><th>System</th><th>Extensions</th></tr>
+  <tr><td>Atari 2600/5200/7800</td><td>.a26/.a52/.a78</td></tr>
+  <tr><td>Atari Lynx</td><td>.lnx, .zip</td></tr>
+  <tr><td>ColecoVision</td><td>.col, .rom</td></tr>
+  <tr><td>Neo Geo Pocket</td><td>.ngc, .ngp</td></tr>
+  <tr><td>WonderSwan</td><td>.ws, .wsc</td></tr>
+  <tr><td>3DS</td><td>.3ds, .cia</td></tr>
+</table>
+</div>
+</div>
+
+<!-- ======================= 13. i18n ======================= -->
+<h2 id="s13">13. Internationalization (6 Languages)</h2>
+
+<table>
+  <tr><th>Language</th><th>Code</th><th>File</th><th>Keys</th><th>Coverage</th></tr>
+  <tr><td>English</td><td>en</td><td>en.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+  <tr><td>Spanish</td><td>es</td><td>es.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+  <tr><td>German</td><td>de</td><td>de.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+  <tr><td>French</td><td>fr</td><td>fr.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+  <tr><td>Japanese</td><td>ja</td><td>ja.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+  <tr><td>Portuguese</td><td>pt</td><td>pt.ts</td><td>188</td><td><span class="badge badge-green">100%</span></td></tr>
+</table>
+
+<h3>Translation Sections (10)</h3>
+<table>
+  <tr><th>Section</th><th>Keys</th><th>Scope</th></tr>
+  <tr><td>settings</td><td>22</td><td>Configuration page</td></tr>
+  <tr><td>library</td><td>21</td><td>Game library page</td></tr>
+  <tr><td>filters</td><td>9</td><td>Sort &amp; filter options</td></tr>
+  <tr><td>game</td><td>26</td><td>Game detail view</td></tr>
+  <tr><td>hyperspin</td><td>8</td><td>HyperSpin theme</td></tr>
+  <tr><td>themes</td><td>6</td><td>Theme names/descriptions</td></tr>
+  <tr><td>common</td><td>10</td><td>Shared UI strings</td></tr>
+  <tr><td>editor</td><td>42</td><td>Metadata editor</td></tr>
+  <tr><td>scraper</td><td>27</td><td>Scraper management</td></tr>
+  <tr><td>steam</td><td>17</td><td>Steam integration</td></tr>
+</table>
+
+<!-- ======================= 14. THEME ENGINE ======================= -->
+<h2 id="s14">14. Theme Engine</h2>
+
+<table>
+  <tr><th>Theme</th><th>Style</th><th>Components</th><th>Description</th></tr>
+  <tr><td><strong>Default</strong></td><td>Sidebar + Grid</td><td>1</td><td>Clean sidebar with game grid, minimal &amp; responsive</td></tr>
+  <tr><td><strong>Aurora</strong></td><td>Xbox 360 Dashboard</td><td>7</td><td>3D CoverFlow carousel, bokeh effects, system boxes</td></tr>
+  <tr><td><strong>HyperSpin</strong></td><td>Spinning Wheel</td><td>5</td><td>Classic arcade frontend with wheel carousel &amp; preview panel</td></tr>
+</table>
+
+<p>Themes use CSS custom properties for colors/spacing, Framer Motion for animations, and a manifest-based registry system. Theme switching is instant with no page reload.</p>
+
+<!-- ======================= 15. RELEASE HISTORY ======================= -->
+<h2 id="s15">15. Release History</h2>
+
+<table>
+  <tr><th>Version</th><th>Date</th><th>Highlights</th></tr>
+  <tr><td><strong>v0.6.0</strong></td><td>2026-03-31</td><td>Steam integration, video controls, media fixes, yt-dlp improvements</td></tr>
+  <tr><td>v0.5.3</td><td>2026-03-30</td><td>YouTube search fix, yt-dlp primary search strategy</td></tr>
+  <tr><td>v0.5.2</td><td>2026-03-30</td><td>EmuDeck RetroArch path detection, metadata editor</td></tr>
+  <tr><td>v0.5.1</td><td>2026-03-29</td><td>Library UX improvements, grid zoom, list view</td></tr>
+  <tr><td>v0.5.0</td><td>2026-03-28</td><td>Scraper system, emulator settings, custom metadata editor</td></tr>
+  <tr><td>v0.4.0</td><td>2026-03-27</td><td>PC enhanced metadata, multi-source scraping pipeline</td></tr>
+  <tr><td>v0.3.0</td><td>2026-03-26</td><td>Aurora theme, gamepad input mapping, localization</td></tr>
+  <tr><td>v0.2.0</td><td>2026-03-25</td><td>Theme engine, media manager, system logos, 3D box view</td></tr>
+  <tr><td>v0.1.0</td><td>2026-03-24</td><td>Initial release: library, scanner, launcher, config</td></tr>
+</table>
+
+<!-- ======================= 16. SDD GAP RESOLUTION ======================= -->
+<h2 id="s16">16. SDD Gap Resolution Report</h2>
+
+<p>During this audit, <strong>6 SDD compliance gaps</strong> were identified and resolved:</p>
+
+<h3>16.1 Missing Design Specs (DES) — 3 Created</h3>
+
+<table>
+  <tr><th>Feature</th><th>Gap</th><th>Resolution</th><th>Status</th></tr>
+  <tr><td>REQ-008 Media Downloader</td><td>No DES document</td><td>Created DES-008-media-downloader.md (retroactive)</td><td><span class="badge badge-green">Resolved</span></td></tr>
+  <tr><td>REQ-012 Scraper System</td><td>No DES document</td><td>Created DES-012-scraper-system.md (retroactive)</td><td><span class="badge badge-green">Resolved</span></td></tr>
+  <tr><td>REQ-020 Scraper Improvements</td><td>No DES document</td><td>Created DES-020-scraper-improvements.md</td><td><span class="badge badge-green">Resolved</span></td></tr>
+</table>
+
+<h3>16.2 Missing Task Specs (TASK) — 10 Created</h3>
+
+<table>
+  <tr><th>Feature</th><th>Gap</th><th>Tasks Created</th><th>Status</th></tr>
+  <tr><td>REQ-017 Emulator Settings</td><td>Had DES, no TASKs</td><td>TASK-017-01, -02, -03, -04 (retroactive)</td><td><span class="badge badge-green">Resolved</span></td></tr>
+  <tr><td>REQ-019 Library UX</td><td>Had DES, no TASKs</td><td>TASK-019-01 (retroactive)</td><td><span class="badge badge-green">Resolved</span></td></tr>
+  <tr><td>REQ-021 Steam Integration</td><td>Had DES, no TASKs</td><td>TASK-021-01, -02, -03, -04, -05</td><td><span class="badge badge-green">Resolved</span></td></tr>
+</table>
+
+<h3>16.3 Remaining Notes</h3>
+<ul style="margin-left: 24px;">
+  <li><strong>REQ-020</strong> has REQ + DES but no TASKs — this is correct per SDD workflow since TASKs are created at implementation time and REQ-020 is still in APPROVED stage</li>
+  <li>All 21 features now have at minimum REQ + DES coverage</li>
+  <li>20 of 21 features have full REQ + DES + TASK coverage</li>
+  <li><strong>Overall SDD compliance: 95.2%</strong> (20/21 fully compliant)</li>
+</ul>
+
+<!-- ======================= 17. APPENDIX ======================= -->
+<h2 id="s17">17. Appendix: File Structure</h2>
+
+<div class="file-tree">cubi-frontend/
+├── CLAUDE.md                          # AI agent instructions
+├── package.json                       # v0.6.0
+├── tsconfig.json
+├── vite.config.ts
+├── tailwind.config.ts
+│
+├── specs/                             # SDD specification documents
+│   ├── requirements/                  # 23 REQ documents
+│   ├── design/                        # 20 DES documents
+│   ├── tasks/                         # 68+ TASK documents
+│   └── templates/                     # 3 document templates
+│
+├── src-tauri/                         # Rust backend
+│   ├── Cargo.toml                     # v0.6.0, 26 dependencies
+│   ├── tauri.conf.json                # App config
+│   └── src/
+│       ├── main.rs                    # Entry point
+│       ├── lib.rs                     # Command registration
+│       ├── commands/                  # 14 IPC command modules
+│       ├── models/                    # Data structures (game, steam, system)
+│       ├── services/                  # 41 service modules
+│       │   ├── config_writers/        # 8 emulator config writers
+│       │   ├── exporters/             # 5 export formats
+│       │   └── web_scraper/           # HTML + headless scrapers
+│       └── db/                        # SQLite (schema + migrations)
+│
+├── src/                               # React frontend
+│   ├── App.tsx                        # Router + providers
+│   ├── main.tsx                       # React entry
+│   ├── pages/                         # 9 page components
+│   ├── components/                    # 25 components (8 categories)
+│   ├── stores/                        # 6 Zustand stores
+│   ├── hooks/                         # Custom React hooks
+│   ├── lib/                           # Utility functions + invoke.ts
+│   ├── types/                         # TypeScript type definitions
+│   ├── themes/                        # 3 theme implementations
+│   │   ├── default/                   # 1 component
+│   │   ├── aurora/                    # 7 components + CSS
+│   │   └── hyperspin/                 # 5 components
+│   ├── i18n/                          # Internationalization
+│   │   ├── index.ts                   # LocaleStrings type (188 keys)
+│   │   └── locales/                   # 6 language files
+│   └── assets/                        # SVG system logos (38)
+│
+├── .github/workflows/release.yml      # Multi-platform CI/CD
+├── .claude/                           # Agent configs + skills
+│   ├── agents/                        # 5 sub-agents
+│   ├── commands/                      # 6 slash commands
+│   └── skills/                        # 9 domain skills
+└── docs/                              # Documentation</div>
+
+<hr>
+
+<p style="text-align: center; margin-top: 30px; font-size: 10pt; color: #666;">
+  <strong>Cubi Frontend v0.6.0</strong> — Project Documentation &amp; SDD Compliance Report<br>
+  Generated: March 31, 2026 | Author: vjsr007 | 34 commits | 9 releases<br>
+  <em>Built with Tauri 2, React 19, TypeScript, Tailwind CSS 4, and Rust</em>
+</p>
+
+</body>
+</html>

@@ -87,6 +87,10 @@ pub fn run() {
             commands::metadata_editor::delete_game_media,
             commands::metadata_editor::search_youtube,
             commands::metadata_editor::download_youtube_video,
+            commands::steam_integration::search_steam_games,
+            commands::steam_integration::link_steam_game,
+            commands::steam_integration::fetch_steam_data,
+            commands::steam_integration::refresh_steam_data,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

@@ -4,10 +4,11 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 interface VideoPreviewProps {
   videoPath: string;
   playing?: boolean;
+  showControls?: boolean;
   style?: React.CSSProperties;
 }
 
-export function VideoPreview({ videoPath, playing = true, style }: VideoPreviewProps) {
+export function VideoPreview({ videoPath, playing = true, showControls = false, style }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const [ready, setReady] = useState(false);
@@ -39,6 +40,7 @@ export function VideoPreview({ videoPath, playing = true, style }: VideoPreviewP
         muted={muted}
         loop
         playsInline
+        controls={showControls}
         onCanPlay={() => setReady(true)}
         onError={() => setReady(false)}
         style={{
@@ -49,30 +51,31 @@ export function VideoPreview({ videoPath, playing = true, style }: VideoPreviewP
           transition: 'opacity 0.4s',
         }}
       />
-      {/* Mute toggle */}
-      <button
-        onClick={() => setMuted((m) => !m)}
-        title={muted ? 'Unmute' : 'Mute'}
-        style={{
-          position: 'absolute',
-          bottom: 8,
-          right: 8,
-          background: 'rgba(0,0,0,0.6)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 6,
-          color: '#fff',
-          width: 28,
-          height: 28,
-          fontSize: 13,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 5,
-        }}
-      >
-        {muted ? '🔇' : '🔊'}
-      </button>
+      {!showControls && (
+        <button
+          onClick={() => setMuted((m) => !m)}
+          title={muted ? 'Unmute' : 'Mute'}
+          style={{
+            position: 'absolute',
+            bottom: 8,
+            right: 8,
+            background: 'rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 6,
+            color: '#fff',
+            width: 28,
+            height: 28,
+            fontSize: 13,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 5,
+          }}
+        >
+          {muted ? '\u{1F507}' : '\u{1F50A}'}
+        </button>
+      )}
     </div>
   );
 }

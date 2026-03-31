@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { toImageSrc } from '../../lib/media';
 import { api } from '../../lib/invoke';
 import { useI18nStore } from '../../stores/i18nStore';
@@ -86,12 +87,15 @@ export function MediaSlot({ gameId, mediaType, label, currentPath, onUpdate, onE
         background: 'var(--color-surface-2)', borderRadius: 6, overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {imgSrc && !isVideo ? (
+        {currentPath && isVideo ? (
+          <video
+            src={convertFileSrc(currentPath)}
+            controls
+            muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : imgSrc && !isVideo ? (
           <img src={imgSrc} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : currentPath && isVideo ? (
-          <span style={{ fontSize: 10, color: 'var(--color-text-muted)', textAlign: 'center', padding: 8, wordBreak: 'break-all' }}>
-            {currentPath.split(/[\\/]/).pop()}
-          </span>
         ) : (
           <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{t('editor.noMedia')}</span>
         )}

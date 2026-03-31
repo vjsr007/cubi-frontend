@@ -188,6 +188,25 @@ export interface LocaleStrings {
     selectScraper: string;
     confirmDelete: string;
   };
+  steam: {
+    viewOnSteam: string;
+    achievements: string;
+    releaseDate: string;
+    languages: string;
+    systemRequirements: string;
+    minimum: string;
+    recommended: string;
+    findOnSteam: string;
+    searchPlaceholder: string;
+    search: string;
+    searchHint: string;
+    linked: string;
+    linking: string;
+    loading: string;
+    refreshed: string;
+    refresh: string;
+    noData: string;
+  };
 }
 
 export const SUPPORTED_LANGUAGES: { code: string; name: string; native: string; flag: string }[] = [

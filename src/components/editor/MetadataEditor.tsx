@@ -68,7 +68,7 @@ export function MetadataEditor({ game, media }: Props) {
   };
 
   const handleMediaUpdate = () => {
-    queryClient.invalidateQueries({ queryKey: ['gameMedia', game.id] });
+    queryClient.invalidateQueries({ queryKey: ['game-media', game.id] });
     // Also refresh game data from DB since media paths are stored in game record
     api.getGame(game.id).then((updated) => {
       if (updated) {

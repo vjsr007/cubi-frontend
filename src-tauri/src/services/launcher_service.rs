@@ -71,6 +71,13 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             launch_template: LaunchTemplate::Simple,
         },
         EmulatorDef {
+            system_ids: &["nds"],
+            name: "melonDS",
+            emudeck_paths: &["melonDS/melonDS.exe"],
+            exe_name: "melonDS",
+            launch_template: LaunchTemplate::Custom("--fullscreen \"{rom}\""),
+        },
+        EmulatorDef {
             system_ids: &["ps3"],
             name: "RPCS3",
             emudeck_paths: &["rpcs3/rpcs3.exe"],
@@ -89,11 +96,11 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             name: "Ryujinx",
             emudeck_paths: &["Ryujinx/Ryujinx.exe", "ryujinx/Ryujinx.exe"],
             exe_name: "Ryujinx",
-            launch_template: LaunchTemplate::Simple,
+            launch_template: LaunchTemplate::Custom("--fullscreen \"{rom}\""),
         },
         EmulatorDef {
             system_ids: &[
-                "nes", "snes", "n64", "gb", "gbc", "gba", "nds", "3ds",
+                "nes", "snes", "n64", "gb", "gbc", "gba", "3ds",
                 "genesis", "mastersystem", "gamegear", "saturn", "dreamcast",
                 "arcade", "fbneo", "neogeo", "cps1", "cps2", "cps3",
                 "amiga", "atari2600", "atari5200", "atari7800", "atarist", "atarilynx",
@@ -221,7 +228,7 @@ pub fn get_retroarch_core(system_id: &str) -> &'static str {
         "atari7800"    => "prosystem_libretro",
         "atarist"      => "hatari_libretro",
         "atarilynx"    => "beetle_lynx_libretro",
-        "pcengine"     => "beetle_pce_libretro",
+        "pcengine"     => "mednafen_pce_libretro",
         "gamegear"     => "genesis_plus_gx_libretro",
         "ngpc"         => "mednafen_ngp_libretro",
         "colecovision" => "gearcoleco_libretro",
@@ -378,13 +385,6 @@ fn write_retroarch_override_cfg(system_id: &str) -> Result<String, String> {
         writeln!(f, "video_driver = \"glcore\"")
             .and_then(|_| writeln!(f, "input_player1_analog_dpad_mode = \"0\""))
             .map_err(|e| format!("Failed to write N64 override: {e}"))?;
-    }
-
-    // NDS: melonDS core requires the OpenGL compatibility context (`gl`).
-    // Using vulkan, d3d, or even glcore causes a frozen/black screen with audio.
-    if system_id == "nds" {
-        writeln!(f, "video_driver = \"gl\"")
-            .map_err(|e| format!("Failed to write NDS override: {e}"))?;
     }
 
     Ok(cfg_path.to_string_lossy().to_string())

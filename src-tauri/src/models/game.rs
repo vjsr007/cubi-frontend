@@ -31,6 +31,8 @@ pub struct GameInfo {
     pub website: Option<String>,
     pub pcgamingwiki_url: Option<String>,
     pub igdb_id: Option<i64>,
+    // Steam integration (REQ-021)
+    pub steam_app_id: Option<u32>,
 }
 
 impl GameInfo {
@@ -100,6 +102,7 @@ pub struct GameInfoPatch {
     pub website: Option<String>,
     pub pcgamingwiki_url: Option<String>,
     pub igdb_id: Option<i64>,
+    pub steam_app_id: Option<u32>,
 }
 
 impl GameInfoPatch {

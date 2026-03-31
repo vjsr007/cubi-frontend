@@ -10,6 +10,7 @@ import { VideoPreview } from '../components/media/VideoPreview';
 import { SystemLogo } from '../components/common/SystemLogo';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { MetadataEditor } from '../components/editor/MetadataEditor';
+import { SteamSection } from '../components/steam/SteamSection';
 
 export function GameDetailPage() {
   const { selectedGameId, navigateTo, showToast } = useUiStore();
@@ -133,7 +134,7 @@ export function GameDetailPage() {
                 border: '1px solid var(--color-border)',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
               }}>
-                <VideoPreview videoPath={media.video} playing={true} />
+                <VideoPreview videoPath={media.video} playing={true} showControls={true} />
               </div>
             )}
 
@@ -309,6 +310,9 @@ export function GameDetailPage() {
                 {(game.file_size / 1024 / 1024).toFixed(1)} MB
               </p>
             </div>
+
+            {/* Steam Reviews & Info */}
+            {!editMode && <SteamSection game={game} />}
 
             {/* Keyboard shortcuts hint */}
             {!editMode && (

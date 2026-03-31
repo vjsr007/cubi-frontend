@@ -239,6 +239,152 @@ fn sanitize(name: &str) -> String {
         .to_string()
 }
 
+// ── Steam Reviews API ──────────────────────────────────────────────────
+
+use crate::models::steam::{SteamSearchResult, SteamGameData, SteamReview};
+
+/// Search Steam Store by game title.
+pub async fn search_steam_store(query: &str) -> Result<Vec<SteamSearchResult>, String> {
+    let client = build_client()?;
+    let encoded = percent_encoding::utf8_percent_encode(query, percent_encoding::NON_ALPHANUMERIC)
+        .to_string();
+    let url = format!(
+        "https://store.steampowered.com/api/storesearch/?term={}&l=english&cc=US",
+        encoded
+    );
+    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !resp.status().is_success() {
+        return Err(format!("Steam search HTTP {}", resp.status()));
+    }
+    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    let items = json["items"].as_array().map(|arr| {
+        arr.iter()
+            .filter_map(|item| {
+                let app_id = item["id"].as_u64()? as u32;
+                let name = item["name"].as_str()?.to_string();
+                let icon_url = item["tiny_image"].as_str().map(str::to_string);
+                Some(SteamSearchResult { app_id, name, icon_url })
+            })
+            .take(10)
+            .collect()
+    }).unwrap_or_default();
+    Ok(items)
+}
+
+/// Fetch reviews from Steam for a given AppID.
+pub async fn fetch_steam_reviews(app_id: u32) -> Result<(String, u32, u32, Vec<SteamReview>), String> {
+    let client = build_client()?;
+    let url = format!(
+        "https://store.steampowered.com/appreviews/{}?json=1&language=all&num_per_page=10&filter=recent&purchase_type=all",
+        app_id
+    );
+    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !resp.status().is_success() {
+        return Err(format!("Steam reviews HTTP {}", resp.status()));
+    }
+    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+
+    let summary = &json["query_summary"];
+    let score_desc = summary["review_score_desc"].as_str().unwrap_or("").to_string();
+    let positive = summary["total_positive"].as_u64().unwrap_or(0) as u32;
+    let negative = summary["total_negative"].as_u64().unwrap_or(0) as u32;
+
+    let reviews: Vec<SteamReview> = json["reviews"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|r| {
+                    let review_text = r["review"].as_str()?.to_string();
+                    if review_text.len() < 10 { return None; }
+                    // Truncate very long reviews
+                    let text = if review_text.len() > 500 {
+                        format!("{}...", &review_text[..500])
+                    } else {
+                        review_text
+                    };
+                    Some(SteamReview {
+                        author_name: r["author"]["steamid"].as_str().unwrap_or("Anonymous").to_string(),
+                        hours_played: r["author"]["playtime_forever"].as_f64().unwrap_or(0.0) / 60.0,
+                        voted_up: r["voted_up"].as_bool().unwrap_or(true),
+                        review_text: text,
+                        timestamp: r["timestamp_created"].as_i64().unwrap_or(0),
+                    })
+                })
+                .take(10)
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok((score_desc, positive, negative, reviews))
+}
+
+/// Fetch full Steam data (details + reviews) for a game.
+pub async fn fetch_full_steam_data(app_id: u32) -> Result<SteamGameData, String> {
+    let appid_str = app_id.to_string();
+
+    // Fetch app details
+    let client = build_client()?;
+    let details_url = format!(
+        "https://store.steampowered.com/api/appdetails?appids={}&cc=us&l=en",
+        app_id
+    );
+    let resp = client.get(&details_url).send().await.map_err(|e| e.to_string())?;
+    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    let app_data = &json[&appid_str];
+    let data = &app_data["data"];
+
+    let short_description = data["short_description"].as_str()
+        .map(|s| strip_html(s))
+        .filter(|s| !s.is_empty());
+
+    let categories: Vec<String> = data["categories"]
+        .as_array()
+        .map(|arr| arr.iter().filter_map(|c| c["description"].as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+
+    let release_date = data["release_date"]["date"].as_str().map(str::to_string);
+
+    let languages = data["supported_languages"].as_str()
+        .map(|s| {
+            strip_html(s).split(',')
+                .map(|lang| lang.trim().split('<').next().unwrap_or("").trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
+
+    let requirements_min = data["pc_requirements"]["minimum"].as_str()
+        .map(|s| strip_html(s));
+    let requirements_rec = data["pc_requirements"]["recommended"].as_str()
+        .map(|s| strip_html(s));
+
+    let dlc_count = data["dlc"].as_array().map(|a| a.len() as u32).unwrap_or(0);
+
+    let achievements_count = data["achievements"]["total"].as_u64().unwrap_or(0) as u32;
+
+    // Fetch reviews
+    rate_limit_sleep().await;
+    let (score_desc, positive, negative, reviews) = fetch_steam_reviews(app_id).await
+        .unwrap_or_else(|_| (String::new(), 0, 0, Vec::new()));
+
+    Ok(SteamGameData {
+        steam_app_id: app_id,
+        review_score_desc: if score_desc.is_empty() { None } else { Some(score_desc) },
+        review_positive: positive,
+        review_negative: negative,
+        short_description,
+        categories,
+        release_date,
+        languages,
+        requirements_min,
+        requirements_rec,
+        dlc_count,
+        achievements_count,
+        reviews,
+        store_url: format!("https://store.steampowered.com/app/{}", app_id),
+    })
+}
+
 async fn download_file(client: &reqwest::Client, url: &str, dest: &Path) -> Result<(), String> {
     if let Some(p) = dest.parent() { std::fs::create_dir_all(p).ok(); }
     let resp = client.get(url).send().await.map_err(|e| e.to_string())?;

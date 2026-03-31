@@ -57,13 +57,35 @@ pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> R
         )
     };
 
-    // Fallback: use DB-stored paths / URLs (set by scraper) if resolver didn't find files
-    if media.box_art.is_none() {
-        if let Some(ref p) = game.box_art {
-            // Remote URLs (Steam CDN, SteamGridDB) are valid — skip filesystem check
-            let is_remote = p.starts_with("http://") || p.starts_with("https://");
-            if is_remote || std::path::Path::new(p).exists() {
-                media.box_art = Some(p.clone());
+    // Fallback: use DB-stored paths / URLs (set by scraper or editor) if resolver didn't find files
+    fn try_fill(slot: &mut Option<String>, db_value: &Option<String>) {
+        if slot.is_none() {
+            if let Some(ref p) = db_value {
+                if p.is_empty() { return; }
+                let is_remote = p.starts_with("http://") || p.starts_with("https://");
+                if is_remote || std::path::Path::new(p).exists() {
+                    *slot = Some(p.clone());
+                }
+            }
+        }
+    }
+
+    try_fill(&mut media.box_art, &game.box_art);
+    try_fill(&mut media.fan_art, &game.hero_art);
+    try_fill(&mut media.wheel, &game.logo);
+    try_fill(&mut media.fan_art, &game.background_art);
+    try_fill(&mut media.video, &game.trailer_local);
+
+    // Screenshots: DB stores a Vec, media only has one slot
+    if media.screenshot.is_none() {
+        if let Some(ref shots) = game.screenshots {
+            if let Some(first) = shots.first() {
+                if !first.is_empty() {
+                    let is_remote = first.starts_with("http://") || first.starts_with("https://");
+                    if is_remote || std::path::Path::new(first).exists() {
+                        media.screenshot = Some(first.clone());
+                    }
+                }
             }
         }
     }

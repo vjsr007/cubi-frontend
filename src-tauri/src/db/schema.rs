@@ -126,3 +126,27 @@ ALTER TABLE games ADD COLUMN pcgamingwiki_url TEXT;
 ALTER TABLE games ADD COLUMN igdb_id INTEGER;
 UPDATE schema_version SET version = 2;
 ";
+
+/// Migration v3: Steam integration (REQ-021)
+pub const MIGRATION_V3: &str = "
+ALTER TABLE games ADD COLUMN steam_app_id INTEGER;
+CREATE TABLE IF NOT EXISTS game_steam_data (
+    game_id TEXT PRIMARY KEY,
+    steam_app_id INTEGER NOT NULL,
+    review_score_desc TEXT,
+    review_positive INTEGER DEFAULT 0,
+    review_negative INTEGER DEFAULT 0,
+    short_description TEXT,
+    categories TEXT,
+    release_date TEXT,
+    languages TEXT,
+    requirements_min TEXT,
+    requirements_rec TEXT,
+    dlc_count INTEGER DEFAULT 0,
+    achievements_count INTEGER DEFAULT 0,
+    reviews_json TEXT,
+    fetched_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+UPDATE schema_version SET version = 3;
+";

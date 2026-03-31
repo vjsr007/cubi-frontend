@@ -10,6 +10,7 @@ import type {
   MediaImportResult, YoutubeSearchResult,
 } from '../types';
 import type { GameInfoPatch } from '../types/editor';
+import type { SteamSearchResult, SteamGameData } from '../types/steam';
 
 export const api = {
   // Config
@@ -145,4 +146,14 @@ export const api = {
     invoke<YoutubeSearchResult[]>('search_youtube', { query }),
   downloadYoutubeVideo: (gameId: string, youtubeUrl: string) =>
     invoke<MediaImportResult>('download_youtube_video', { gameId, youtubeUrl }),
+
+  // Steam integration (REQ-021)
+  searchSteamGames: (query: string) =>
+    invoke<SteamSearchResult[]>('search_steam_games', { query }),
+  linkSteamGame: (gameId: string, steamAppId: number) =>
+    invoke<SteamGameData>('link_steam_game', { gameId, steamAppId }),
+  fetchSteamData: (gameId: string) =>
+    invoke<SteamGameData | null>('fetch_steam_data', { gameId }),
+  refreshSteamData: (gameId: string) =>
+    invoke<SteamGameData>('refresh_steam_data', { gameId }),
 };

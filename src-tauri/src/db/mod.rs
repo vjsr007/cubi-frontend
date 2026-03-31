@@ -75,6 +75,40 @@ impl Database {
             }
             log::info!("DB migration v2 complete");
         }
+
+        if version < 3 {
+            log::info!("Running DB migration v3: Steam integration");
+            let stmts = [
+                "ALTER TABLE games ADD COLUMN steam_app_id INTEGER",
+                "CREATE TABLE IF NOT EXISTS game_steam_data (
+                    game_id TEXT PRIMARY KEY,
+                    steam_app_id INTEGER NOT NULL,
+                    review_score_desc TEXT,
+                    review_positive INTEGER DEFAULT 0,
+                    review_negative INTEGER DEFAULT 0,
+                    short_description TEXT,
+                    categories TEXT,
+                    release_date TEXT,
+                    languages TEXT,
+                    requirements_min TEXT,
+                    requirements_rec TEXT,
+                    dlc_count INTEGER DEFAULT 0,
+                    achievements_count INTEGER DEFAULT 0,
+                    reviews_json TEXT,
+                    fetched_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+                )",
+                "UPDATE schema_version SET version = 3",
+            ];
+            for stmt in &stmts {
+                if let Err(e) = conn.execute_batch(stmt) {
+                    if !e.to_string().contains("duplicate column") {
+                        log::warn!("Migration v3 stmt (ignored): {} — {}", stmt, e);
+                    }
+                }
+            }
+            log::info!("DB migration v3 complete");
+        }
         Ok(())
     }
 
@@ -250,6 +284,7 @@ impl Database {
             website: row.get(25)?,
             pcgamingwiki_url: row.get(26)?,
             igdb_id: row.get(27)?,
+            steam_app_id: row.get::<_, Option<i64>>(28)?.map(|v| v as u32),
         })
     }
 
@@ -258,7 +293,8 @@ impl Database {
          box_art, description, developer, publisher, year, genre,
          players, rating, last_played, play_count, favorite,
          hero_art, logo, background_art, screenshots, trailer_url,
-         trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id";
+         trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id,
+         steam_app_id";
 
     pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
@@ -365,6 +401,7 @@ impl Database {
         push!(patch.pcgamingwiki_url, "pcgamingwiki_url");
         push!(json patch.screenshots, "screenshots");
         push!(json patch.tags, "tags");
+        push!(int patch.steam_app_id, "steam_app_id");
 
         if sets.is_empty() { return Ok(()); }
         values.push(rusqlite::types::Value::Text(game_id.to_string()));
@@ -763,5 +800,85 @@ impl Database {
             rusqlite::params![emulator_name, setting_key],
         )?;
         Ok(())
+    }
+
+    // ── Steam integration (REQ-021) ────────────────────────────────────────
+
+    pub fn save_steam_data(&self, game_id: &str, data: &crate::models::steam::SteamGameData) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let categories_json = serde_json::to_string(&data.categories).unwrap_or_default();
+        let languages_json = serde_json::to_string(&data.languages).unwrap_or_default();
+        let reviews_json = serde_json::to_string(&data.reviews).unwrap_or_default();
+        conn.execute(
+            "INSERT OR REPLACE INTO game_steam_data
+             (game_id, steam_app_id, review_score_desc, review_positive, review_negative,
+              short_description, categories, release_date, languages,
+              requirements_min, requirements_rec, dlc_count, achievements_count,
+              reviews_json, fetched_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, datetime('now'))",
+            rusqlite::params![
+                game_id,
+                data.steam_app_id,
+                data.review_score_desc,
+                data.review_positive,
+                data.review_negative,
+                data.short_description,
+                categories_json,
+                data.release_date,
+                languages_json,
+                data.requirements_min,
+                data.requirements_rec,
+                data.dlc_count,
+                data.achievements_count,
+                reviews_json,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_steam_data(&self, game_id: &str) -> SqlResult<Option<crate::models::steam::SteamGameData>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT steam_app_id, review_score_desc, review_positive, review_negative,
+                    short_description, categories, release_date, languages,
+                    requirements_min, requirements_rec, dlc_count, achievements_count,
+                    reviews_json
+             FROM game_steam_data WHERE game_id = ?1"
+        )?;
+        match stmt.query_row([game_id], |row| {
+            let categories_json: Option<String> = row.get(5)?;
+            let categories: Vec<String> = categories_json.as_deref()
+                .and_then(|j| serde_json::from_str(j).ok())
+                .unwrap_or_default();
+            let languages_json: Option<String> = row.get(7)?;
+            let languages: Vec<String> = languages_json.as_deref()
+                .and_then(|j| serde_json::from_str(j).ok())
+                .unwrap_or_default();
+            let reviews_json_str: Option<String> = row.get(12)?;
+            let reviews: Vec<crate::models::steam::SteamReview> = reviews_json_str.as_deref()
+                .and_then(|j| serde_json::from_str(j).ok())
+                .unwrap_or_default();
+            let app_id: u32 = row.get::<_, i64>(0)? as u32;
+            Ok(crate::models::steam::SteamGameData {
+                steam_app_id: app_id,
+                review_score_desc: row.get(1)?,
+                review_positive: row.get::<_, i64>(2)? as u32,
+                review_negative: row.get::<_, i64>(3)? as u32,
+                short_description: row.get(4)?,
+                categories,
+                release_date: row.get(6)?,
+                languages,
+                requirements_min: row.get(8)?,
+                requirements_rec: row.get(9)?,
+                dlc_count: row.get::<_, i64>(10)? as u32,
+                achievements_count: row.get::<_, i64>(11)? as u32,
+                reviews,
+                store_url: format!("https://store.steampowered.com/app/{}", app_id),
+            })
+        }) {
+            Ok(data) => Ok(Some(data)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e),
+        }
     }
 }

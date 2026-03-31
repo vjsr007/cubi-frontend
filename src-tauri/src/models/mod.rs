@@ -5,6 +5,7 @@ pub mod media;
 pub mod scraper;
 pub mod input_mapping;
 pub mod emulator_settings;
+pub mod steam;
 
 pub use config::*;
 pub use game::*;

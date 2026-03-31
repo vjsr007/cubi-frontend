@@ -7,10 +7,9 @@ import { GameCard } from './GameCard';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import type { GamepadButton } from '../../hooks/useGamepad';
 
-const COLUMNS = 6;
-
 export function GameGrid() {
   const store = useLibraryStore();
+  const COLUMNS = store.gridColumns;
   const { showToast, navigateTo } = useUiStore();
   const { t } = useI18nStore();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -27,8 +26,8 @@ export function GameGrid() {
     switch (btn) {
       case 'RIGHT': store.setFocusedGameIndex(Math.min(cur + 1, n - 1)); break;
       case 'LEFT':  store.setFocusedGameIndex(Math.max(cur - 1, 0)); break;
-      case 'DOWN':  store.setFocusedGameIndex(Math.min(cur + COLUMNS, n - 1)); break;
-      case 'UP':    store.setFocusedGameIndex(Math.max(cur - COLUMNS, 0)); break;
+      case 'DOWN':  store.setFocusedGameIndex(Math.min(cur + useLibraryStore.getState().gridColumns, n - 1)); break;
+      case 'UP':    store.setFocusedGameIndex(Math.max(cur - useLibraryStore.getState().gridColumns, 0)); break;
       case 'A': {
         const game = useLibraryStore.getState().getFilteredGames()[cur];
         if (game) navigateTo('game-detail', game.id);

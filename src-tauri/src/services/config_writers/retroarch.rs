@@ -119,6 +119,8 @@ impl EmulatorConfigWriter for RetroArchConfigWriter {
         }
         // V-Sync always false
         lines.push("video_vsync = \"false\"".to_string());
+        // Prevent pause when window loses focus (critical for frontends)
+        lines.push("pause_nonactive = \"false\"".to_string());
         if let Some(v) = settings.get("aspect_ratio") {
             lines.push(format!("aspect_ratio_index = \"{}\"", Self::aspect_ratio_value(v)));
         }

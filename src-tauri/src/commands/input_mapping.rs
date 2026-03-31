@@ -324,6 +324,65 @@ pub fn get_retroarch_cfg_path() -> Result<serde_json::Value, String> {
     }))
 }
 
+/// Removes all input_player1_* lines written by Cubi from retroarch.cfg and
+/// re-enables input_autoconfig_enable so RetroArch handles the controller itself.
+/// This is the "factory reset" for the input config.
+#[tauri::command]
+pub fn reset_retroarch_input() -> Result<String, String> {
+    let cfg_path = resolve_retroarch_cfg_path()?;
+    if !cfg_path.exists() {
+        return Err(format!("retroarch.cfg not found at {}", cfg_path.display()));
+    }
+    let existing = std::fs::read_to_string(&cfg_path)
+        .map_err(|e| format!("Read cfg: {}", e))?;
+
+    let kept: String = existing
+        .lines()
+        .filter(|l| {
+            let t = l.trim_start();
+            !t.starts_with("input_player1_b_btn")
+                && !t.starts_with("input_player1_a_btn")
+                && !t.starts_with("input_player1_x_btn")
+                && !t.starts_with("input_player1_y_btn")
+                && !t.starts_with("input_player1_b_axis")
+                && !t.starts_with("input_player1_a_axis")
+                && !t.starts_with("input_player1_x_axis")
+                && !t.starts_with("input_player1_y_axis")
+                && !t.starts_with("input_player1_l_btn")
+                && !t.starts_with("input_player1_r_btn")
+                && !t.starts_with("input_player1_l2")
+                && !t.starts_with("input_player1_r2")
+                && !t.starts_with("input_player1_l3")
+                && !t.starts_with("input_player1_r3")
+                && !t.starts_with("input_player1_start")
+                && !t.starts_with("input_player1_select")
+                && !t.starts_with("input_player1_up")
+                && !t.starts_with("input_player1_down")
+                && !t.starts_with("input_player1_left")
+                && !t.starts_with("input_player1_right")
+                && !t.starts_with("input_player1_joypad_index")
+                && !t.starts_with("input_enable_hotkey")
+                && !t.starts_with("input_save_state")
+                && !t.starts_with("input_load_state")
+                && !t.starts_with("input_toggle_fast_forward")
+                && !t.starts_with("input_screenshot")
+                && !t.starts_with("input_joypad_driver")
+                && !t.starts_with("input_autoconfig_enable")
+                && !t.starts_with("# RetroArch input config")
+                && !t.starts_with("# Generated:")
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    // Re-enable autoconfig so RetroArch manages the controller automatically
+    let mut out = kept.trim_end().to_string();
+    if !out.is_empty() { out.push('\n'); }
+    out.push_str("\ninput_autoconfig_enable = \"true\"\n");
+
+    std::fs::write(&cfg_path, out).map_err(|e| format!("Write cfg: {}", e))?;
+    Ok(cfg_path.to_string_lossy().to_string())
+}
+
 fn resolve_emulator_config_path(emulator_name: &str) -> Result<(std::path::PathBuf, Option<&'static str>), String> {
     match emulator_name.to_lowercase().as_str() {
         "retroarch" => {

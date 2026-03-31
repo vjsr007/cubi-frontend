@@ -9,12 +9,14 @@ import { GameBoxCase } from '../components/library/GameBoxCase';
 import { VideoPreview } from '../components/media/VideoPreview';
 import { SystemLogo } from '../components/common/SystemLogo';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { MetadataEditor } from '../components/editor/MetadataEditor';
 
 export function GameDetailPage() {
   const { selectedGameId, navigateTo, showToast } = useUiStore();
-  const { launchGame, games, toggleFavorite } = useLibraryStore();
+  const { launchGame, games, toggleFavorite, launchingGameId } = useLibraryStore();
   const { t } = useI18nStore();
   const [boxFlipped, setBoxFlipped] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const game = games.find((g) => g.id === selectedGameId);
   const { data: media, isLoading: mediaLoading } = useGameMedia(game?.id ?? null);
@@ -27,19 +29,29 @@ export function GameDetailPage() {
     publisher: game?.publisher,
   });
 
+  const isLaunching = !!launchingGameId;
+
   const handleLaunch = useCallback(() => {
-    if (game) launchGame(game.id).catch((err) => showToast(String(err), 'error'));
-  }, [game, launchGame, showToast]);
+    if (game && !launchingGameId) launchGame(game.id).catch((err) => showToast(String(err), 'error'));
+  }, [game, launchGame, launchingGameId, showToast]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); navigateTo('library'); }
+      // Skip shortcuts when typing in inputs during edit mode
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        e.preventDefault();
+        if (editMode) setEditMode(false);
+        else navigateTo('library');
+      }
       if (e.key === 'Enter') { e.preventDefault(); handleLaunch(); }
       if (e.key === ' ') { e.preventDefault(); setBoxFlipped((f) => !f); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleLaunch, navigateTo]);
+  }, [handleLaunch, navigateTo, editMode]);
 
   if (!game) {
     return (
@@ -63,19 +75,36 @@ export function GameDetailPage() {
       style={{ flex: 1, overflowY: 'auto', height: '100%', background: 'var(--color-background)' }}
     >
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '28px 32px 48px' }}>
-        {/* Back button */}
-        <button
-          onClick={() => navigateTo('library')}
-          style={{
-            background: 'none', border: 'none', color: 'var(--color-text-muted)',
-            cursor: 'pointer', fontSize: 13, marginBottom: 24, padding: '4px 0',
-            display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.15s',
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; }}
-        >
-          {t('settings.back')}
-        </button>
+        {/* Top bar: Back + Edit toggle */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <button
+            onClick={() => { if (editMode) setEditMode(false); else navigateTo('library'); }}
+            style={{
+              background: 'none', border: 'none', color: 'var(--color-text-muted)',
+              cursor: 'pointer', fontSize: 13, padding: '4px 0',
+              display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; }}
+          >
+            {t('settings.back')}
+          </button>
+
+          <button
+            onClick={() => setEditMode((m) => !m)}
+            style={{
+              background: editMode ? 'var(--color-primary)' : 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8, padding: '6px 16px', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+              color: editMode ? '#fff' : 'var(--color-text-muted)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+          >
+            {editMode ? t('common.close') : t('editor.editMode')}
+          </button>
+        </div>
 
         <div style={{ display: 'flex', gap: 40, alignItems: 'flex-start' }}>
           {/* ── Left Column: 3D Box + Video ── */}
@@ -217,23 +246,42 @@ export function GameDetailPage() {
             {/* Launch button */}
             <button
               onClick={handleLaunch}
+              disabled={isLaunching}
               style={{
-                background: 'var(--color-primary)', color: '#fff', border: 'none',
+                background: isLaunching ? 'var(--color-surface-2)' : 'var(--color-primary)',
+                color: '#fff', border: 'none',
                 borderRadius: 10, padding: '14px 36px', fontSize: 16, fontWeight: 700,
-                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10,
-                boxShadow: '0 4px 16px rgba(124,58,237,0.3)',
-                transition: 'transform 0.1s, box-shadow 0.1s', marginBottom: 24,
+                cursor: isLaunching ? 'not-allowed' : 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                boxShadow: isLaunching ? 'none' : '0 4px 16px rgba(124,58,237,0.3)',
+                transition: 'transform 0.1s, box-shadow 0.1s, background 0.2s', marginBottom: 24,
+                opacity: isLaunching ? 0.8 : 1,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 24px rgba(124,58,237,0.45)';
+                if (!isLaunching) {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 24px rgba(124,58,237,0.45)';
+                }
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(124,58,237,0.3)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = isLaunching ? 'none' : '0 4px 16px rgba(124,58,237,0.3)';
               }}
             >
-              ▶ {t('game.launch')}
+              {isLaunching ? (
+                <>
+                  <div style={{
+                    width: 16, height: 16,
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTopColor: '#fff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.6s linear infinite',
+                  }} />
+                  {t('game.launching')}
+                </>
+              ) : (
+                <>▶ {t('game.launch')}</>
+              )}
             </button>
 
             {/* Favorite toggle */}
@@ -263,13 +311,27 @@ export function GameDetailPage() {
             </div>
 
             {/* Keyboard shortcuts hint */}
-            <div style={{ marginTop: 20, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <KbdHint keys="Enter" action={t('game.launch')} />
-              <KbdHint keys="Space" action={t('game.flipBox')} />
-              <KbdHint keys="Esc" action={t('common.back')} />
-            </div>
+            {!editMode && (
+              <div style={{ marginTop: 20, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <KbdHint keys="Enter" action={t('game.launch')} />
+                <KbdHint keys="Space" action={t('game.flipBox')} />
+                <KbdHint keys="Esc" action={t('common.back')} />
+              </div>
+            )}
           </motion.div>
         </div>
+
+        {/* ── Metadata Editor Panel ── */}
+        {editMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ marginTop: 32, borderTop: '1px solid var(--color-border)', paddingTop: 24 }}
+          >
+            <MetadataEditor game={game} media={media ?? null} />
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );

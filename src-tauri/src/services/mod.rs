@@ -24,6 +24,7 @@ pub mod youtube_service;
 pub mod web_scraper;
 pub mod search_service;
 pub mod pc_metadata_orchestrator;
+pub mod media_import_service;
 
 /// Normalize a game title for fuzzy matching:
 /// lowercase, remove punctuation, collapse whitespace.

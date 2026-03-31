@@ -9,3 +9,4 @@ pub mod rom_paths;
 pub mod input_mapping;
 pub mod emulator_settings;
 pub mod pc_scraper;
+pub mod metadata_editor;

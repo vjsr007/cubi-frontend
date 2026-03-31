@@ -5,8 +5,15 @@ use std::path::Path;
 use tokio::time::{sleep, Duration};
 
 const YT_SEARCH: &str = "https://www.googleapis.com/youtube/v3/search";
-const INVIDIOUS: &str = "https://vid.puffyan.us/api/v1/search";
-const UA: &str = "cubi-frontend/0.1";
+const INVIDIOUS_INSTANCES: &[&str] = &[
+    "https://invidious.fdn.fr/api/v1/search",
+    "https://iv.ggtyler.dev/api/v1/search",
+    "https://invidious.perennialte.ch/api/v1/search",
+    "https://invidious.privacyredirect.com/api/v1/search",
+    "https://vid.puffyan.us/api/v1/search",
+    "https://inv.nadeko.net/api/v1/search",
+];
+const UA: &str = "cubi-frontend/0.5";
 
 #[derive(Debug, Clone)]
 pub struct VideoResult {
@@ -75,22 +82,29 @@ async fn search_invidious(query: &str) -> Result<Option<VideoResult>, String> {
     let client = build_client()?;
     let encoded = percent_encoding::utf8_percent_encode(query, percent_encoding::NON_ALPHANUMERIC)
         .to_string();
-    let url = format!("{}?q={}&type=video&fields=videoId,title", INVIDIOUS, encoded);
-    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
-    if !resp.status().is_success() {
-        return Ok(None); // Non-fatal
-    }
-    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
-    let first = json.as_array().and_then(|a| a.first());
-    if let Some(item) = first {
-        let video_id = item["videoId"].as_str().unwrap_or("").to_string();
-        let title = item["title"].as_str().unwrap_or("").to_string();
-        if !video_id.is_empty() {
-            return Ok(Some(VideoResult {
-                url: format!("https://www.youtube.com/watch?v={}", video_id),
-                video_id,
-                title,
-            }));
+
+    for instance in INVIDIOUS_INSTANCES {
+        let url = format!("{}?q={}&type=video&fields=videoId,title", instance, encoded);
+        let resp = match client.get(&url).send().await {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        if !resp.status().is_success() { continue; }
+        let json: serde_json::Value = match resp.json().await {
+            Ok(j) => j,
+            Err(_) => continue,
+        };
+        let first = json.as_array().and_then(|a| a.first());
+        if let Some(item) = first {
+            let video_id = item["videoId"].as_str().unwrap_or("").to_string();
+            let title = item["title"].as_str().unwrap_or("").to_string();
+            if !video_id.is_empty() {
+                return Ok(Some(VideoResult {
+                    url: format!("https://www.youtube.com/watch?v={}", video_id),
+                    video_id,
+                    title,
+                }));
+            }
         }
     }
     Ok(None)

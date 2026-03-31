@@ -243,6 +243,21 @@ export interface SystemMedia {
   marquee: string | null;
 }
 
+// ── Metadata Editor (REQ-018) ────────────────────────────────────────
+
+export interface MediaImportResult {
+  saved_path: string;
+  media_type: string;
+}
+
+export interface YoutubeSearchResult {
+  video_id: string;
+  title: string;
+  url: string;
+}
+
+export type EditableMediaType = 'box_art' | 'hero_art' | 'logo' | 'background_art' | 'screenshot' | 'video';
+
 // ── ROM Path Overrides ────────────────────────────────────────────────
 
 export interface SystemDefInfo {

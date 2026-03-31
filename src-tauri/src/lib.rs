@@ -66,6 +66,7 @@ pub fn run() {
             commands::input_mapping::write_profile_to_retroarch,
             commands::input_mapping::write_profile_to_emulator,
             commands::input_mapping::get_retroarch_cfg_path,
+            commands::input_mapping::reset_retroarch_input,
             commands::input_mapping::get_all_actions,
             commands::input_mapping::get_button_label,
             commands::emulator_settings::get_setting_definitions,
@@ -80,6 +81,12 @@ pub fn run() {
             commands::pc_scraper::save_pc_metadata_config,
             commands::pc_scraper::scrape_single_pc_game,
             commands::pc_scraper::run_pc_metadata_job,
+            commands::metadata_editor::update_game_metadata,
+            commands::metadata_editor::import_media_file,
+            commands::metadata_editor::import_media_url,
+            commands::metadata_editor::delete_game_media,
+            commands::metadata_editor::search_youtube,
+            commands::metadata_editor::download_youtube_video,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

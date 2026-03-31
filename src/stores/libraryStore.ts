@@ -12,11 +12,13 @@ interface LibraryState {
   sortField: SortField;
   sortOrder: SortOrder;
   viewMode: ViewMode;
+  gridColumns: number;
   showFavoritesOnly: boolean;
 
   isLoadingSystems: boolean;
   isLoadingGames: boolean;
   isScanning: boolean;
+  launchingGameId: string | null;
   scanProgress: string;
   error: string | null;
 
@@ -27,6 +29,7 @@ interface LibraryState {
   setSortField: (field: SortField) => void;
   setSortOrder: (order: SortOrder) => void;
   setViewMode: (mode: ViewMode) => void;
+  setGridColumns: (cols: number) => void;
   toggleFavoritesOnly: () => void;
   toggleFavorite: (gameId: string) => Promise<void>;
   scanLibrary: (dataRoot: string) => Promise<void>;
@@ -44,11 +47,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   sortField: 'title',
   sortOrder: 'asc',
   viewMode: 'grid',
+  gridColumns: 6,
   showFavoritesOnly: false,
 
   isLoadingSystems: false,
   isLoadingGames: false,
   isScanning: false,
+  launchingGameId: null,
   scanProgress: '',
   error: null,
 
@@ -88,6 +93,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setSortField: (field) => set({ sortField: field }),
   setSortOrder: (order) => set({ sortOrder: order }),
   setViewMode: (mode) => set({ viewMode: mode }),
+  setGridColumns: (cols) => set({ gridColumns: Math.max(3, Math.min(10, cols)) }),
   toggleFavoritesOnly: () => set((s) => ({ showFavoritesOnly: !s.showFavoritesOnly })),
 
   toggleFavorite: async (gameId: string) => {
@@ -117,6 +123,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   launchGame: async (gameId: string) => {
+    if (get().launchingGameId) return;
+    set({ launchingGameId: gameId });
     try {
       await api.launchGame(gameId);
       const game = await api.getGame(gameId);
@@ -128,6 +136,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (e) {
       set({ error: String(e) });
       throw e;
+    } finally {
+      set({ launchingGameId: null });
     }
   },
 

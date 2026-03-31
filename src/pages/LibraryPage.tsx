@@ -5,11 +5,12 @@ import { useUiStore } from '../stores/uiStore';
 import { useI18nStore } from '../stores/i18nStore';
 import { SystemList } from '../components/library/SystemList';
 import { GameGrid } from '../components/library/GameGrid';
+import { GameList } from '../components/library/GameList';
 import { FilterBar } from '../components/library/FilterBar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
 export function LibraryPage() {
-  const { systems, loadSystems, isScanning, scanProgress, scanLibrary } = useLibraryStore();
+  const { systems, loadSystems, isScanning, scanProgress, scanLibrary, viewMode } = useLibraryStore();
   const { config } = useConfigStore();
   const { navigateTo, showToast } = useUiStore();
   const { t } = useI18nStore();
@@ -76,7 +77,7 @@ export function LibraryPage() {
       <SystemList />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <FilterBar />
-        <GameGrid />
+        {viewMode === 'list' ? <GameList /> : <GameGrid />}
       </div>
     </div>
   );

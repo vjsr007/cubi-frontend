@@ -7,7 +7,9 @@ import type {
   InputProfile, ButtonBinding, SystemProfileAssignment, ActionInfo,
   SettingDefinition, EmulatorSettingValue, ConfigWriterInfo,
   PcMetadataConfig, PcToolsStatus, PcScrapeResult,
+  MediaImportResult, YoutubeSearchResult,
 } from '../types';
+import type { GameInfoPatch } from '../types/editor';
 
 export const api = {
   // Config
@@ -104,6 +106,8 @@ export const api = {
     invoke<string>('write_profile_to_emulator', { profileId, emulatorName }),
   getRetroarchCfgPath: () =>
     invoke<{ path: string; exists: boolean }>('get_retroarch_cfg_path'),
+  resetRetroarchInput: () =>
+    invoke<string>('reset_retroarch_input'),
   getAllActions: () => invoke<ActionInfo[]>('get_all_actions'),
   getButtonLabel: (buttonIndex: number) => invoke<string>('get_button_label', { buttonIndex }),
 
@@ -127,4 +131,18 @@ export const api = {
   savePcMetadataConfig: (pcMetadata: PcMetadataConfig) => invoke<void>('save_pc_metadata_config', { pcMetadata }),
   scrapeSinglePcGame: (gameId: string) => invoke<PcScrapeResult>('scrape_single_pc_game', { gameId }),
   runPcMetadataJob: (gameIds?: string[]) => invoke<PcScrapeResult[]>('run_pc_metadata_job', { gameIds }),
+
+  // Metadata Editor (REQ-018)
+  updateGameMetadata: (gameId: string, patch: GameInfoPatch) =>
+    invoke<GameInfo>('update_game_metadata', { gameId, patch }),
+  importMediaFile: (gameId: string, sourcePath: string, mediaType: string) =>
+    invoke<MediaImportResult>('import_media_file', { gameId, sourcePath, mediaType }),
+  importMediaUrl: (gameId: string, url: string, mediaType: string) =>
+    invoke<MediaImportResult>('import_media_url', { gameId, url, mediaType }),
+  deleteGameMedia: (gameId: string, mediaType: string) =>
+    invoke<void>('delete_game_media', { gameId, mediaType }),
+  searchYoutube: (query: string) =>
+    invoke<YoutubeSearchResult[]>('search_youtube', { query }),
+  downloadYoutubeVideo: (gameId: string, youtubeUrl: string) =>
+    invoke<MediaImportResult>('download_youtube_video', { gameId, youtubeUrl }),
 };

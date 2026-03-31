@@ -37,6 +37,8 @@ export interface LocaleStrings {
     sortBy: string;
     viewGrid: string;
     viewList: string;
+    zoomIn: string;
+    zoomOut: string;
     loadingGames: string;
   };
   filters: {
@@ -51,6 +53,7 @@ export interface LocaleStrings {
   };
   game: {
     launch: string;
+    launching: string;
     developer: string;
     publisher: string;
     year: string;
@@ -103,6 +106,49 @@ export interface LocaleStrings {
     no: string;
     cancel: string;
     confirm: string;
+  };
+  editor: {
+    editMode: string;
+    save: string;
+    cancel: string;
+    discard: string;
+    saving: string;
+    title: string;
+    description: string;
+    developer: string;
+    publisher: string;
+    year: string;
+    genre: string;
+    players: string;
+    rating: string;
+    tags: string;
+    website: string;
+    addTag: string;
+    removeTag: string;
+    mediaGallery: string;
+    boxArt: string;
+    heroArt: string;
+    logo: string;
+    backgroundArt: string;
+    screenshots: string;
+    video: string;
+    uploadFile: string;
+    importUrl: string;
+    deleteMedia: string;
+    replaceMedia: string;
+    urlPlaceholder: string;
+    importing: string;
+    importSuccess: string;
+    importError: string;
+    youtubeSearch: string;
+    youtubeSearchPlaceholder: string;
+    youtubeDownload: string;
+    youtubeDownloading: string;
+    youtubeNoResults: string;
+    ytdlpRequired: string;
+    noMedia: string;
+    unsavedChanges: string;
+    confirmDiscard: string;
   };
   scraper: {
     title: string;

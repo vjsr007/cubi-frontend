@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::io::Write;
 use serde::{Deserialize, Serialize};
 use crate::models::{GameInfo, config::EmulatorOverride};
 
@@ -313,11 +314,17 @@ pub async fn launch_game(
                 } else {
                     exe_dir.join("cores").join(format!("{}.dll", core_name))
                 };
-                vec![
+                let mut launch_args = vec![
                     "-L".to_string(),
                     core_path.to_string_lossy().to_string(),
                     rom.clone(),
-                ]
+                ];
+                // Create a temp override config to prevent pause when RA loses focus
+                if let Ok(override_path) = write_retroarch_override_cfg(&game.system_id) {
+                    launch_args.push("--appendconfig".to_string());
+                    launch_args.push(override_path);
+                }
+                launch_args
             }
         }
     };
@@ -348,6 +355,32 @@ fn shell_split(s: &str) -> Vec<String> {
     }
     if !current.is_empty() { args.push(current); }
     args
+}
+
+/// Write a RetroArch override config with global + per-system settings.
+/// Returns the path to the generated file.
+fn write_retroarch_override_cfg(system_id: &str) -> Result<String, String> {
+    let dir = std::env::temp_dir().join("cubi-frontend");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create temp dir: {e}"))?;
+    let cfg_path = dir.join("retroarch_override.cfg");
+    let mut f = std::fs::File::create(&cfg_path)
+        .map_err(|e| format!("Failed to create override cfg: {e}"))?;
+    writeln!(f, "# Cubi Frontend — RetroArch launch overrides")
+        .and_then(|_| writeln!(f, "pause_nonactive = \"false\""))
+        .and_then(|_| writeln!(f, "video_vsync = \"false\""))
+        .map_err(|e| format!("Failed to write override cfg: {e}"))?;
+
+    // N64: mupen64plus_next GLideN64 plugin requires an OpenGL driver.
+    // Force glcore so it doesn't blank-screen when RA defaults to vulkan/d3d.
+    // Also force analog_dpad_mode=0 so the left stick sends true analog data
+    // to the N64 control stick (mode ≠ 0 converts analog→dpad, breaking movement).
+    if system_id == "n64" {
+        writeln!(f, "video_driver = \"glcore\"")
+            .and_then(|_| writeln!(f, "input_player1_analog_dpad_mode = \"0\""))
+            .map_err(|e| format!("Failed to write N64 override: {e}"))?;
+    }
+
+    Ok(cfg_path.to_string_lossy().to_string())
 }
 
 /// Launch a PC game: protocol URL (Steam/Epic) or direct exe.

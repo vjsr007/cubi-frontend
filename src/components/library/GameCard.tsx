@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toImageSrc } from '../../lib/media';
 import { useGameMedia, bestImage } from '../../hooks/useMedia';
+import { useLibraryStore } from '../../stores/libraryStore';
 import { VideoPreview } from '../media/VideoPreview';
 import type { GameInfo } from '../../types';
 
@@ -17,6 +18,8 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const launchingGameId = useLibraryStore((s) => s.launchingGameId);
+  const isLaunching = launchingGameId === game.id;
 
   // Fetch rich media — only when hovered or focused for performance
   const { data: media } = useGameMedia(hovered || isFocused ? game.id : null);
@@ -73,26 +76,38 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
           </div>
         )}
 
-        {/* Hover overlay with play button */}
-        {hovered && (
+        {/* Hover overlay with play button / launching spinner */}
+        {(hovered || isLaunching) && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.35)',
+            background: isLaunching ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 10,
           }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); onLaunch(); }}
-              style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: 'var(--color-primary)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: 18,
-              }}
-            >
-              ▶
-            </button>
+            {isLaunching ? (
+              <div style={{
+                width: 36, height: 36,
+                border: '3px solid rgba(255,255,255,0.2)',
+                borderTopColor: 'var(--color-primary)',
+                borderRadius: '50%',
+                animation: 'spin 0.6s linear infinite',
+              }} />
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); onLaunch(); }}
+                disabled={!!launchingGameId}
+                style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  background: launchingGameId ? 'var(--color-surface-2)' : 'var(--color-primary)',
+                  border: 'none', cursor: launchingGameId ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 18,
+                  opacity: launchingGameId ? 0.5 : 1,
+                }}
+              >
+                ▶
+              </button>
+            )}
           </div>
         )}
 

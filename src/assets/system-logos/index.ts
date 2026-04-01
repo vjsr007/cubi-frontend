@@ -44,8 +44,17 @@ import cps3 from './cps3.svg';
 import amiga from './amiga.svg';
 import atarist from './atarist.svg';
 import atarilynx from './atarilynx.svg';
+import atarijaguar from './atarijaguar.svg';
 import msx from './msx.svg';
 import c64 from './c64.svg';
+import fds from './fds.svg';
+import satellaview from './satellaview.svg';
+import gw from './gw.svg';
+import model2 from './model2.svg';
+import supermodel from './supermodel.svg';
+import scummvm from './scummvm.svg';
+import threeDoLogo from './3do.svg';
+import megadrive from './megadrive.svg';
 
 /**
  * Maps system IDs to their SVG logo URLs (Vite static imports).
@@ -98,6 +107,15 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   amiga,
   atarist,
   atarilynx,
+  atarijaguar,
   msx,
   c64,
+  fds,
+  satellaview,
+  gw,
+  model2,
+  supermodel,
+  scummvm,
+  '3do': threeDoLogo,
+  megadrive,
 };

@@ -18,6 +18,7 @@ const SYSTEMS = [
   { id: 'nds',         name: 'NDS',           full_name: 'Nintendo DS',                       extensions: ['.nds'],        game_count: 19, rom_path: 'E:\\Emulation\\roms\\nds' },
   { id: 'gc',          name: 'GC',            full_name: 'GameCube',                          extensions: ['.iso','.gcz'], game_count: 15, rom_path: 'E:\\Emulation\\roms\\gc' },
   { id: 'wii',         name: 'Wii',           full_name: 'Nintendo Wii',                      extensions: ['.wbfs'],       game_count: 12, rom_path: 'E:\\Emulation\\roms\\wii' },
+  { id: 'wiiu',        name: 'Wii U',         full_name: 'Nintendo Wii U',                    extensions: ['.rpx','.wux'], game_count: 6,  rom_path: 'E:\\Emulation\\roms\\wiiu' },
   { id: 'switch',      name: 'Switch',        full_name: 'Nintendo Switch',                   extensions: ['.nsp','.xci'], game_count: 8,  rom_path: 'E:\\Emulation\\roms\\switch' },
   { id: 'genesis',     name: 'Genesis',       full_name: 'Sega Genesis',                      extensions: ['.md','.bin'],  game_count: 35, rom_path: 'E:\\Emulation\\roms\\genesis' },
   { id: 'saturn',      name: 'Saturn',        full_name: 'Sega Saturn',                       extensions: ['.cue','.iso'], game_count: 9,  rom_path: 'E:\\Emulation\\roms\\saturn' },
@@ -44,6 +45,8 @@ const GAME_TITLES = {
   genesis: ['Sonic the Hedgehog', 'Streets of Rage 2', 'Gunstar Heroes', 'Phantasy Star IV', 'Shining Force II'],
   dreamcast: ['Sonic Adventure', 'Shenmue', 'Jet Set Radio', 'Soul Calibur', 'Power Stone'],
   gc: ['Metroid Prime', 'Wind Waker', 'Resident Evil 4', 'Tales of Symphonia', 'F-Zero GX'],
+  wii: ['Wii Sports', 'Super Mario Galaxy', 'Zelda: Skyward Sword', 'Metroid Prime 3', 'Xenoblade Chronicles'],
+  wiiu: ['Super Mario 3D World', 'Splatoon', 'Mario Kart 8', 'Zelda: Breath of the Wild', 'Bayonetta 2', 'Pikmin 3'],
   switch: ['Zelda: TOTK', 'Mario Odyssey', 'Metroid Dread', 'Fire Emblem: Three Houses', 'Xenoblade 3'],
   arcade: ['Street Fighter II', 'Metal Slug', 'King of Fighters \'98', 'Pac-Man', 'Galaga', 'Donkey Kong', 'Space Invaders', 'Bubble Bobble'],
   pc: ['Cyberpunk 2077', 'Elden Ring', 'Baldur\'s Gate 3', 'Hades', 'Celeste', 'Hollow Knight', 'Stardew Valley', 'Disco Elysium'],
@@ -89,6 +92,7 @@ const EMULATOR_INFO = [
   { system_id: 'ps3',       system_name: 'PS3',        emulator_name: 'RPCS3',     detected_path: 'C:\\emudeck\\Emulators\\RPCS3\\rpcs3.exe',         is_retroarch: false },
   { system_id: 'gc',        system_name: 'GameCube',   emulator_name: 'Dolphin',   detected_path: 'C:\\emudeck\\Emulators\\Dolphin\\Dolphin.exe',     is_retroarch: false },
   { system_id: 'wii',       system_name: 'Wii',        emulator_name: 'Dolphin',   detected_path: 'C:\\emudeck\\Emulators\\Dolphin\\Dolphin.exe',     is_retroarch: false },
+  { system_id: 'wiiu',      system_name: 'Wii U',      emulator_name: 'Cemu',      detected_path: 'C:\\emudeck\\Emulators\\Cemu\\Cemu.exe',           is_retroarch: false },
   { system_id: 'switch',    system_name: 'Switch',     emulator_name: 'Ryujinx',   detected_path: 'C:\\emudeck\\Emulators\\Ryujinx\\Ryujinx.exe',     is_retroarch: false },
   { system_id: 'genesis',   system_name: 'Genesis',    emulator_name: 'RetroArch', detected_path: 'C:\\emudeck\\Emulators\\RetroArch\\retroarch.exe', is_retroarch: true, default_core: 'genesis_plus_gx' },
   { system_id: 'dreamcast', system_name: 'Dreamcast',  emulator_name: 'RetroArch', detected_path: 'C:\\emudeck\\Emulators\\RetroArch\\retroarch.exe', is_retroarch: true, default_core: 'flycast' },
@@ -275,4 +279,4 @@ window.__TAURI_INTERNALS__ = {
 // Also mock the plugin:shell open function
 window.__TAURI_PLUGIN_INTERNALS__ = {};
 
-console.log('[MOCK] Tauri API mock injected — 21 systems, ' + ALL_GAMES.length + ' games');
+console.log('[MOCK] Tauri API mock injected — ' + SYSTEMS.length + ' systems, ' + ALL_GAMES.length + ' games');

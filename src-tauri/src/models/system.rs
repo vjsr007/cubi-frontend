@@ -90,8 +90,8 @@ pub fn get_system_registry() -> Vec<SystemDef> {
             id: "wiiu",
             name: "Wii U",
             full_name: "Nintendo Wii U",
-            extensions: &["rpx", "wud", "wux", "iso"],
-            folder_names: &["wiiu", "wii-u"],
+            extensions: &["rpx", "wud", "wux", "wua", "iso"],
+            folder_names: &["wiiu", "wii-u", "wii u"],
         },
         SystemDef {
             id: "switch",

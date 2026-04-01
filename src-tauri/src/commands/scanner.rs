@@ -76,7 +76,7 @@ pub async fn scan_library(
         let mut games: Vec<GameInfo> = Vec::new();
 
         for file_entry in WalkDir::new(&path)
-            .max_depth(2)
+            .max_depth(4)
             .into_iter()
             .filter_map(|e| e.ok())
         {

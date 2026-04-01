@@ -324,13 +324,13 @@ pub fn get_retroarch_core(system_id: &str) -> &'static str {
         "pcengine"     => "mednafen_pce_libretro",
         "gamegear"     => "genesis_plus_gx_libretro",
         "ngpc"         => "mednafen_ngp_libretro",
-        "colecovision" => "gearcoleco_libretro",
+        "colecovision" => "bluemsx_libretro",
         "msx"          => "fmsx_libretro",
         "c64"          => "vice_x64_libretro",
         "wswan"        => "mednafen_wswan_libretro",
         "3ds"          => "citra_libretro",
         "wiiu"         => "hiyacfw_libretro",
-        "fds"          => "mesen_libretro",
+        "fds"          => "fceumm_libretro",
         "satellaview"  => "snes9x_libretro",
         "sg1000"       => "genesis_plus_gx_libretro",
         "intellivision"=> "freeintv_libretro",
@@ -426,6 +426,12 @@ pub fn build_launch_command(
                 } else {
                     exe_dir.join("cores").join(format!("{}.dll", core_name))
                 };
+                if !core_path.exists() {
+                    return Err(format!(
+                        "RetroArch core not found: '{}'. Install the core from RetroArch > Online Updater > Core Downloader.",
+                        core_path.display()
+                    ));
+                }
                 let mut launch_args = vec![
                     "-L".to_string(),
                     core_path.to_string_lossy().to_string(),

@@ -21,8 +21,8 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
   const launchingGameId = useLibraryStore((s) => s.launchingGameId);
   const isLaunching = launchingGameId === game.id;
 
-  // Fetch rich media — only when hovered or focused for performance
-  const { data: media } = useGameMedia(hovered || isFocused ? game.id : null);
+  // Always fetch media so cover art is visible; video plays only on hover/focus
+  const { data: media } = useGameMedia(game.id);
 
   const showVideo = (hovered || isFocused) && !!media?.video;
 

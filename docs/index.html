@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cubi Frontend — Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    h1 { font-size: 2rem; margin-bottom: 8px; }
+    .subtitle { color: #8b949e; margin-bottom: 32px; font-size: 1.1rem; }
+    video {
+      width: 100%;
+      max-width: 960px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .links {
+      margin-top: 24px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .links a {
+      color: #58a6ff;
+      text-decoration: none;
+      padding: 8px 16px;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+    .links a:hover { border-color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <h1>Cubi Frontend</h1>
+  <p class="subtitle">Multiplayer emulator frontend — v0.7.0 Demo</p>
+
+  <video controls autoplay muted loop playsinline poster="poster.png">
+    <source src="cubi-demo-720p.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <div class="links">
+    <a href="https://github.com/vjsr007/cubi-frontend">📦 GitHub Repository</a>
+    <a href="https://github.com/vjsr007/cubi-frontend/releases/latest">📥 Download Latest</a>
+    <a href="cubi-demo-720p.mp4" download>⬇️ Download Video</a>
+  </div>
+</body>
+</html>

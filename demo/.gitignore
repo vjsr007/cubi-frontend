@@ -7,5 +7,6 @@ screenshots-mock/
 output/*.mp4
 output/*.webm
 
-# Keep GIF previews (small enough for git)
+# Keep demo video for README and GIF previews
+!output/cubi-demo-720p.mp4
 !output/*.gif

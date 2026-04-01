@@ -13,12 +13,14 @@ Inspired by EmulationStation-DE, Pegasus, and LaunchBox — designed to work alo
 ## Demo
 
 <p align="center">
-  <img src="demo/output/cubi-demo-preview.gif" alt="Cubi Frontend Demo Preview" width="854" />
+  <video src="https://vjsr007.github.io/cubi-frontend/cubi-demo-720p.mp4" controls autoplay muted loop width="854">
+    Your browser does not support the video tag.
+  </video>
 </p>
 
 <p align="center">
-  <a href="https://github.com/vjsr007/cubi-frontend/releases/download/v0.7.0/cubi-demo-720p.mp4">
-    📺 Watch full demo video (5 min, 720p)
+  <a href="https://vjsr007.github.io/cubi-frontend/">
+    ▶️ Watch on full page
   </a>
 </p>
 

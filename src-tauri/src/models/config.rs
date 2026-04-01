@@ -27,6 +27,8 @@ pub struct AppConfig {
     pub emulators: HashMap<String, EmulatorOverride>,
     #[serde(default)]
     pub pc_metadata: PcMetadataConfig,
+    #[serde(default)]
+    pub catalog: super::catalog::CatalogConfig,
 }
 
 impl Default for AppConfig {
@@ -37,6 +39,7 @@ impl Default for AppConfig {
             scanner: ScannerConfig::default(),
             emulators: HashMap::new(),
             pc_metadata: PcMetadataConfig::default(),
+            catalog: super::catalog::CatalogConfig::default(),
         }
     }
 }

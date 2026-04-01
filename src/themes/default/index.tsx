@@ -10,6 +10,7 @@ import { RomPathsPage } from '../../pages/RomPathsPage';
 import { InputMappingPage } from '../../pages/InputMappingPage';
 import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import { GameVerificationPage } from '../../pages/GameVerificationPage';
+import { CatalogPage } from '../../pages/CatalogPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -29,6 +30,7 @@ export function DefaultTheme() {
         {currentPage === 'input-mapping'    && <InputMappingPage />}
         {currentPage === 'emulator-settings' && <EmulatorSettingsPage />}
         {currentPage === 'game-verification' && <GameVerificationPage />}
+        {currentPage === 'catalog'            && <CatalogPage />}
       </main>
       <Toast />
     </div>

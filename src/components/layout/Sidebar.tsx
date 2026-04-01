@@ -4,6 +4,7 @@ import cubiLogo from '../../assets/cubi-logo.png';
 
 const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
   { id: 'library', label: 'Library', icon: '⊞' },
+  { id: 'catalog', label: 'Catalog', icon: '📚' },
   { id: 'settings', label: 'Settings', icon: '⚙' },
 ];
 

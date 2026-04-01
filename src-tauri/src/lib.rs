@@ -97,6 +97,18 @@ pub fn run() {
             commands::verification::get_broken_games,
             commands::verification::delete_broken_game,
             commands::verification::delete_broken_games,
+            commands::catalog::get_catalog_stats,
+            commands::catalog::get_catalog_games,
+            commands::catalog::import_dat_file,
+            commands::catalog::sync_catalog,
+            commands::catalog::get_default_dat_urls,
+            commands::catalog::refresh_catalog_ownership,
+            commands::catalog::get_catalog_config,
+            commands::catalog::set_catalog_download_url,
+            commands::system_wiki::get_system_wiki,
+            commands::system_wiki::get_all_system_wiki,
+            commands::system_wiki::update_system_wiki,
+            commands::system_wiki::reset_system_wiki,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

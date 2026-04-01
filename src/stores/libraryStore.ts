@@ -116,6 +116,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         scanProgress: `Found ${result.systems_found} systems, ${result.games_found} games`,
       });
       await get().loadSystems();
+      // Auto-refresh catalog ownership after scan (fire-and-forget)
+      api.refreshCatalogOwnership().catch(e => console.warn('Catalog ownership refresh:', e));
     } catch (e) {
       set({ isScanning: false, error: String(e) });
       throw e;

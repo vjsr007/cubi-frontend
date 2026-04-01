@@ -8,6 +8,8 @@ import type {
   SettingDefinition, EmulatorSettingValue, ConfigWriterInfo,
   PcMetadataConfig, PcToolsStatus, PcScrapeResult,
   MediaImportResult, YoutubeSearchResult,
+  CatalogSystemStats, CatalogPage, CatalogFilter, CatalogSync, CatalogConfig,
+  SystemWiki,
 } from '../types';
 import type { GameInfoPatch } from '../types/editor';
 import type { SteamSearchResult, SteamGameData } from '../types/steam';
@@ -156,4 +158,28 @@ export const api = {
     invoke<SteamGameData | null>('fetch_steam_data', { gameId }),
   refreshSteamData: (gameId: string) =>
     invoke<SteamGameData>('refresh_steam_data', { gameId }),
+
+  // Game Catalog (REQ-022)
+  getCatalogStats: () => invoke<CatalogSystemStats[]>('get_catalog_stats'),
+  getCatalogGames: (filter: CatalogFilter) => invoke<CatalogPage>('get_catalog_games', { filter }),
+  importDatFile: (systemId: string, filePath: string) =>
+    invoke<CatalogSync>('import_dat_file', { systemId, filePath }),
+  syncCatalog: (systemId: string, url?: string) =>
+    invoke<CatalogSync>('sync_catalog', { systemId, url }),
+  getDefaultDatUrls: () => invoke<Record<string, string>>('get_default_dat_urls'),
+  refreshCatalogOwnership: (systemId?: string) =>
+    invoke<number>('refresh_catalog_ownership', { systemId }),
+  getCatalogConfig: () => invoke<CatalogConfig>('get_catalog_config'),
+  setCatalogDownloadUrl: (systemId: string, url: string) =>
+    invoke<void>('set_catalog_download_url', { systemId, url }),
+
+  // System Wiki
+  getSystemWiki: (systemId: string) =>
+    invoke<SystemWiki | null>('get_system_wiki', { systemId }),
+  getAllSystemWiki: () =>
+    invoke<SystemWiki[]>('get_all_system_wiki'),
+  updateSystemWiki: (wiki: SystemWiki) =>
+    invoke<void>('update_system_wiki', { wiki }),
+  resetSystemWiki: () =>
+    invoke<number>('reset_system_wiki'),
 };

@@ -31,6 +31,7 @@ impl Database {
         self.seed_default_scrapers();
         self.seed_default_input_profiles();
         self.seed_emulator_setting_definitions();
+        self.seed_system_wiki_if_empty();
         Ok(())
     }
 
@@ -125,6 +126,22 @@ impl Database {
                 }
             }
             log::info!("DB migration v4 complete");
+        }
+
+        if version < 5 {
+            log::info!("Running DB migration v5: catalog tables (REQ-022)");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V5) {
+                log::warn!("Migration v5 error (ignored): {}", e);
+            }
+            log::info!("DB migration v5 complete");
+        }
+
+        if version < 6 {
+            log::info!("Running DB migration v6: system wiki");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V6) {
+                log::warn!("Migration v6 error (ignored): {}", e);
+            }
+            log::info!("DB migration v6 complete");
         }
         Ok(())
     }
@@ -245,7 +262,7 @@ impl Database {
     pub fn get_systems(&self) -> SqlResult<Vec<SystemInfo>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, name, full_name, extensions, game_count, rom_path FROM systems ORDER BY name"
+            "SELECT id, name, full_name, extensions, game_count, rom_path FROM systems WHERE game_count > 0 ORDER BY name"
         )?;
         let systems = stmt.query_map([], |row| {
             let extensions_json: String = row.get(3)?;
@@ -930,5 +947,378 @@ impl Database {
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),
         }
+    }
+
+    // ── Catalog (REQ-022) ──────────────────────────────────────────────
+
+    /// Bulk insert catalog games inside a single transaction for performance.
+    /// Deletes existing entries for the system+dat_name first (full replace).
+    pub fn bulk_insert_catalog_games(
+        &self,
+        system_id: &str,
+        dat_name: &str,
+        games: &[crate::models::CatalogGame],
+    ) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        // Ensure system row exists (catalog may sync before ROM scan creates it)
+        let display_name = crate::services::launcher_service::system_display_name_pub(system_id);
+        conn.execute(
+            "INSERT OR IGNORE INTO systems (id, name, full_name) VALUES (?1, ?2, ?3)",
+            rusqlite::params![system_id, &display_name, &display_name],
+        )?;
+        conn.execute(
+            "DELETE FROM catalog_games WHERE system_id = ?1 AND dat_name = ?2",
+            rusqlite::params![system_id, dat_name],
+        )?;
+        let mut stmt = conn.prepare(
+            "INSERT OR REPLACE INTO catalog_games
+             (id, system_id, title, region, sha1, md5, crc32, file_size, file_name, dat_name, owned, owned_game_id)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)"
+        )?;
+        for g in games {
+            stmt.execute(rusqlite::params![
+                g.id, g.system_id, g.title, g.region,
+                g.sha1, g.md5, g.crc32,
+                g.file_size.map(|s| s as i64),
+                g.file_name, g.dat_name,
+                g.owned as i32,
+                g.owned_game_id,
+            ])?;
+        }
+        Ok(())
+    }
+
+    /// Upsert catalog sync metadata
+    pub fn upsert_catalog_sync(&self, sync: &crate::models::CatalogSync) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO catalog_sync (system_id, dat_name, dat_version, entry_count, last_synced, source_url)
+             VALUES (?1,?2,?3,?4,?5,?6)
+             ON CONFLICT(system_id, dat_name) DO UPDATE SET
+               dat_version=excluded.dat_version,
+               entry_count=excluded.entry_count,
+               last_synced=excluded.last_synced,
+               source_url=excluded.source_url",
+            rusqlite::params![
+                sync.system_id, sync.dat_name, sync.dat_version,
+                sync.entry_count, sync.last_synced, sync.source_url,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Get per-system catalog stats (joined with systems table for name)
+    pub fn get_catalog_stats(&self) -> SqlResult<Vec<crate::models::CatalogSystemStats>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT
+                cg.system_id,
+                COALESCE(s.full_name, s.name, cg.system_id) AS system_name,
+                COUNT(*) AS total,
+                SUM(CASE WHEN cg.owned = 1 THEN 1 ELSE 0 END) AS owned,
+                SUM(CASE WHEN cg.owned = 0 THEN 1 ELSE 0 END) AS missing,
+                cs.last_synced
+             FROM catalog_games cg
+             LEFT JOIN systems s ON s.id = cg.system_id
+             LEFT JOIN catalog_sync cs ON cs.system_id = cg.system_id
+             GROUP BY cg.system_id
+             ORDER BY system_name"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::CatalogSystemStats {
+                system_id: row.get(0)?,
+                system_name: row.get(1)?,
+                total: row.get::<_, i64>(2)? as u32,
+                owned: row.get::<_, i64>(3)? as u32,
+                missing: row.get::<_, i64>(4)? as u32,
+                last_synced: row.get(5)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    /// Paginated, filtered catalog query for a system
+    pub fn get_catalog_games(&self, filter: &crate::models::CatalogFilter) -> SqlResult<crate::models::CatalogPage> {
+        let conn = self.conn.lock().unwrap();
+
+        let mut where_clauses = vec!["system_id = ?1".to_string()];
+        let mut count_params: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(filter.system_id.clone())];
+
+        let mut param_idx = 2u32;
+        if let Some(ref status) = filter.status {
+            match status.as_str() {
+                "owned" => where_clauses.push("owned = 1".to_string()),
+                "missing" => where_clauses.push("owned = 0".to_string()),
+                _ => {}
+            }
+        }
+        if let Some(ref region) = filter.region {
+            where_clauses.push(format!("region LIKE ?{}", param_idx));
+            count_params.push(Box::new(format!("%{}%", region)));
+            param_idx += 1;
+        }
+        if let Some(ref search) = filter.search {
+            where_clauses.push(format!("title LIKE ?{}", param_idx));
+            count_params.push(Box::new(format!("%{}%", search)));
+            param_idx += 1;
+        }
+
+        let where_sql = where_clauses.join(" AND ");
+
+        // Get total count
+        let count_sql = format!("SELECT COUNT(*) FROM catalog_games WHERE {}", where_sql);
+        let total: u32 = conn.query_row(
+            &count_sql,
+            rusqlite::params_from_iter(count_params.iter().map(|p| p.as_ref())),
+            |row| row.get::<_, i64>(0).map(|v| v as u32),
+        )?;
+
+        // Get page of results
+        let offset = (filter.page.saturating_sub(1)) * filter.page_size;
+        let query_sql = format!(
+            "SELECT id, system_id, title, region, sha1, md5, crc32, file_size,
+                    file_name, dat_name, owned, owned_game_id
+             FROM catalog_games
+             WHERE {}
+             ORDER BY title
+             LIMIT {} OFFSET {}",
+            where_sql, filter.page_size, offset
+        );
+
+        let mut query_params: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(filter.system_id.clone())];
+        if let Some(ref region) = filter.region {
+            query_params.push(Box::new(format!("%{}%", region)));
+        }
+        if let Some(ref search) = filter.search {
+            query_params.push(Box::new(format!("%{}%", search)));
+        }
+
+        let mut stmt = conn.prepare(&query_sql)?;
+        let games = stmt.query_map(
+            rusqlite::params_from_iter(query_params.iter().map(|p| p.as_ref())),
+            |row| {
+                Ok(crate::models::CatalogGame {
+                    id: row.get(0)?,
+                    system_id: row.get(1)?,
+                    title: row.get(2)?,
+                    region: row.get(3)?,
+                    sha1: row.get(4)?,
+                    md5: row.get(5)?,
+                    crc32: row.get(6)?,
+                    file_size: row.get::<_, Option<i64>>(7)?.map(|v| v as u64),
+                    file_name: row.get(8)?,
+                    dat_name: row.get(9)?,
+                    owned: row.get::<_, i32>(10)? != 0,
+                    owned_game_id: row.get(11)?,
+                })
+            },
+        )?.collect::<SqlResult<Vec<_>>>()?;
+
+        Ok(crate::models::CatalogPage {
+            games,
+            total,
+            page: filter.page,
+            page_size: filter.page_size,
+        })
+    }
+
+    /// Get all filenames for a system's games (for ownership matching)
+    pub fn get_game_filenames_for_system(&self, system_id: &str) -> SqlResult<Vec<(String, String)>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, file_name FROM games WHERE system_id = ?1"
+        )?;
+        let rows = stmt.query_map([system_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    /// Get game id, file_name, and title for ownership matching
+    pub fn get_game_info_for_system(&self, system_id: &str) -> SqlResult<Vec<(String, String, String)>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, file_name, title FROM games WHERE system_id = ?1"
+        )?;
+        let rows = stmt.query_map([system_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    /// Update ownership for catalog games in a system
+    pub fn update_catalog_ownership(
+        &self,
+        system_id: &str,
+        matches: &[(String, String)], // (catalog_game_id, owned_game_id)
+    ) -> SqlResult<u32> {
+        let conn = self.conn.lock().unwrap();
+        // Reset all to unowned first
+        conn.execute(
+            "UPDATE catalog_games SET owned = 0, owned_game_id = NULL WHERE system_id = ?1",
+            [system_id],
+        )?;
+        // Set matched ones as owned
+        let mut stmt = conn.prepare(
+            "UPDATE catalog_games SET owned = 1, owned_game_id = ?2 WHERE id = ?1"
+        )?;
+        let mut count = 0u32;
+        for (catalog_id, game_id) in matches {
+            let updated = stmt.execute(rusqlite::params![catalog_id, game_id])?;
+            if updated > 0 { count += 1; }
+        }
+        Ok(count)
+    }
+
+    /// Get all system_ids that have catalog entries
+    pub fn get_catalog_system_ids(&self) -> SqlResult<Vec<String>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT system_id FROM catalog_games ORDER BY system_id"
+        )?;
+        let rows = stmt.query_map([], |row| row.get(0))?
+            .collect::<SqlResult<Vec<String>>>()?;
+        Ok(rows)
+    }
+
+    /// Get catalog sync info for all systems
+    pub fn get_catalog_syncs(&self) -> SqlResult<Vec<crate::models::CatalogSync>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT system_id, dat_name, dat_version, entry_count, last_synced, source_url
+             FROM catalog_sync ORDER BY system_id"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::CatalogSync {
+                system_id: row.get(0)?,
+                dat_name: row.get(1)?,
+                dat_version: row.get(2)?,
+                entry_count: row.get::<_, i64>(3)? as u32,
+                last_synced: row.get(4)?,
+                source_url: row.get(5)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    // ── System Wiki ─────────────────────────────────────────────────
+
+    pub fn get_system_wiki(&self, system_id: &str) -> SqlResult<Option<crate::models::SystemWiki>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT system_id, manufacturer, release_year, discontinue_year, generation,
+                    media_type, cpu, memory, graphics, sound, display,
+                    units_sold, launch_price, description, wikipedia_url, image_url,
+                    notable_games, emulators, updated_at
+             FROM system_wiki WHERE system_id = ?1"
+        )?;
+        let mut rows = stmt.query_map([system_id], |row| {
+            Ok(crate::models::SystemWiki {
+                system_id: row.get(0)?,
+                manufacturer: row.get(1)?,
+                release_year: row.get::<_, Option<i64>>(2)?.map(|v| v as u16),
+                discontinue_year: row.get::<_, Option<i64>>(3)?.map(|v| v as u16),
+                generation: row.get::<_, Option<i64>>(4)?.map(|v| v as u8),
+                media_type: row.get(5)?,
+                cpu: row.get(6)?,
+                memory: row.get(7)?,
+                graphics: row.get(8)?,
+                sound: row.get(9)?,
+                display: row.get(10)?,
+                units_sold: row.get(11)?,
+                launch_price: row.get(12)?,
+                description: row.get(13)?,
+                wikipedia_url: row.get(14)?,
+                image_url: row.get(15)?,
+                notable_games: row.get(16)?,
+                emulators: row.get(17)?,
+                updated_at: row.get(18)?,
+            })
+        })?;
+        Ok(rows.next().transpose()?)
+    }
+
+    pub fn get_all_system_wiki(&self) -> SqlResult<Vec<crate::models::SystemWiki>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT system_id, manufacturer, release_year, discontinue_year, generation,
+                    media_type, cpu, memory, graphics, sound, display,
+                    units_sold, launch_price, description, wikipedia_url, image_url,
+                    notable_games, emulators, updated_at
+             FROM system_wiki ORDER BY system_id"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(crate::models::SystemWiki {
+                system_id: row.get(0)?,
+                manufacturer: row.get(1)?,
+                release_year: row.get::<_, Option<i64>>(2)?.map(|v| v as u16),
+                discontinue_year: row.get::<_, Option<i64>>(3)?.map(|v| v as u16),
+                generation: row.get::<_, Option<i64>>(4)?.map(|v| v as u8),
+                media_type: row.get(5)?,
+                cpu: row.get(6)?,
+                memory: row.get(7)?,
+                graphics: row.get(8)?,
+                sound: row.get(9)?,
+                display: row.get(10)?,
+                units_sold: row.get(11)?,
+                launch_price: row.get(12)?,
+                description: row.get(13)?,
+                wikipedia_url: row.get(14)?,
+                image_url: row.get(15)?,
+                notable_games: row.get(16)?,
+                emulators: row.get(17)?,
+                updated_at: row.get(18)?,
+            })
+        })?.collect::<SqlResult<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn upsert_system_wiki(&self, wiki: &crate::models::SystemWiki) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO system_wiki
+             (system_id, manufacturer, release_year, discontinue_year, generation,
+              media_type, cpu, memory, graphics, sound, display,
+              units_sold, launch_price, description, wikipedia_url, image_url,
+              notable_games, emulators, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18, datetime('now'))
+             ON CONFLICT(system_id) DO UPDATE SET
+              manufacturer=excluded.manufacturer, release_year=excluded.release_year,
+              discontinue_year=excluded.discontinue_year, generation=excluded.generation,
+              media_type=excluded.media_type, cpu=excluded.cpu, memory=excluded.memory,
+              graphics=excluded.graphics, sound=excluded.sound, display=excluded.display,
+              units_sold=excluded.units_sold, launch_price=excluded.launch_price,
+              description=excluded.description, wikipedia_url=excluded.wikipedia_url,
+              image_url=excluded.image_url, notable_games=excluded.notable_games,
+              emulators=excluded.emulators, updated_at=datetime('now')",
+            rusqlite::params![
+                wiki.system_id, wiki.manufacturer,
+                wiki.release_year.map(|v| v as i64), wiki.discontinue_year.map(|v| v as i64),
+                wiki.generation.map(|v| v as i64),
+                wiki.media_type, wiki.cpu, wiki.memory,
+                wiki.graphics, wiki.sound, wiki.display,
+                wiki.units_sold, wiki.launch_price, wiki.description,
+                wiki.wikipedia_url, wiki.image_url,
+                wiki.notable_games, wiki.emulators,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn seed_system_wiki_if_empty(&self) {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM system_wiki", [], |r| r.get(0))
+            .unwrap_or(0);
+        if count > 0 { return; }
+        drop(conn);
+
+        let entries = crate::services::system_wiki_service::get_builtin_wiki_data();
+        for wiki in &entries {
+            if let Err(e) = self.upsert_system_wiki(wiki) {
+                log::warn!("Failed to seed wiki for {}: {}", wiki.system_id, e);
+            }
+        }
+        log::info!("Seeded {} system wiki entries", entries.len());
     }
 }

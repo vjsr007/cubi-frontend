@@ -3,23 +3,31 @@ import type { Page } from '../types';
 
 interface UiState {
   currentPage: Page;
+  previousPage: Page | null;
   selectedGameId: string | null;
   toastMessage: string | null;
   toastType: 'success' | 'error' | 'info';
 
   navigateTo: (page: Page, gameId?: string) => void;
+  goBack: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   clearToast: () => void;
 }
 
-export const useUiStore = create<UiState>((set) => ({
+export const useUiStore = create<UiState>((set, get) => ({
   currentPage: 'library',
+  previousPage: null,
   selectedGameId: null,
   toastMessage: null,
   toastType: 'info',
 
   navigateTo: (page, gameId) =>
-    set({ currentPage: page, selectedGameId: gameId ?? null }),
+    set((s) => ({ previousPage: s.currentPage, currentPage: page, selectedGameId: gameId ?? null })),
+
+  goBack: () => {
+    const prev = get().previousPage ?? 'library';
+    set({ currentPage: prev, previousPage: null, selectedGameId: null });
+  },
 
   showToast: (message, type = 'info') => {
     set({ toastMessage: message, toastType: type });

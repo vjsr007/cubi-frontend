@@ -192,6 +192,11 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
     ]
 }
 
+/// Public wrapper so other modules (e.g. catalog) can map system_id → display name.
+pub fn system_display_name_pub(id: &str) -> String {
+    system_display_name(id)
+}
+
 fn system_display_name(id: &str) -> String {
     let s: &str = match id {
         "nes"          => "NES",

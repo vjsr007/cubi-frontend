@@ -20,6 +20,7 @@ import { RomPathsPage } from '../../pages/RomPathsPage';
 import { InputMappingPage } from '../../pages/InputMappingPage';
 import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import { GameVerificationPage } from '../../pages/GameVerificationPage';
+import { CatalogPage } from '../../pages/CatalogPage';
 import './aurora.css';
 
 type AuroraView = 'systems' | 'games';
@@ -118,7 +119,7 @@ export function AuroraTheme() {
   // ── Keyboard handler ──────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings' || currentPage === 'game-verification') return;
+      if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings' || currentPage === 'game-verification' || currentPage === 'catalog') return;
       switch (e.key) {
         case 'ArrowLeft':  e.preventDefault(); navigateItem(-1); break;
         case 'ArrowRight': e.preventDefault(); navigateItem(1);  break;
@@ -141,7 +142,7 @@ export function AuroraTheme() {
 
   // ── Gamepad polling ───────────────────────────────────────
   useEffect(() => {
-    if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings' || currentPage === 'game-verification') {
+    if (currentPage === 'settings' || currentPage === 'scraper' || currentPage === 'pc-games' || currentPage === 'emulator-config' || currentPage === 'rom-paths' || currentPage === 'input-mapping' || currentPage === 'emulator-settings' || currentPage === 'game-verification' || currentPage === 'catalog') {
       isRunning.current = false;
       cancelAnimationFrame(rafRef.current);
       return;
@@ -352,7 +353,13 @@ export function AuroraTheme() {
       </div>
     );
   }
-
+  if (currentPage === 'catalog') {
+    return (
+      <div style={{ height: '100%' }}>
+        <CatalogPage />
+      </div>
+    );
+  }
   // ── Welcome screen if no data_root configured ─────────────
   if (!config?.paths?.data_root) {
     return (

@@ -35,6 +35,7 @@ percent-encoding = "2"
 uuid = { version = "1", features = ["v4"] }
 scraper = "0.20"
 url = "2"
+zip = "2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

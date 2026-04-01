@@ -129,7 +129,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping' | 'emulator-settings' | 'game-verification';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping' | 'emulator-settings' | 'game-verification' | 'catalog';
 
 export interface ScraperConfig {
   id: string;
@@ -356,4 +356,85 @@ export interface ConfigWriterInfo {
   config_format: string;
   supported_settings: string[];
   default_config_path?: string;
+}
+
+// ── Game Catalog (REQ-022) ────────────────────────────────────────────
+
+export interface CatalogGame {
+  id: string;
+  system_id: string;
+  title: string;
+  region: string;
+  sha1?: string;
+  md5?: string;
+  crc32?: string;
+  file_size?: number;
+  file_name: string;
+  dat_name: string;
+  owned: boolean;
+  owned_game_id?: string;
+}
+
+export interface CatalogSync {
+  system_id: string;
+  dat_name: string;
+  dat_version: string;
+  entry_count: number;
+  last_synced: string;
+  source_url?: string;
+}
+
+export interface CatalogSystemStats {
+  system_id: string;
+  system_name: string;
+  total: number;
+  owned: number;
+  missing: number;
+  last_synced?: string;
+}
+
+export interface CatalogPage {
+  games: CatalogGame[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface CatalogFilter {
+  system_id: string;
+  status?: 'owned' | 'missing';
+  region?: string;
+  search?: string;
+  page: number;
+  page_size: number;
+}
+
+export interface CatalogConfig {
+  dat_source_url: string;
+  auto_sync: boolean;
+  download_urls: Record<string, string>;
+}
+
+// ── System Wiki ───────────────────────────────────────────────────────
+
+export interface SystemWiki {
+  system_id: string;
+  manufacturer: string;
+  release_year?: number;
+  discontinue_year?: number;
+  generation?: number;
+  media_type: string;
+  cpu: string;
+  memory: string;
+  graphics: string;
+  sound: string;
+  display: string;
+  units_sold: string;
+  launch_price: string;
+  description: string;
+  wikipedia_url: string;
+  image_url: string;
+  notable_games: string;
+  emulators: string;
+  updated_at?: string;
 }

@@ -11,15 +11,30 @@ import { SystemLogo } from '../components/common/SystemLogo';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { MetadataEditor } from '../components/editor/MetadataEditor';
 import { SteamSection } from '../components/steam/SteamSection';
+import { api } from '../lib/invoke';
+import type { GameInfo } from '../types';
 
 export function GameDetailPage() {
-  const { selectedGameId, navigateTo, showToast } = useUiStore();
+  const { selectedGameId, navigateTo, goBack, showToast } = useUiStore();
   const { launchGame, games, toggleFavorite, launchingGameId } = useLibraryStore();
   const { t } = useI18nStore();
   const [boxFlipped, setBoxFlipped] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [fetchedGame, setFetchedGame] = useState<GameInfo | null>(null);
 
-  const game = games.find((g) => g.id === selectedGameId);
+  const storeGame = games.find((g) => g.id === selectedGameId);
+
+  // If game not in libraryStore (e.g. navigated from Catalog), fetch directly
+  useEffect(() => {
+    if (!storeGame && selectedGameId) {
+      api.getGame(selectedGameId).then((g) => {
+        if (g) setFetchedGame(g);
+        else goBack();
+      }).catch(() => goBack());
+    }
+  }, [selectedGameId, storeGame, navigateTo]);
+
+  const game = storeGame ?? fetchedGame;
   const { data: media, isLoading: mediaLoading } = useGameMedia(game?.id ?? null);
 
   const { translate, toggleOriginal, isLoading: translating, canTranslate,
@@ -45,7 +60,7 @@ export function GameDetailPage() {
       if (e.key === 'Escape' || e.key === 'Backspace') {
         e.preventDefault();
         if (editMode) setEditMode(false);
-        else navigateTo('library');
+        else goBack();
       }
       if (e.key === 'Enter') { e.preventDefault(); handleLaunch(); }
       if (e.key === ' ') { e.preventDefault(); setBoxFlipped((f) => !f); }
@@ -79,7 +94,7 @@ export function GameDetailPage() {
         {/* Top bar: Back + Edit toggle */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <button
-            onClick={() => { if (editMode) setEditMode(false); else navigateTo('library'); }}
+            onClick={() => { if (editMode) setEditMode(false); else goBack(); }}
             style={{
               background: 'none', border: 'none', color: 'var(--color-text-muted)',
               cursor: 'pointer', fontSize: 13, padding: '4px 0',

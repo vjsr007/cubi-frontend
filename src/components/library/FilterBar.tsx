@@ -3,7 +3,11 @@ import { useLibraryStore } from '../../stores/libraryStore';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { SortField, ViewMode } from '../../types';
 
-export function FilterBar() {
+interface FilterBarProps {
+  onShowWiki?: () => void;
+}
+
+export function FilterBar({ onShowWiki }: FilterBarProps = {}) {
   const {
     searchQuery, setSearchQuery,
     sortField, setSortField,
@@ -192,6 +196,17 @@ export function FilterBar() {
       >
         {sortOrder === 'asc' ? '↑' : '↓'}
       </button>
+
+      {/* System Wiki info */}
+      {onShowWiki && (
+        <button
+          onClick={onShowWiki}
+          style={{ ...inputStyle, cursor: 'pointer', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 4 }}
+          title="System Info"
+        >
+          ℹ️ Info
+        </button>
+      )}
 
       {/* Zoom controls (only in grid mode) */}
       {viewMode === 'grid' && (

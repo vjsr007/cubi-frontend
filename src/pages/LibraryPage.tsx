@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLibraryStore } from '../stores/libraryStore';
 import { useConfigStore } from '../stores/configStore';
 import { useUiStore } from '../stores/uiStore';
@@ -8,12 +8,14 @@ import { GameGrid } from '../components/library/GameGrid';
 import { GameList } from '../components/library/GameList';
 import { FilterBar } from '../components/library/FilterBar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { SystemWikiPanel } from '../components/wiki/SystemWikiPanel';
 
 export function LibraryPage() {
-  const { systems, loadSystems, isScanning, scanProgress, scanLibrary, viewMode } = useLibraryStore();
+  const { systems, selectedSystemId, loadSystems, isScanning, scanProgress, scanLibrary, viewMode } = useLibraryStore();
   const { config } = useConfigStore();
   const { navigateTo, showToast } = useUiStore();
   const { t } = useI18nStore();
+  const [wikiSystemId, setWikiSystemId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSystems();
@@ -72,13 +74,42 @@ export function LibraryPage() {
     );
   }
 
+  const wikiSystem = wikiSystemId ? systems.find((s) => s.id === wikiSystemId) : null;
+
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
       <SystemList />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <FilterBar />
+        <FilterBar onShowWiki={selectedSystemId && selectedSystemId !== '__all__' ? () => setWikiSystemId(selectedSystemId) : undefined} />
         {viewMode === 'list' ? <GameList /> : <GameGrid />}
       </div>
+      {wikiSystemId && wikiSystem && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 100,
+          background: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}
+          onClick={() => setWikiSystemId(null)}
+        >
+          <div
+            style={{
+              width: '90%', maxWidth: 800, maxHeight: '90%',
+              borderRadius: 16, overflow: 'auto',
+              background: 'var(--color-background)',
+              border: '1px solid var(--color-border)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SystemWikiPanel
+              systemId={wikiSystemId}
+              systemName={wikiSystem.name}
+              onClose={() => setWikiSystemId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

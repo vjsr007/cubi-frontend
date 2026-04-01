@@ -157,3 +157,67 @@ CREATE TABLE IF NOT EXISTS game_steam_data (
 );
 UPDATE schema_version SET version = 3;
 ";
+
+/// Migration v5: Game Catalog Database (REQ-022)
+pub const MIGRATION_V5: &str = "
+CREATE TABLE IF NOT EXISTS catalog_games (
+    id TEXT PRIMARY KEY,
+    system_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    region TEXT NOT NULL DEFAULT '',
+    sha1 TEXT,
+    md5 TEXT,
+    crc32 TEXT,
+    file_size INTEGER,
+    file_name TEXT NOT NULL,
+    dat_name TEXT NOT NULL,
+    owned INTEGER NOT NULL DEFAULT 0,
+    owned_game_id TEXT,
+    FOREIGN KEY (system_id) REFERENCES systems(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_catalog_system ON catalog_games(system_id);
+CREATE INDEX IF NOT EXISTS idx_catalog_sha1 ON catalog_games(sha1);
+CREATE INDEX IF NOT EXISTS idx_catalog_title ON catalog_games(title);
+CREATE INDEX IF NOT EXISTS idx_catalog_owned ON catalog_games(system_id, owned);
+CREATE INDEX IF NOT EXISTS idx_catalog_region ON catalog_games(system_id, region);
+
+CREATE TABLE IF NOT EXISTS catalog_sync (
+    system_id TEXT NOT NULL,
+    dat_name TEXT NOT NULL,
+    dat_version TEXT NOT NULL DEFAULT '',
+    entry_count INTEGER NOT NULL DEFAULT 0,
+    last_synced TEXT DEFAULT (datetime('now')),
+    source_url TEXT,
+    PRIMARY KEY (system_id, dat_name)
+);
+
+UPDATE schema_version SET version = 5;
+";
+
+/// Migration v6: System Wiki (encyclopedia per system)
+pub const MIGRATION_V6: &str = "
+CREATE TABLE IF NOT EXISTS system_wiki (
+    system_id TEXT PRIMARY KEY,
+    manufacturer TEXT NOT NULL DEFAULT '',
+    release_year INTEGER,
+    discontinue_year INTEGER,
+    generation INTEGER,
+    media_type TEXT NOT NULL DEFAULT '',
+    cpu TEXT NOT NULL DEFAULT '',
+    memory TEXT NOT NULL DEFAULT '',
+    graphics TEXT NOT NULL DEFAULT '',
+    sound TEXT NOT NULL DEFAULT '',
+    display TEXT NOT NULL DEFAULT '',
+    units_sold TEXT NOT NULL DEFAULT '',
+    launch_price TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    wikipedia_url TEXT NOT NULL DEFAULT '',
+    image_url TEXT NOT NULL DEFAULT '',
+    notable_games TEXT NOT NULL DEFAULT '',
+    emulators TEXT NOT NULL DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+UPDATE schema_version SET version = 6;
+";

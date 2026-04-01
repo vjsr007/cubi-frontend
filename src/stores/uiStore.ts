@@ -28,3 +28,6 @@ export const useUiStore = create<UiState>((set) => ({
 
   clearToast: () => set({ toastMessage: null }),
 }));
+
+// Expose store for Playwright demo automation
+(window as any).__CUBI_UI_STORE__ = useUiStore;

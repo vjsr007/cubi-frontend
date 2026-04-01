@@ -1,0 +1,11 @@
+# Raw recordings (too large for git)
+recordings/
+screenshots/
+screenshots-mock/
+
+# Output videos (rebuild with scripts or download from GitHub Releases)
+output/*.mp4
+output/*.webm
+
+# Keep GIF previews (small enough for git)
+!output/*.gif

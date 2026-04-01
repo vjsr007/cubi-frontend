@@ -36,6 +36,7 @@ pub async fn test_launch_game(
 ) -> Result<GameVerificationResult, String> {
     let config = config_service::load_config().map_err(|e| e.to_string())?;
     let emudeck_path = config.paths.emudeck_path;
+    let data_root = config.paths.data_root;
 
     let game = db
         .get_game(&game_id)
@@ -50,7 +51,7 @@ pub async fn test_launch_game(
 
     let timeout = timeout_secs.unwrap_or(5);
     let result = verification_service::test_launch_single(
-        &db, &game, &emudeck_path, &overrides, timeout,
+        &db, &game, &emudeck_path, &data_root, &overrides, timeout,
     )
     .await;
 

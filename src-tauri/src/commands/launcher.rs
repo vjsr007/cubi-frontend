@@ -12,7 +12,7 @@ pub async fn launch_game(
         .ok_or_else(|| format!("Game not found: {}", game_id))?;
 
     let config = config_service::load_config()?;
-    launcher_service::launch_game(&game, &config.paths.emudeck_path, &config.emulators).await?;
+    launcher_service::launch_game(&game, &config.paths.emudeck_path, &config.paths.data_root, &config.emulators).await?;
     db.update_play_stats(&game_id).map_err(|e| e.to_string())?;
 
     Ok(())

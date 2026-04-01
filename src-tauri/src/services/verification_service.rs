@@ -104,6 +104,7 @@ pub fn verify_game(game: &GameInfo, emudeck_path: &str) -> GameVerificationResul
 pub async fn test_launch_game(
     game: &GameInfo,
     emudeck_path: &str,
+    data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
     timeout_secs: u64,
 ) -> GameVerificationResult {
@@ -119,7 +120,7 @@ pub async fn test_launch_game(
     }
 
     // Build the launch command
-    let cmd = match launcher_service::build_launch_command(game, emudeck_path, overrides) {
+    let cmd = match launcher_service::build_launch_command(game, emudeck_path, data_root, overrides) {
         Ok(c) => c,
         Err(e) => {
             return GameVerificationResult {
@@ -332,10 +333,11 @@ pub async fn test_launch_single(
     db: &Database,
     game: &GameInfo,
     emudeck_path: &str,
+    data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
     timeout_secs: u64,
 ) -> GameVerificationResult {
-    let result = test_launch_game(game, emudeck_path, overrides, timeout_secs).await;
+    let result = test_launch_game(game, emudeck_path, data_root, overrides, timeout_secs).await;
     let _ = db.update_verification_status(
         &result.game_id,
         &result.status,

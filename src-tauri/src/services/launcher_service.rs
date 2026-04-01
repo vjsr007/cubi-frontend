@@ -375,6 +375,7 @@ pub struct LaunchCommand {
 pub fn build_launch_command(
     game: &GameInfo,
     emudeck_path: &str,
+    data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
 ) -> Result<LaunchCommand, String> {
     let registry = get_emulator_registry();
@@ -437,7 +438,7 @@ pub fn build_launch_command(
                     core_path.to_string_lossy().to_string(),
                     rom.clone(),
                 ];
-                if let Ok(override_path) = write_retroarch_override_cfg(&game.system_id) {
+                if let Ok(override_path) = write_retroarch_override_cfg(&game.system_id, data_root, &exe_path) {
                     launch_args.push("--appendconfig".to_string());
                     launch_args.push(override_path);
                 }
@@ -456,6 +457,7 @@ pub fn build_launch_command(
 pub async fn launch_game(
     game: &GameInfo,
     emudeck_path: &str,
+    data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
 ) -> Result<(), String> {
     // PC games: launch directly without emulator
@@ -463,7 +465,7 @@ pub async fn launch_game(
         return launch_pc_game(&game.file_path).await;
     }
 
-    let cmd = build_launch_command(game, emudeck_path, overrides)?;
+    let cmd = build_launch_command(game, emudeck_path, data_root, overrides)?;
 
     log::info!("Launching: {} {:?}", cmd.exe_path, cmd.args);
     tokio::process::Command::new(&cmd.exe_path)
@@ -495,7 +497,7 @@ fn shell_split(s: &str) -> Vec<String> {
 
 /// Write a RetroArch override config with global + per-system settings.
 /// Returns the path to the generated file.
-fn write_retroarch_override_cfg(system_id: &str) -> Result<String, String> {
+fn write_retroarch_override_cfg(system_id: &str, data_root: &str, exe_path: &str) -> Result<String, String> {
     let dir = std::env::temp_dir().join("cubi-frontend");
     std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create temp dir: {e}"))?;
     let cfg_path = dir.join("retroarch_override.cfg");
@@ -505,6 +507,25 @@ fn write_retroarch_override_cfg(system_id: &str) -> Result<String, String> {
         .and_then(|_| writeln!(f, "pause_nonactive = \"false\""))
         .and_then(|_| writeln!(f, "video_vsync = \"false\""))
         .map_err(|e| format!("Failed to write override cfg: {e}"))?;
+
+    // Point RetroArch to the user's BIOS directory so cores can find required
+    // system files (e.g. disksys.rom, coleco.rom) without manual copying.
+    // Prefer {data_root}/bios when it exists, otherwise fall back to the
+    // standard RetroArch/system directory next to the executable.
+    let bios_dir = if !data_root.is_empty() {
+        let candidate = PathBuf::from(data_root).join("bios");
+        if candidate.is_dir() { Some(candidate) } else { None }
+    } else {
+        None
+    };
+    let system_dir = bios_dir.unwrap_or_else(|| {
+        std::path::Path::new(exe_path)
+            .parent()
+            .unwrap_or(std::path::Path::new(""))
+            .join("system")
+    });
+    writeln!(f, "system_directory = \"{}\"", system_dir.to_string_lossy().replace('\\', "/"))
+        .map_err(|e| format!("Failed to write system_directory: {e}"))?;
 
     // N64: mupen64plus_next GLideN64 plugin requires an OpenGL driver.
     // Force glcore so it doesn't blank-screen when RA defaults to vulkan/d3d.

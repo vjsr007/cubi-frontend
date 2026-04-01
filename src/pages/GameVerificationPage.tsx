@@ -105,7 +105,7 @@ export function GameVerificationPage() {
         const problems = result.file_missing + result.file_unreadable + result.launch_failed;
         showToast(
           `Verificacion completa: ${result.ok} OK, ${result.file_missing} faltantes, ${result.file_unreadable} corruptos, ${result.emulator_missing} sin emulador, ${result.launch_failed} no abren`,
-          problems > 0 ? 'warning' : 'success'
+          problems > 0 ? 'error' : 'success'
         );
       }
     } catch (e) {

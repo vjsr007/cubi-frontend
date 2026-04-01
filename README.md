@@ -10,6 +10,20 @@ Inspired by EmulationStation-DE, Pegasus, and LaunchBox — designed to work alo
 
 ---
 
+## Demo
+
+<p align="center">
+  <img src="demo/output/cubi-demo-preview.gif" alt="Cubi Frontend Demo Preview" width="854" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/vjsr007/cubi-frontend/releases/download/v0.7.0/cubi-demo-720p.mp4">
+    📺 Watch full demo video (5 min, 720p)
+  </a>
+</p>
+
+---
+
 ## Download
 
 Pre-built installers are available on the [Releases page](https://github.com/vjsr007/cubi-frontend/releases/latest).

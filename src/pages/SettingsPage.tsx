@@ -329,6 +329,7 @@ export function SettingsPage() {
               { icon: '🖥️', label: 'PC Games',                 page: 'pc-games'           },
               { icon: '📁', label: 'ROM Paths',                page: 'rom-paths'          },
               { icon: '🎛️', label: 'Input Mapping',            page: 'input-mapping'      },
+              { icon: '🔍', label: 'Game Verification',         page: 'game-verification'  },
             ] as { icon: string; label: string; page: Page }[]).map(({ icon, label, page }) => (
               <button
                 key={page}

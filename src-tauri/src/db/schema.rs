@@ -127,6 +127,13 @@ ALTER TABLE games ADD COLUMN igdb_id INTEGER;
 UPDATE schema_version SET version = 2;
 ";
 
+/// Migration v4: Game verification status
+pub const MIGRATION_V4: &str = "
+ALTER TABLE games ADD COLUMN verification_status TEXT NOT NULL DEFAULT 'unverified';
+ALTER TABLE games ADD COLUMN verification_message TEXT;
+UPDATE schema_version SET version = 4;
+";
+
 /// Migration v3: Steam integration (REQ-021)
 pub const MIGRATION_V3: &str = "
 ALTER TABLE games ADD COLUMN steam_app_id INTEGER;

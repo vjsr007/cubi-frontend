@@ -14,6 +14,7 @@ import { EmulatorConfigPage } from '../../pages/EmulatorConfigPage';
 import { RomPathsPage } from '../../pages/RomPathsPage';
 import { InputMappingPage } from '../../pages/InputMappingPage';
 import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
+import { GameVerificationPage } from '../../pages/GameVerificationPage';
 import { useAudio } from '../../hooks/useAudio';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { GameInfo } from '../../types';
@@ -182,6 +183,15 @@ export function HyperSpinTheme() {
     return (
       <div style={{ height: '100%', background: '#0d0d0d' }}>
         <EmulatorSettingsPage />
+        <Toast />
+      </div>
+    );
+  }
+
+  if (currentPage === 'game-verification') {
+    return (
+      <div style={{ height: '100%', background: '#0d0d0d' }}>
+        <GameVerificationPage />
         <Toast />
       </div>
     );

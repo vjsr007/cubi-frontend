@@ -11,3 +11,4 @@ pub mod emulator_settings;
 pub mod pc_scraper;
 pub mod metadata_editor;
 pub mod steam_integration;
+pub mod verification;

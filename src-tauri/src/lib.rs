@@ -91,6 +91,12 @@ pub fn run() {
             commands::steam_integration::link_steam_game,
             commands::steam_integration::fetch_steam_data,
             commands::steam_integration::refresh_steam_data,
+            commands::verification::verify_all_games,
+            commands::verification::verify_system_games,
+            commands::verification::test_launch_game,
+            commands::verification::get_broken_games,
+            commands::verification::delete_broken_game,
+            commands::verification::delete_broken_games,
         ])
         .setup(|app| {
             let db = db::Database::new(app.handle())?;

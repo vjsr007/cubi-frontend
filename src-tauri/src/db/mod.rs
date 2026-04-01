@@ -109,6 +109,23 @@ impl Database {
             }
             log::info!("DB migration v3 complete");
         }
+
+        if version < 4 {
+            log::info!("Running DB migration v4: game verification status");
+            let stmts = [
+                "ALTER TABLE games ADD COLUMN verification_status TEXT NOT NULL DEFAULT 'unverified'",
+                "ALTER TABLE games ADD COLUMN verification_message TEXT",
+                "UPDATE schema_version SET version = 4",
+            ];
+            for stmt in &stmts {
+                if let Err(e) = conn.execute_batch(stmt) {
+                    if !e.to_string().contains("duplicate column") {
+                        log::warn!("Migration v4 stmt (ignored): {} — {}", stmt, e);
+                    }
+                }
+            }
+            log::info!("DB migration v4 complete");
+        }
         Ok(())
     }
 
@@ -285,6 +302,10 @@ impl Database {
             pcgamingwiki_url: row.get(26)?,
             igdb_id: row.get(27)?,
             steam_app_id: row.get::<_, Option<i64>>(28)?.map(|v| v as u32),
+            verification_status: crate::models::VerificationStatus::from_str(
+                &row.get::<_, String>(29).unwrap_or_else(|_| "unverified".to_string()),
+            ),
+            verification_message: row.get(30)?,
         })
     }
 
@@ -294,7 +315,7 @@ impl Database {
          players, rating, last_played, play_count, favorite,
          hero_art, logo, background_art, screenshots, trailer_url,
          trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id,
-         steam_app_id";
+         steam_app_id, verification_status, verification_message";
 
     pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
@@ -467,6 +488,35 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         conn.execute("DELETE FROM games WHERE id = ?1", [game_id])?;
         Ok(())
+    }
+
+    pub fn update_verification_status(
+        &self,
+        game_id: &str,
+        status: &crate::models::VerificationStatus,
+        message: Option<&str>,
+    ) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE games SET verification_status = ?1, verification_message = ?2 WHERE id = ?3",
+            rusqlite::params![status.as_str(), message, game_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_games_by_verification(
+        &self,
+        status: &str,
+    ) -> SqlResult<Vec<GameInfo>> {
+        let conn = self.conn.lock().unwrap();
+        let sql = format!(
+            "SELECT {} FROM games WHERE verification_status = ?1 ORDER BY title",
+            Self::GAME_COLS
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let result = stmt.query_map([status], Self::row_to_game)?
+            .collect::<SqlResult<Vec<_>>>();
+        result
     }
 
     pub fn update_system_game_count(&self, system_id: &str) -> SqlResult<()> {

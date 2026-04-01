@@ -58,6 +58,8 @@ export interface SystemInfo {
   icon?: string;
 }
 
+export type VerificationStatus = 'unverified' | 'ok' | 'file_missing' | 'file_unreadable' | 'emulator_missing' | 'launch_failed';
+
 export interface GameInfo {
   id: string;
   system_id: string;
@@ -88,6 +90,27 @@ export interface GameInfo {
   website?: string;
   pcgamingwiki_url?: string;
   igdb_id?: number;
+  // Game verification
+  verification_status: VerificationStatus;
+  verification_message?: string;
+}
+
+export interface GameVerificationResult {
+  game_id: string;
+  title: string;
+  system_id: string;
+  status: VerificationStatus;
+  message: string;
+}
+
+export interface VerificationSummary {
+  total: number;
+  ok: number;
+  file_missing: number;
+  file_unreadable: number;
+  emulator_missing: number;
+  launch_failed: number;
+  results: GameVerificationResult[];
 }
 
 export interface ScanProgress {
@@ -106,7 +129,7 @@ export interface ScanResult {
 export type SortField = 'title' | 'last_played' | 'play_count' | 'rating' | 'year';
 export type SortOrder = 'asc' | 'desc';
 export type ViewMode = 'grid' | 'list';
-export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping' | 'emulator-settings';
+export type Page = 'library' | 'settings' | 'game-detail' | 'scraper' | 'pc-games' | 'emulator-config' | 'rom-paths' | 'input-mapping' | 'emulator-settings' | 'game-verification';
 
 export interface ScraperConfig {
   id: string;

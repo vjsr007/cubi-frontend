@@ -1,5 +1,44 @@
 use serde::{Deserialize, Serialize};
 
+/// Verification status for a game ROM
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum VerificationStatus {
+    Unverified,
+    Ok,
+    FileMissing,
+    FileUnreadable,
+    EmulatorMissing,
+    LaunchFailed,
+}
+
+impl Default for VerificationStatus {
+    fn default() -> Self { Self::Unverified }
+}
+
+impl VerificationStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Unverified => "unverified",
+            Self::Ok => "ok",
+            Self::FileMissing => "file_missing",
+            Self::FileUnreadable => "file_unreadable",
+            Self::EmulatorMissing => "emulator_missing",
+            Self::LaunchFailed => "launch_failed",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "ok" => Self::Ok,
+            "file_missing" => Self::FileMissing,
+            "file_unreadable" => Self::FileUnreadable,
+            "emulator_missing" => Self::EmulatorMissing,
+            "launch_failed" => Self::LaunchFailed,
+            _ => Self::Unverified,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameInfo {
     pub id: String,
@@ -33,6 +72,9 @@ pub struct GameInfo {
     pub igdb_id: Option<i64>,
     // Steam integration (REQ-021)
     pub steam_app_id: Option<u32>,
+    // Game health verification
+    pub verification_status: VerificationStatus,
+    pub verification_message: Option<String>,
 }
 
 impl GameInfo {
@@ -167,4 +209,26 @@ pub struct ScanResult {
     pub systems_found: u32,
     pub games_found: u32,
     pub errors: Vec<String>,
+}
+
+/// Result of verifying a single game
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameVerificationResult {
+    pub game_id: String,
+    pub title: String,
+    pub system_id: String,
+    pub status: VerificationStatus,
+    pub message: String,
+}
+
+/// Summary of a batch verification run
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VerificationSummary {
+    pub total: u32,
+    pub ok: u32,
+    pub file_missing: u32,
+    pub file_unreadable: u32,
+    pub emulator_missing: u32,
+    pub launch_failed: u32,
+    pub results: Vec<GameVerificationResult>,
 }

@@ -99,12 +99,90 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             launch_template: LaunchTemplate::Custom("--fullscreen \"{rom}\""),
         },
         EmulatorDef {
+            system_ids: &["wiiu"],
+            name: "Cemu",
+            emudeck_paths: &["Cemu/Cemu.exe", "cemu/Cemu.exe"],
+            exe_name: "Cemu",
+            launch_template: LaunchTemplate::Custom("-g \"{rom}\" -f"),
+        },
+        EmulatorDef {
+            system_ids: &["psvita"],
+            name: "Vita3K",
+            emudeck_paths: &["Vita3K/Vita3K.exe"],
+            exe_name: "Vita3K",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["xbox360"],
+            name: "Xenia",
+            emudeck_paths: &["xenia/xenia_canary.exe", "xenia/xenia.exe"],
+            exe_name: "xenia_canary",
+            launch_template: LaunchTemplate::Custom("--fullscreen=true \"{rom}\""),
+        },
+        EmulatorDef {
+            system_ids: &["ps4"],
+            name: "ShadPS4",
+            emudeck_paths: &["shadps4-qt/shadps4.exe", "shadps4/shadps4.exe"],
+            exe_name: "shadps4",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["gba"],
+            name: "mGBA",
+            emudeck_paths: &["mGBA/mGBA.exe"],
+            exe_name: "mGBA",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["dreamcast"],
+            name: "Flycast",
+            emudeck_paths: &["flycast/flycast.exe"],
+            exe_name: "flycast",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["scummvm"],
+            name: "ScummVM",
+            emudeck_paths: &["scummvm/scummvm.exe"],
+            exe_name: "scummvm",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["atarijaguar"],
+            name: "BigPEmu",
+            emudeck_paths: &["bigpemu/BigPEmu.exe"],
+            exe_name: "BigPEmu",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["model2"],
+            name: "Model 2 Emulator",
+            emudeck_paths: &["Model2/emulator.exe"],
+            exe_name: "emulator",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["supermodel"],
+            name: "Supermodel",
+            emudeck_paths: &["supermodel/Supermodel.exe"],
+            exe_name: "Supermodel",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["3ds"],
+            name: "Lime3DS",
+            emudeck_paths: &["lime3ds/lime3ds.exe", "azahar/azahar.exe"],
+            exe_name: "lime3ds",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
             system_ids: &[
                 "nes", "snes", "n64", "gb", "gbc", "gba", "3ds",
-                "genesis", "mastersystem", "gamegear", "saturn", "dreamcast",
+                "genesis", "megadrive", "mastersystem", "gamegear", "saturn", "dreamcast",
                 "arcade", "fbneo", "neogeo", "cps1", "cps2", "cps3",
                 "amiga", "atari2600", "atari5200", "atari7800", "atarist", "atarilynx",
-                "pcengine", "ngpc", "colecovision", "msx", "c64", "wswan",
+                "pcengine", "ngpc", "colecovision", "msx", "c64", "wswan", "wswanc",
+                "fds", "satellaview", "sg1000", "intellivision", "gw", "3do",
             ],
             name: "RetroArch",
             emudeck_paths: &["RetroArch/retroarch.exe", "RetroArch-Win64/retroarch.exe"],
@@ -153,9 +231,24 @@ fn system_display_name(id: &str) -> String {
         "colecovision" => "ColecoVision",
         "msx"          => "MSX",
         "c64"          => "Commodore 64",
-        "wswan"        => "WonderSwan Color",
+        "wswan"        => "WonderSwan",
+        "wswanc"       => "WonderSwan Color",
         "3ds"          => "Nintendo 3DS",
         "wiiu"         => "Wii U",
+        "fds"          => "Famicom Disk System",
+        "satellaview"  => "Satellaview",
+        "sg1000"       => "SG-1000",
+        "intellivision"=> "Intellivision",
+        "psvita"       => "PS Vita",
+        "xbox360"      => "Xbox 360",
+        "ps4"          => "PlayStation 4",
+        "gw"           => "Game & Watch",
+        "model2"       => "Model 2 Arcade",
+        "supermodel"   => "Model 3 Arcade",
+        "atarijaguar"  => "Atari Jaguar",
+        "scummvm"      => "ScummVM",
+        "3do"          => "3DO",
+        "megadrive"    => "Mega Drive",
         other          => other,
     };
     s.to_string()
@@ -212,7 +305,7 @@ pub fn get_retroarch_core(system_id: &str) -> &'static str {
         "gb" | "gbc" => "gambatte_libretro",
         "gba" => "mgba_libretro",
         "nds" => "melonds_libretro",
-        "genesis" | "megadrive" => "genesis_plus_gx_libretro",
+        "genesis" => "genesis_plus_gx_libretro",
         "mastersystem" => "genesis_plus_gx_libretro",
         "saturn" => "mednafen_saturn_libretro",
         "dreamcast" => "flycast_libretro",
@@ -237,6 +330,14 @@ pub fn get_retroarch_core(system_id: &str) -> &'static str {
         "wswan"        => "mednafen_wswan_libretro",
         "3ds"          => "citra_libretro",
         "wiiu"         => "hiyacfw_libretro",
+        "fds"          => "mesen_libretro",
+        "satellaview"  => "snes9x_libretro",
+        "sg1000"       => "genesis_plus_gx_libretro",
+        "intellivision"=> "freeintv_libretro",
+        "wswanc"       => "mednafen_wswan_libretro",
+        "gw"           => "gw_libretro",
+        "3do"          => "opera_libretro",
+        "megadrive"    => "genesis_plus_gx_libretro",
         _ => "fceumm_libretro",
     }
 }
@@ -262,16 +363,20 @@ pub fn find_emulator(system_id: &str, emudeck_path: &str) -> Option<(String, Str
     None
 }
 
-pub async fn launch_game(
+/// Resolved launch command: executable path + arguments.
+pub struct LaunchCommand {
+    pub exe_path: String,
+    pub args: Vec<String>,
+    pub emulator_name: String,
+}
+
+/// Build the launch command for a game without actually spawning it.
+/// Returns the resolved exe path, arguments, and emulator name.
+pub fn build_launch_command(
     game: &GameInfo,
     emudeck_path: &str,
     overrides: &HashMap<String, EmulatorOverride>,
-) -> Result<(), String> {
-    // PC games: launch directly without emulator
-    if game.system_id == "pc" {
-        return launch_pc_game(&game.file_path).await;
-    }
-
+) -> Result<LaunchCommand, String> {
     let registry = get_emulator_registry();
     let def = registry.iter().find(|d| d.system_ids.contains(&game.system_id.as_str()))
         .ok_or_else(|| format!("No emulator configured for system '{}'", game.system_id))?;
@@ -326,7 +431,6 @@ pub async fn launch_game(
                     core_path.to_string_lossy().to_string(),
                     rom.clone(),
                 ];
-                // Create a temp override config to prevent pause when RA loses focus
                 if let Ok(override_path) = write_retroarch_override_cfg(&game.system_id) {
                     launch_args.push("--appendconfig".to_string());
                     launch_args.push(override_path);
@@ -336,11 +440,30 @@ pub async fn launch_game(
         }
     };
 
-    log::info!("Launching: {} {:?}", exe_path, args);
-    tokio::process::Command::new(&exe_path)
-        .args(&args)
+    Ok(LaunchCommand {
+        exe_path,
+        args,
+        emulator_name: def.name.to_string(),
+    })
+}
+
+pub async fn launch_game(
+    game: &GameInfo,
+    emudeck_path: &str,
+    overrides: &HashMap<String, EmulatorOverride>,
+) -> Result<(), String> {
+    // PC games: launch directly without emulator
+    if game.system_id == "pc" {
+        return launch_pc_game(&game.file_path).await;
+    }
+
+    let cmd = build_launch_command(game, emudeck_path, overrides)?;
+
+    log::info!("Launching: {} {:?}", cmd.exe_path, cmd.args);
+    tokio::process::Command::new(&cmd.exe_path)
+        .args(&cmd.args)
         .spawn()
-        .map_err(|e| format!("Failed to launch {}: {}", def.name, e))?;
+        .map_err(|e| format!("Failed to launch {}: {}", cmd.emulator_name, e))?;
 
     Ok(())
 }

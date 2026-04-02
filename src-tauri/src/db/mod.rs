@@ -3,7 +3,7 @@ pub mod schema;
 use rusqlite::{Connection, Result as SqlResult};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
-use crate::models::{GameInfo, GameInfoPatch, SystemInfo, ScraperConfig, default_scrapers};
+use crate::models::{GameInfo, GameInfoPatch, GamesPage, SystemInfo, ScraperConfig, default_scrapers};
 
 pub struct Database {
     pub conn: Mutex<Connection>,
@@ -490,6 +490,48 @@ impl Database {
         let result = stmt.query_map([], Self::row_to_game)?
             .collect::<SqlResult<Vec<_>>>();
         result
+    }
+
+    pub fn get_games_page(&self, system_id: &str, offset: usize, limit: usize) -> SqlResult<GamesPage> {
+        let conn = self.conn.lock().unwrap();
+        let total: usize = conn.query_row(
+            "SELECT COUNT(*) FROM games WHERE system_id = ?1",
+            [system_id],
+            |row| row.get(0),
+        )?;
+        let sql = if limit == 0 {
+            format!("SELECT {} FROM games WHERE system_id = ?1 ORDER BY title", Self::GAME_COLS)
+        } else {
+            format!("SELECT {} FROM games WHERE system_id = ?1 ORDER BY title LIMIT ?2 OFFSET ?3", Self::GAME_COLS)
+        };
+        let mut stmt = conn.prepare(&sql)?;
+        let games = if limit == 0 {
+            stmt.query_map([system_id], Self::row_to_game)?.collect::<SqlResult<Vec<_>>>()?
+        } else {
+            stmt.query_map(rusqlite::params![system_id, limit, offset], Self::row_to_game)?.collect::<SqlResult<Vec<_>>>()?
+        };
+        Ok(GamesPage { games, total })
+    }
+
+    pub fn get_all_games_page(&self, offset: usize, limit: usize) -> SqlResult<GamesPage> {
+        let conn = self.conn.lock().unwrap();
+        let total: usize = conn.query_row(
+            "SELECT COUNT(*) FROM games",
+            [],
+            |row| row.get(0),
+        )?;
+        let sql = if limit == 0 {
+            format!("SELECT {} FROM games ORDER BY title", Self::GAME_COLS)
+        } else {
+            format!("SELECT {} FROM games ORDER BY title LIMIT ?1 OFFSET ?2", Self::GAME_COLS)
+        };
+        let mut stmt = conn.prepare(&sql)?;
+        let games = if limit == 0 {
+            stmt.query_map([], Self::row_to_game)?.collect::<SqlResult<Vec<_>>>()?
+        } else {
+            stmt.query_map(rusqlite::params![limit, offset], Self::row_to_game)?.collect::<SqlResult<Vec<_>>>()?
+        };
+        Ok(GamesPage { games, total })
     }
 
     pub fn update_play_stats(&self, game_id: &str) -> SqlResult<()> {

@@ -60,6 +60,11 @@ export interface SystemInfo {
 
 export type VerificationStatus = 'unverified' | 'ok' | 'file_missing' | 'file_unreadable' | 'emulator_missing' | 'launch_failed';
 
+export interface GamesPage {
+  games: GameInfo[];
+  total: number;
+}
+
 export interface GameInfo {
   id: string;
   system_id: string;

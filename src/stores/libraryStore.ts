@@ -2,10 +2,13 @@ import { create } from 'zustand';
 import type { GameInfo, SystemInfo, SortField, SortOrder, ViewMode } from '../types';
 import { api } from '../lib/invoke';
 
+const PAGE_SIZE = 200;
+
 interface LibraryState {
   systems: SystemInfo[];
   selectedSystemId: string | null;
   games: GameInfo[];
+  totalGames: number;
   focusedGameIndex: number;
 
   searchQuery: string;
@@ -17,6 +20,7 @@ interface LibraryState {
 
   isLoadingSystems: boolean;
   isLoadingGames: boolean;
+  isLoadingMore: boolean;
   isScanning: boolean;
   launchingGameId: string | null;
   scanProgress: string;
@@ -24,6 +28,7 @@ interface LibraryState {
 
   loadSystems: () => Promise<void>;
   selectSystem: (systemId: string) => Promise<void>;
+  loadMoreGames: () => Promise<void>;
   setFocusedGameIndex: (index: number) => void;
   setSearchQuery: (query: string) => void;
   setSortField: (field: SortField) => void;
@@ -35,12 +40,14 @@ interface LibraryState {
   scanLibrary: (dataRoot: string) => Promise<void>;
   launchGame: (gameId: string) => Promise<void>;
   getFilteredGames: () => GameInfo[];
+  hasMoreGames: () => boolean;
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   systems: [],
   selectedSystemId: null,
   games: [],
+  totalGames: 0,
   focusedGameIndex: 0,
 
   searchQuery: '',
@@ -52,6 +59,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   isLoadingSystems: false,
   isLoadingGames: false,
+  isLoadingMore: false,
   isScanning: false,
   launchingGameId: null,
   scanProgress: '',
@@ -72,19 +80,40 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   selectSystem: async (systemId: string) => {
     // Clear previous games immediately so the grid resets at once
-    set({ selectedSystemId: systemId, isLoadingGames: true, focusedGameIndex: 0, games: [] });
+    set({ selectedSystemId: systemId, isLoadingGames: true, focusedGameIndex: 0, games: [], totalGames: 0 });
     try {
-      const games = systemId === '__all__'
-        ? await api.getAllGames()
-        : await api.getGames(systemId);
+      const page = systemId === '__all__'
+        ? await api.getAllGamesPage(0, PAGE_SIZE)
+        : await api.getGamesPage(systemId, 0, PAGE_SIZE);
       // Guard against race conditions: only apply if this is still the active selection
       if (get().selectedSystemId === systemId) {
-        set({ games, isLoadingGames: false });
+        set({ games: page.games, totalGames: page.total, isLoadingGames: false });
       }
     } catch (e) {
       if (get().selectedSystemId === systemId) {
         set({ isLoadingGames: false, error: String(e) });
       }
+    }
+  },
+
+  loadMoreGames: async () => {
+    const { selectedSystemId, games, totalGames, isLoadingMore } = get();
+    if (!selectedSystemId || isLoadingMore || games.length >= totalGames) return;
+    set({ isLoadingMore: true });
+    try {
+      const offset = games.length;
+      const page = selectedSystemId === '__all__'
+        ? await api.getAllGamesPage(offset, PAGE_SIZE)
+        : await api.getGamesPage(selectedSystemId, offset, PAGE_SIZE);
+      if (get().selectedSystemId === selectedSystemId) {
+        set((s) => ({
+          games: [...s.games, ...page.games],
+          totalGames: page.total,
+          isLoadingMore: false,
+        }));
+      }
+    } catch (e) {
+      set({ isLoadingMore: false, error: String(e) });
     }
   },
 
@@ -177,5 +206,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     });
 
     return filtered;
+  },
+
+  hasMoreGames: () => {
+    const { games, totalGames } = get();
+    return games.length < totalGames;
   },
 }));

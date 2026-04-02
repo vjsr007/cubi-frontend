@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useI18nStore } from '../../stores/i18nStore';
@@ -13,10 +13,35 @@ export function GameGrid() {
   const { showToast, navigateTo } = useUiStore();
   const { t } = useI18nStore();
   const gridRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const filteredGames = store.getFilteredGames();
   const total = filteredGames.length;
   const focused = store.focusedGameIndex;
+  const hasMore = store.hasMoreGames();
+
+  // Load more from backend when sentinel is visible
+  const loadMore = useCallback(() => {
+    if (hasMore && !store.isLoadingMore) store.loadMoreGames();
+  }, [hasMore, store]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { root: gridRef.current, rootMargin: '400px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  // Auto-load if gamepad/keyboard navigates near the end
+  useEffect(() => {
+    if (hasMore && focused >= total - COLUMNS * 2) {
+      store.loadMoreGames();
+    }
+  }, [focused, total, hasMore, COLUMNS, store]);
 
   const handleButton = (btn: GamepadButton) => {
     const cur = useLibraryStore.getState().focusedGameIndex;
@@ -134,6 +159,14 @@ export function GameGrid() {
           />
         </div>
       ))}
+      {hasMore && (
+        <div ref={sentinelRef} style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', padding: 16 }}>
+          {store.isLoadingMore
+            ? <LoadingSpinner size="sm" />
+            : <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>{total} / {store.totalGames}</span>
+          }
+        </div>
+      )}
     </div>
   );
 }

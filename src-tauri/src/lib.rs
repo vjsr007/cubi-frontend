@@ -21,6 +21,8 @@ pub fn run() {
             commands::library::get_systems,
             commands::library::get_games,
             commands::library::get_all_games,
+            commands::library::get_games_page,
+            commands::library::get_all_games_page,
             commands::library::get_game,
             commands::library::toggle_favorite,
             commands::scanner::scan_library,

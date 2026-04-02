@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
-  AppConfig, SystemInfo, GameInfo, ScanResult, GameMedia, SystemMedia,
+  AppConfig, SystemInfo, GameInfo, GamesPage, ScanResult, GameMedia, SystemMedia,
   ScraperConfig, ScrapeJob, ScrapeResult, EsDECredentials,
   PcImportGame, PcLibraryStatus, SystemEmulatorInfo,
   SystemDefInfo, RomPathOverride,
@@ -26,6 +26,10 @@ export const api = {
   getSystems: () => invoke<SystemInfo[]>('get_systems'),
   getGames: (systemId: string) => invoke<GameInfo[]>('get_games', { systemId }),
   getAllGames: () => invoke<GameInfo[]>('get_all_games'),
+  getGamesPage: (systemId: string, offset: number, limit: number) =>
+    invoke<GamesPage>('get_games_page', { systemId, offset, limit }),
+  getAllGamesPage: (offset: number, limit: number) =>
+    invoke<GamesPage>('get_all_games_page', { offset, limit }),
   getGame: (gameId: string) => invoke<GameInfo | null>('get_game', { gameId }),
   toggleFavorite: (gameId: string) => invoke<boolean>('toggle_favorite', { gameId }),
 

@@ -1,6 +1,6 @@
 use tauri::State;
 use crate::db::Database;
-use crate::models::{GameInfo, SystemInfo};
+use crate::models::{GameInfo, GamesPage, SystemInfo};
 
 #[tauri::command]
 pub fn get_systems(db: State<Database>) -> Result<Vec<SystemInfo>, String> {
@@ -25,4 +25,14 @@ pub fn toggle_favorite(db: State<Database>, game_id: String) -> Result<bool, Str
 #[tauri::command]
 pub fn get_all_games(db: State<Database>) -> Result<Vec<GameInfo>, String> {
     db.get_all_games().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_games_page(db: State<Database>, system_id: String, offset: usize, limit: usize) -> Result<GamesPage, String> {
+    db.get_games_page(&system_id, offset, limit).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_all_games_page(db: State<Database>, offset: usize, limit: usize) -> Result<GamesPage, String> {
+    db.get_all_games_page(offset, limit).map_err(|e| e.to_string())
 }

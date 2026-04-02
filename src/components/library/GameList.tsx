@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useI18nStore } from '../../stores/i18nStore';
@@ -13,10 +13,35 @@ export function GameList() {
   const { showToast, navigateTo } = useUiStore();
   const { t } = useI18nStore();
   const listRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const filteredGames = store.getFilteredGames();
   const total = filteredGames.length;
   const focused = store.focusedGameIndex;
+  const hasMore = store.hasMoreGames();
+
+  // Load more from backend when sentinel is visible
+  const loadMore = useCallback(() => {
+    if (hasMore && !store.isLoadingMore) store.loadMoreGames();
+  }, [hasMore, store]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { root: listRef.current, rootMargin: '400px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  // Auto-load if keyboard/gamepad navigates near the end
+  useEffect(() => {
+    if (hasMore && focused >= total - 10) {
+      store.loadMoreGames();
+    }
+  }, [focused, total, hasMore, store]);
 
   const handleButton = (btn: GamepadButton) => {
     const cur = useLibraryStore.getState().focusedGameIndex;
@@ -209,6 +234,14 @@ export function GameList() {
           </div>
         );
       })}
+      {hasMore && (
+        <div ref={sentinelRef} style={{ display: 'flex', justifyContent: 'center', padding: 12 }}>
+          {store.isLoadingMore
+            ? <LoadingSpinner size="sm" />
+            : <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>{total} / {store.totalGames}</span>
+          }
+        </div>
+      )}
     </div>
   );
 }

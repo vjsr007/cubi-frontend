@@ -77,6 +77,12 @@ pub struct GameInfo {
     pub verification_message: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GamesPage {
+    pub games: Vec<GameInfo>,
+    pub total: usize,
+}
+
 impl GameInfo {
     pub fn title_from_filename(filename: &str) -> String {
         let name = std::path::Path::new(filename)

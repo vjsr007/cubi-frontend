@@ -6,8 +6,8 @@ use crate::models::{
 };
 use crate::services::config_writers::{
     DolphinConfigWriter, DuckStationConfigWriter, EmulatorConfigWriter, Pcsx2ConfigWriter,
-    PpssppConfigWriter, RetroArchConfigWriter, Rpcs3ConfigWriter, RyujinxConfigWriter,
-    XemuConfigWriter,
+    PpssppConfigWriter, RetroArchConfigWriter, Rpcs3ConfigWriter, RuffleConfigWriter,
+    RyujinxConfigWriter, XemuConfigWriter,
 };
 
 /// Seed all canonical setting definitions into the database.
@@ -31,6 +31,7 @@ pub fn get_config_writer(emulator_name: &str) -> Option<Box<dyn EmulatorConfigWr
         "RPCS3"       => Some(Box::new(Rpcs3ConfigWriter)),
         "xemu"        => Some(Box::new(XemuConfigWriter)),
         "Ryujinx"     => Some(Box::new(RyujinxConfigWriter)),
+        "Ruffle"      => Some(Box::new(RuffleConfigWriter)),
         _ => None,
     }
 }
@@ -46,6 +47,7 @@ pub fn get_all_config_writers_info() -> Vec<ConfigWriterInfo> {
         Box::new(Rpcs3ConfigWriter),
         Box::new(XemuConfigWriter),
         Box::new(RyujinxConfigWriter),
+        Box::new(RuffleConfigWriter),
     ];
 
     writers

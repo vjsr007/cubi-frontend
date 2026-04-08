@@ -3,7 +3,7 @@ use crate::db::Database;
 use crate::models::{GameInfo, SystemInfo};
 use crate::services::pc_import_service::{
     PcImportGame, PcLibraryStatus,
-    detect_pc_libraries, import_steam, import_epic, import_ea, import_gog,
+    detect_pc_libraries, import_steam, import_epic, import_ea, import_gog, import_xbox,
 };
 
 const PC_SYSTEM_ID: &str = "pc";
@@ -66,6 +66,12 @@ pub async fn import_ea_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGam
 #[tauri::command]
 pub async fn import_gog_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
     Ok(import_gog(resolve_sgdb_key(sgdb_key).as_deref()).await)
+}
+
+/// Scan and return all discovered Xbox Game Pass games.
+#[tauri::command]
+pub async fn import_xbox_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
+    Ok(import_xbox(resolve_sgdb_key(sgdb_key).as_deref()).await)
 }
 
 /// Persist a list of imported PC games to the database.

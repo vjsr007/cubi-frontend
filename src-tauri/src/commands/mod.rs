@@ -14,3 +14,5 @@ pub mod steam_integration;
 pub mod verification;
 pub mod catalog;
 pub mod system_wiki;
+pub mod emulator_commands;
+pub mod flash_mapping;

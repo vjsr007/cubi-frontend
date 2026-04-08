@@ -101,11 +101,12 @@ function StoreLogo({ id, size = 16 }: { id: string; size?: number }) {
 type Tab = PcGameSource;
 
 const SOURCES: { id: Tab; label: string }[] = [
-  { id: 'steam',  label: 'Steam'       },
-  { id: 'epic',   label: 'Epic Games'  },
-  { id: 'ea',     label: 'EA App'      },
-  { id: 'gog',    label: 'GOG Galaxy'  },
-  { id: 'manual', label: 'Manual'      },
+  { id: 'steam',  label: 'Steam'          },
+  { id: 'epic',   label: 'Epic Games'     },
+  { id: 'ea',     label: 'EA App'         },
+  { id: 'gog',    label: 'GOG Galaxy'     },
+  { id: 'xbox',   label: 'Xbox Game Pass' },
+  { id: 'manual', label: 'Manual'         },
 ];
 
 const card: React.CSSProperties = {
@@ -203,6 +204,7 @@ export function PcGamesPage() {
       else if (source === 'epic') games = await api.importEpicGames(key);
       else if (source === 'ea') games = await api.importEaGames(key);
       else if (source === 'gog') games = await api.importGogGames(key);
+      else if (source === 'xbox') games = await api.importXboxGames(key);
 
       setResults((r) => ({ ...r, [source]: games }));
       // Select all by default
@@ -300,6 +302,7 @@ export function PcGamesPage() {
     if (src === 'epic') return libraryStatus.epic_found;
     if (src === 'ea') return libraryStatus.ea_found;
     if (src === 'gog') return libraryStatus.gog_found;
+    if (src === 'xbox') return libraryStatus.xbox_found;
     return true;
   };
 

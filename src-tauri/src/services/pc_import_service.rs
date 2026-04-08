@@ -27,6 +27,7 @@ pub struct PcLibraryStatus {
     pub epic_found: bool,
     pub ea_found: bool,
     pub gog_found: bool,
+    pub xbox_found: bool,
 }
 
 // ── Steam ─────────────────────────────────────────────────────────────
@@ -564,12 +565,15 @@ pub fn detect_pc_libraries() -> PcLibraryStatus {
 
     let gog_found = check_gog_registry();
 
+    let xbox_found = check_xbox_app();
+
     PcLibraryStatus {
         steam_found,
         steam_path: steam_path_str,
         epic_found,
         ea_found,
         gog_found,
+        xbox_found,
     }
 }
 
@@ -597,4 +601,338 @@ fn check_gog_registry() -> bool {
 #[cfg(not(windows))]
 fn check_gog_registry() -> bool {
     false
+}
+
+// ── Xbox Game Pass ────────────────────────────────────────────────────
+
+#[cfg(windows)]
+pub async fn import_xbox(sgdb_key: Option<&str>) -> Vec<PcImportGame> {
+    let mut games = Vec::new();
+
+    // Use PowerShell to query installed Microsoft Store/Xbox Game Pass apps
+    // Focus on packages that are likely to be games
+    let output = std::process::Command::new("powershell")
+        .args(&[
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            r#"Get-AppxPackage | Where-Object { 
+                $_.IsFramework -eq $false -and 
+                $_.SignatureKind -eq 'Store' -and
+                $_.Name -notlike 'Microsoft.*' -and
+                $_.Name -notlike '*MicrosoftCorporation*' -and
+                $_.Publisher -notlike 'CN=Microsoft Corporation*' -and
+                $_.Publisher -notlike '*Microsoft Windows*' -and
+                $_.InstallLocation -ne '' -and
+                $_.InstallLocation -ne $null
+            } | ForEach-Object { 
+                "$($_.Name)|$($_.PackageFamilyName)|$($_.InstallLocation)|$($_.Publisher)" 
+            }"#,
+        ])
+        .output();
+
+    let output = match output {
+        Ok(o) => o,
+        Err(_) => return games,
+    };
+
+    let content = String::from_utf8_lossy(&output.stdout);
+    
+    for line in content.lines() {
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() < 4 {
+            continue;
+        }
+
+        let package_name = parts[0].trim();
+        let package_family = parts[1].trim();
+        let install_location = parts[2].trim();
+        let publisher = parts[3].trim();
+
+        // Skip if empty
+        if package_name.is_empty() || package_family.is_empty() || install_location.is_empty() {
+            continue;
+        }
+
+        // Strict whitelist: Only known game publishers
+        let is_game_publisher = publisher.contains("Xbox Game Studios") 
+            || publisher.contains("Bethesda")
+            || publisher.contains("id Software")
+            || publisher.contains("Activision")
+            || publisher.contains("Ubisoft")
+            || publisher.contains("Electronic Arts")
+            || publisher.contains("Square Enix")
+            || publisher.contains("Bandai Namco")
+            || publisher.contains("Capcom")
+            || publisher.contains("SEGA")
+            || publisher.contains("Konami")
+            || publisher.contains("Take-Two")
+            || publisher.contains("Rockstar")
+            || publisher.contains("Epic Games")
+            || publisher.contains("Riot Games")
+            || publisher.contains("Valve")
+            || publisher.contains("CD Projekt")
+            || publisher.contains("2K Games")
+            || publisher.contains("Warner Bros")
+            || publisher.contains("THQ Nordic")
+            || publisher.contains("Paradox")
+            || publisher.contains("Focus")
+            || publisher.contains("Devolver")
+            || publisher.contains("Private Division")
+            || publisher.contains("Deep Silver")
+            || publisher.contains("Annapurna")
+            || publisher.contains("Humble")
+            || publisher.contains("Team17")
+            || publisher.contains("Raw Fury")
+            || publisher.contains("tinyBuild")
+            || publisher.contains("Coffee Stain")
+            || publisher.contains("Koch Media");
+
+        // Check if the install location contains game-like executables
+        let has_game_exe = if !install_location.is_empty() {
+            check_for_game_executables(install_location)
+        } else {
+            false
+        };
+
+        // Skip if it's not from a game publisher and doesn't have game executables
+        if !is_game_publisher && !has_game_exe {
+            continue;
+        }
+
+        // Additional blacklist for common non-game apps
+        let blacklist = [
+            "Discord", "Spotify", "Netflix", "Prime", "Hulu", "Disney",
+            "Photos", "Camera", "Store", "Calculator", "Notepad", "Paint",
+            "Mail", "Calendar", "Maps", "Weather", "News", "Phone", "Alarm",
+            "Voice", "Sticky", "Feedback", "Tips", "OneNote", "Skype", "Teams",
+            "Office", "Outlook", "OneDrive", "Edge", "Bing", "Twitter", "Facebook",
+            "Instagram", "TikTok", "Messenger", "WhatsApp", "Telegram", "Zoom",
+            "Reader", "Viewer", "Translator", "Recorder", "Scanner", "Wallet",
+            "Health", "Fitness", "Shopping", "Travel", "Finance", "Banking",
+        ];
+        
+        if blacklist.iter().any(|&b| package_name.contains(b)) {
+            continue;
+        }
+
+        // Clean up the display name
+        let title = package_name
+            .split('.')
+            .last()
+            .unwrap_or(package_name)
+            .to_string();
+
+        // Get the app ID (usually matches the last part of package name)
+        let app_id = if let Ok(manifest_path) = find_appxmanifest(install_location) {
+            extract_app_id_from_manifest(&manifest_path).unwrap_or_else(|| "App".to_string())
+        } else {
+            "App".to_string()
+        };
+
+        // Create the launch protocol
+        let file_path = format!("shell:AppsFolder\\{}!{}", package_family, app_id);
+        
+        let file_size = if !install_location.is_empty() {
+            calculate_dir_size(install_location).unwrap_or(0)
+        } else {
+            0
+        };
+
+        games.push(PcImportGame {
+            title: title.clone(),
+            file_path,
+            file_size,
+            developer: None,
+            publisher: Some("Microsoft Store".to_string()),
+            source: "xbox".to_string(),
+            source_id: package_family.to_string(),
+            install_path: if install_location.is_empty() {
+                None
+            } else {
+                Some(install_location.to_string())
+            },
+            box_art: None,
+        });
+    }
+
+    games.sort_by(|a, b| a.title.cmp(&b.title));
+
+    // Fetch SteamGridDB covers when API key is configured
+    if let Some(key) = sgdb_key {
+        let key_str = key.to_string();
+        let futures: Vec<_> = games
+            .iter()
+            .map(|g| {
+                let title = g.title.clone();
+                let k = key_str.clone();
+                async move { steamgriddb::fetch_grid_by_name(&title, &k).await }
+            })
+            .collect();
+        let art_urls = futures::future::join_all(futures).await;
+        for (game, url) in games.iter_mut().zip(art_urls) {
+            if let Some(u) = url {
+                game.box_art = Some(u);
+            }
+        }
+    }
+
+    games
+}
+
+#[cfg(not(windows))]
+pub async fn import_xbox(_sgdb_key: Option<&str>) -> Vec<PcImportGame> {
+    vec![]
+}
+
+#[cfg(windows)]
+fn check_for_game_executables(install_path: &str) -> bool {
+    let path = Path::new(install_path);
+    if !path.exists() {
+        return false;
+    }
+
+    // Common game executable patterns (not launchers or system tools)
+    let game_indicators = [
+        "game.exe", "play.exe", "launch.exe", "start.exe",
+        "win64.exe", "win32.exe", "x64.exe", "x86.exe",
+        "-win64-shipping.exe", // Unreal Engine pattern
+        "_data", // Unity games typically have this
+        "unrealengine", // Unreal games
+        "unity", // Unity games
+    ];
+
+    // Recursively check for game-like executables (limit depth to avoid performance issues)
+    fn check_dir_recursively(dir: &Path, depth: usize, indicators: &[&str]) -> bool {
+        if depth > 2 {
+            return false;
+        }
+
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name_lower = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+
+                // Check if it matches game patterns
+                if indicators.iter().any(|&pattern| name_lower.contains(pattern)) {
+                    return true;
+                }
+
+                // Check for .exe files with reasonable size (games are usually > 1MB)
+                if name_lower.ends_with(".exe") {
+                    if let Ok(metadata) = entry.metadata() {
+                        if metadata.len() > 1_000_000 {
+                            // Exclude known non-game executables
+                            if !name_lower.contains("unins")
+                                && !name_lower.contains("setup")
+                                && !name_lower.contains("install")
+                                && !name_lower.contains("redist")
+                                && !name_lower.contains("vcredist")
+                                && !name_lower.contains("directx")
+                                && !name_lower.contains("dotnet")
+                                && !name_lower.contains("crash")
+                                && !name_lower.contains("report")
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                // Recurse into subdirectories
+                if path.is_dir() && depth < 2 {
+                    if check_dir_recursively(&path, depth + 1, indicators) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    check_dir_recursively(path, 0, &game_indicators)
+}
+
+#[cfg(windows)]
+fn check_xbox_app() -> bool {
+    // Check if Xbox app is installed by looking for the Gaming Services
+    let output = std::process::Command::new("powershell")
+        .args(&[
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "Get-AppxPackage -Name Microsoft.GamingServices | Select-Object -First 1",
+        ])
+        .output();
+
+    if let Ok(o) = output {
+        let content = String::from_utf8_lossy(&o.stdout);
+        !content.trim().is_empty()
+    } else {
+        false
+    }
+}
+
+#[cfg(not(windows))]
+fn check_xbox_app() -> bool {
+    false
+}
+
+#[cfg(windows)]
+fn find_appxmanifest(install_path: &str) -> Result<String, ()> {
+    if install_path.is_empty() {
+        return Err(());
+    }
+    let manifest = PathBuf::from(install_path).join("AppxManifest.xml");
+    if manifest.exists() {
+        Ok(manifest.to_string_lossy().to_string())
+    } else {
+        Err(())
+    }
+}
+
+#[cfg(windows)]
+fn extract_app_id_from_manifest(manifest_path: &str) -> Option<String> {
+    let content = std::fs::read_to_string(manifest_path).ok()?;
+    
+    // Look for Application Id in manifest
+    // <Application Id="App" ... />
+    if let Some(start) = content.find("<Application") {
+        if let Some(id_start) = content[start..].find("Id=\"") {
+            let id_pos = start + id_start + 4;
+            if let Some(id_end) = content[id_pos..].find('"') {
+                return Some(content[id_pos..id_pos + id_end].to_string());
+            }
+        }
+    }
+    
+    None
+}
+
+#[cfg(windows)]
+fn calculate_dir_size(path: &str) -> Option<u64> {
+    let path = Path::new(path);
+    if !path.exists() {
+        return Some(0);
+    }
+    
+    let mut total = 0u64;
+    if let Ok(entries) = std::fs::read_dir(path) {
+        for entry in entries.flatten() {
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.is_file() {
+                    total += metadata.len();
+                } else if metadata.is_dir() {
+                    if let Some(size) = calculate_dir_size(&entry.path().to_string_lossy()) {
+                        total += size;
+                    }
+                }
+            }
+        }
+    }
+    Some(total)
 }

@@ -184,7 +184,7 @@ export interface EsDECredentials {
 
 // ── PC Games ──────────────────────────────────────────────────────────
 
-export type PcGameSource = 'steam' | 'epic' | 'ea' | 'gog' | 'manual';
+export type PcGameSource = 'steam' | 'epic' | 'ea' | 'gog' | 'xbox' | 'manual';
 
 export interface PcImportGame {
   title: string;
@@ -205,6 +205,7 @@ export interface PcLibraryStatus {
   epic_found: boolean;
   ea_found: boolean;
   gog_found: boolean;
+  xbox_found: boolean;
 }
 
 // ── PC Metadata Scraper (REQ-015) ─────────────────────────────────────
@@ -331,6 +332,23 @@ export interface ActionInfo {
   category: string; // 'UI' | 'Game' | 'Hotkey'
 }
 
+// ── Flash Key Mappings ───────────────────────────────────────────────
+
+export interface FlashKeyMapping {
+  game_id: string;
+  gamepad_button: number;
+  keyboard_key: string;
+}
+
+export type LeftStickMode = 'disabled' | 'wasd' | 'arrows';
+
+export interface FlashGameConfig {
+  game_id: string;
+  left_stick_mode: LeftStickMode;
+  right_stick_mouse: boolean;
+  mouse_sensitivity: number;
+}
+
 // ── Emulator General Settings ─────────────────────────────────────────
 
 export type SettingType = 'bool' | 'select' | 'range';
@@ -442,4 +460,19 @@ export interface SystemWiki {
   notable_games: string;
   emulators: string;
   updated_at?: string;
+}
+
+// ── Multi-Emulator Support (REQ-023) ──────────────────────────────────
+
+export interface EmulatorChoice {
+  emulator_name: string;
+  detected_path?: string;
+  is_installed: boolean;
+}
+
+export interface SystemEmulatorChoice {
+  system_id: string;
+  system_name: string;
+  available_emulators: EmulatorChoice[];
+  selected_emulator?: string;
 }

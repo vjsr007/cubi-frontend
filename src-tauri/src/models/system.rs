@@ -409,5 +409,33 @@ pub fn get_system_registry() -> Vec<SystemDef> {
             extensions: &["md", "bin", "gen", "smd", "zip", "7z"],
             folder_names: &["megadrive", "mega-drive"],
         },
+        SystemDef {
+            id: "flash",
+            name: "Flash",
+            full_name: "Adobe Flash",
+            extensions: &["swf", "spl"],
+            folder_names: &["flash", "flashgames", "flash-games"],
+        },
+        SystemDef {
+            id: "mugen",
+            name: "MUGEN",
+            full_name: "M.U.G.E.N",
+            extensions: &["lnk"],
+            folder_names: &["mugen", "m.u.g.e.n"],
+        },
+        SystemDef {
+            id: "android",
+            name: "Android",
+            full_name: "Android",
+            extensions: &["lnk"],
+            folder_names: &["android"],
+        },
+        SystemDef {
+            id: "web",
+            name: "Web",
+            full_name: "Web Apps",
+            extensions: &["url", "lnk"],
+            folder_names: &["web"],
+        },
     ]
 }

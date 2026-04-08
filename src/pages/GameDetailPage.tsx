@@ -12,6 +12,7 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { MetadataEditor } from '../components/editor/MetadataEditor';
 import { SteamSection } from '../components/steam/SteamSection';
 import { api } from '../lib/invoke';
+import { FlashKeyMappingPanel } from '../components/settings/FlashKeyMappingPanel';
 import type { GameInfo } from '../types';
 
 export function GameDetailPage() {
@@ -328,6 +329,11 @@ export function GameDetailPage() {
 
             {/* Steam Reviews & Info */}
             {!editMode && <SteamSection game={game} />}
+
+            {/* Flash gamepad→keyboard mapping */}
+            {!editMode && game.system_id === 'flash' && (
+              <FlashKeyMappingPanel gameId={game.id} />
+            )}
 
             {/* Keyboard shortcuts hint */}
             {!editMode && (

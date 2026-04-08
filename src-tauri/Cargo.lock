@@ -671,7 +671,7 @@ dependencies = [
 
 [[package]]
 name = "cubi-frontend"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "blake3",
  "chrono",
@@ -698,6 +698,7 @@ dependencies = [
  "uuid",
  "walkdir",
  "which",
+ "winapi",
  "winreg 0.52.0",
  "zip",
 ]

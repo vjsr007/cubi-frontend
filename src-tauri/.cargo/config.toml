@@ -1,0 +1,10 @@
+# Disabled - Using default MSVC toolchain instead of MinGW
+# This was causing compilation errors when merged from another PC
+# [build]
+# target = "x86_64-pc-windows-gnu"
+
+# [env]
+# CC = "C:\\msys64\\mingw64\\bin\\gcc.exe"
+# CXX = "C:\\msys64\\mingw64\\bin\\g++.exe"
+# AR = "C:\\msys64\\mingw64\\bin\\ar.exe"
+# PATH = "C:\\msys64\\mingw64\\bin:C:\\msys64\\usr\\bin"

@@ -120,7 +120,7 @@ pub async fn test_launch_game(
     }
 
     // Build the launch command
-    let cmd = match launcher_service::build_launch_command(game, emudeck_path, data_root, overrides) {
+    let cmd = match launcher_service::build_launch_command(game, emudeck_path, data_root, overrides, None) {
         Ok(c) => c,
         Err(e) => {
             return GameVerificationResult {

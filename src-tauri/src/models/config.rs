@@ -25,6 +25,10 @@ pub struct AppConfig {
     /// Per-system emulator overrides, keyed by system_id (e.g. "nes", "ps2").
     #[serde(default)]
     pub emulators: HashMap<String, EmulatorOverride>,
+    /// Per-system emulator preferences, keyed by system_id (e.g. "3ds", "switch").
+    /// Maps to the selected emulator name for that system.
+    #[serde(default)]
+    pub emulator_preferences: HashMap<String, String>,
     #[serde(default)]
     pub pc_metadata: PcMetadataConfig,
     #[serde(default)]
@@ -38,6 +42,7 @@ impl Default for AppConfig {
             paths: PathsConfig::default(),
             scanner: ScannerConfig::default(),
             emulators: HashMap::new(),
+            emulator_preferences: HashMap::new(),
             pc_metadata: PcMetadataConfig::default(),
             catalog: super::catalog::CatalogConfig::default(),
         }

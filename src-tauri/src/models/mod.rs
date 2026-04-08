@@ -8,6 +8,8 @@ pub mod emulator_settings;
 pub mod steam;
 pub mod catalog;
 pub mod system_wiki;
+pub mod emulator;
+pub mod flash_mapping;
 
 pub use config::*;
 pub use game::*;
@@ -18,3 +20,5 @@ pub use input_mapping::*;
 pub use emulator_settings::*;
 pub use catalog::*;
 pub use system_wiki::*;
+pub use emulator::*;
+pub use flash_mapping::*;

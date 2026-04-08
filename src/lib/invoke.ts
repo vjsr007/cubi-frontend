@@ -9,7 +9,7 @@ import type {
   PcMetadataConfig, PcToolsStatus, PcScrapeResult,
   MediaImportResult, YoutubeSearchResult,
   CatalogSystemStats, CatalogPage, CatalogFilter, CatalogSync, CatalogConfig,
-  SystemWiki,
+  SystemWiki, FlashKeyMapping, FlashGameConfig,
 } from '../types';
 import type { GameInfoPatch } from '../types/editor';
 import type { SteamSearchResult, SteamGameData } from '../types/steam';
@@ -62,6 +62,7 @@ export const api = {
   importEpicGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_epic_games', { sgdbKey }),
   importEaGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_ea_games', { sgdbKey }),
   importGogGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_gog_games', { sgdbKey }),
+  importXboxGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_xbox_games', { sgdbKey }),
   savePcGames: (games: PcImportGame[]) => invoke<number>('save_pc_games', { games }),
   addPcGame: (
     title: string,
@@ -186,4 +187,30 @@ export const api = {
     invoke<void>('update_system_wiki', { wiki }),
   resetSystemWiki: () =>
     invoke<number>('reset_system_wiki'),
+
+  // Flash Key Mappings
+  getFlashKeyMappings: (gameId: string) =>
+    invoke<FlashKeyMapping[]>('get_flash_key_mappings', { gameId }),
+  setFlashKeyMapping: (gameId: string, gamepadButton: number, keyboardKey: string) =>
+    invoke<void>('set_flash_key_mapping', { gameId, gamepadButton, keyboardKey }),
+  deleteFlashKeyMapping: (gameId: string, gamepadButton: number) =>
+    invoke<void>('delete_flash_key_mapping', { gameId, gamepadButton }),
+  resetFlashKeyMappings: (gameId: string) =>
+    invoke<FlashKeyMapping[]>('reset_flash_key_mappings', { gameId }),
+  getDefaultFlashMappings: (gameId: string) =>
+    invoke<FlashKeyMapping[]>('get_default_flash_mappings', { gameId }),
+  getFlashButtonLabel: (buttonIndex: number) =>
+    invoke<string>('get_flash_button_label', { buttonIndex }),
+  getFlashGameConfig: (gameId: string) =>
+    invoke<FlashGameConfig>('get_flash_game_config', { gameId }),
+  setFlashGameConfig: (gameId: string, leftStickMode: string, rightStickMouse: boolean, mouseSensitivity: number) =>
+    invoke<void>('set_flash_game_config', { gameId, leftStickMode, rightStickMouse, mouseSensitivity }),
+
+  // Game Emulator Overrides (per-game emulator selection)
+  setGameEmulatorOverride: (gameId: string, emulatorName: string) =>
+    invoke<void>('set_game_emulator_override', { gameId, emulatorName }),
+  getGameEmulatorOverride: (gameId: string) =>
+    invoke<string | null>('get_game_emulator_override', { gameId }),
+  deleteGameEmulatorOverride: (gameId: string) =>
+    invoke<void>('delete_game_emulator_override', { gameId }),
 };

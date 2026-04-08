@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUiStore } from '../stores/uiStore';
 import { api } from '../lib/invoke';
+import { EmulatorSelector } from '../components/settings/EmulatorSelector';
+import { useEmulatorPreferences } from '../hooks/useEmulatorPreferences';
 import type { SettingDefinition, EmulatorSettingValue, ConfigWriterInfo, SettingCategory } from '../types';
 
 // ── Styles ────────────────────────────────────────────────────────────────
@@ -26,6 +28,7 @@ const EMULATOR_COLORS: Record<string, string> = {
   RPCS3:       '#003087',
   xemu:        '#52b043',
   Ryujinx:     '#e11f29',
+  Ruffle:      '#ff6a00',
 };
 
 const CATEGORY_LABELS: Record<SettingCategory, string> = {
@@ -277,6 +280,10 @@ function PreviewModal({ emulatorName, configFormat, content, onClose }: PreviewM
 export function EmulatorSettingsPage() {
   const { navigateTo, showToast } = useUiStore();
 
+  // ────── Main view mode tab ──────
+  const [mainTab, setMainTab] = useState<'general-settings' | 'emulator-preferences'>('general-settings');
+  
+  // ────── General Settings mode ────────
   const [definitions, setDefinitions] = useState<SettingDefinition[]>([]);
   const [writers, setWriters] = useState<ConfigWriterInfo[]>([]);
   const [allValues, setAllValues] = useState<EmulatorSettingValue[]>([]);
@@ -288,6 +295,10 @@ export function EmulatorSettingsPage() {
   const [localEdits, setLocalEdits] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // ────── Emulator Preferences mode ────────
+  const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null);
+  const { systems, loading: prefsLoading, error: prefsError, setPreference } = useEmulatorPreferences();
 
   const load = useCallback(async () => {
     try {
@@ -311,6 +322,13 @@ export function EmulatorSettingsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Initialize selectedSystemId when systems load from preferences hook
+  useEffect(() => {
+    if (systems.length > 0 && !selectedSystemId) {
+      setSelectedSystemId(systems[0].system_id);
+    }
+  }, [systems, selectedSystemId]);
 
   const getSettingValue = (emulatorName: string, key: string): string => {
     const editKey = `${emulatorName}::${key}`;
@@ -433,53 +451,78 @@ export function EmulatorSettingsPage() {
         >
           ← Back
         </button>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>⚙️ Emulator General Settings</span>
-        {customizedCount > 0 && (
-          <span style={{
-            fontSize: 10, padding: '2px 8px', borderRadius: 10, fontWeight: 600,
-            background: 'rgba(16,124,16,0.25)', color: '#52b043',
-            border: '1px solid rgba(16,124,16,0.4)',
-          }}>
-            {customizedCount} customized
-          </span>
-        )}
+        
+        {/* Main Tab Selector */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['general-settings', 'emulator-preferences'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setMainTab(tab)}
+              style={{
+                ...btnStyle,
+                background: mainTab === tab ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+                borderColor: mainTab === tab ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.15)',
+                color: mainTab === tab ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
+                fontWeight: mainTab === tab ? 700 : 500,
+              }}
+            >
+              {tab === 'general-settings' ? '⚙️ General Settings' : '🎮 Emulator Preferences'}
+            </button>
+          ))}
+        </div>
+
         <div style={{ flex: 1 }} />
-        {dirty && (
-          <span style={{ fontSize: 11, color: 'rgba(255,200,50,0.7)', fontWeight: 600 }}>
-            ● unsaved changes
-          </span>
+        
+        {mainTab === 'general-settings' && (
+          <>
+            {customizedCount > 0 && (
+              <span style={{
+                fontSize: 10, padding: '2px 8px', borderRadius: 10, fontWeight: 600,
+                background: 'rgba(16,124,16,0.25)', color: '#52b043',
+                border: '1px solid rgba(16,124,16,0.4)',
+              }}>
+                {customizedCount} customized
+              </span>
+            )}
+            {dirty && (
+              <span style={{ fontSize: 11, color: 'rgba(255,200,50,0.7)', fontWeight: 600 }}>
+                ● unsaved changes
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handlePreview}
+              disabled={!activeTab}
+              style={{ ...btnStyle, background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.4)', color: '#a5b4fc' }}
+            >
+              👁️ Preview Config
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={!activeTab}
+              style={{ ...btnStyle, color: 'rgba(255,80,80,0.7)', borderColor: 'rgba(255,80,80,0.3)' }}
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              style={{
+                ...btnStyle,
+                background: 'rgba(16,124,16,0.4)',
+                borderColor: 'rgba(16,124,16,0.6)',
+                color: '#52b043',
+                fontWeight: 700,
+                opacity: saving || !dirty ? 0.5 : 1,
+              }}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </>
         )}
-        <button
-          type="button"
-          onClick={handlePreview}
-          disabled={!activeTab}
-          style={{ ...btnStyle, background: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.4)', color: '#a5b4fc' }}
-        >
-          👁️ Preview Config
-        </button>
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={!activeTab}
-          style={{ ...btnStyle, color: 'rgba(255,80,80,0.7)', borderColor: 'rgba(255,80,80,0.3)' }}
-        >
-          Reset
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !dirty}
-          style={{
-            ...btnStyle,
-            background: 'rgba(16,124,16,0.4)',
-            borderColor: 'rgba(16,124,16,0.6)',
-            color: '#52b043',
-            fontWeight: 700,
-            opacity: saving || !dirty ? 0.5 : 1,
-          }}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
       </div>
 
       {/* Info banner */}
@@ -493,154 +536,251 @@ export function EmulatorSettingsPage() {
           flexShrink: 0,
         }}
       >
-        Configure shared emulator settings (resolution, language, V-Sync, etc.). Each emulator maps these to its native config format.
-        <span style={{ color: 'rgba(255,80,80,0.6)', marginLeft: 8 }}>
-          🔒 V-Sync is always OFF to prevent input lag.
-        </span>
+        {mainTab === 'general-settings' ? (
+          <>
+            Configure shared emulator settings (resolution, language, V-Sync, etc.). Each emulator maps these to its native config format.
+            <span style={{ color: 'rgba(255,80,80,0.6)', marginLeft: 8 }}>
+              🔒 V-Sync is always OFF to prevent input lag.
+            </span>
+          </>
+        ) : (
+          <>
+            Select your preferred emulator for each system. Changes are saved immediately.
+            <span style={{ color: 'rgba(99,199,255,0.6)', marginLeft: 8 }}>
+              💡 Only installed emulators are available for selection.
+            </span>
+          </>
+        )}
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Emulator Tabs (sidebar) */}
-        <div
-          style={{
-            width: 180,
-            borderRight: '1px solid rgba(255,255,255,0.06)',
-            overflowY: 'auto',
-            padding: '12px 0',
-            flexShrink: 0,
-          }}
-        >
-          {writers.map((w) => {
-            const active = activeTab === w.emulator_name;
-            const color = EMULATOR_COLORS[w.emulator_name] ?? '#888';
-            const storedCount = allValues.filter((v) => v.emulator_name === w.emulator_name).length;
-            return (
-              <button
-                key={w.emulator_name}
-                onClick={() => setActiveTab(w.emulator_name)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  width: '100%',
-                  padding: '10px 16px',
-                  border: 'none',
-                  background: active ? `${color}18` : 'transparent',
-                  borderLeft: active ? `3px solid ${color}` : '3px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: color,
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{
-                  fontSize: 13,
-                  fontWeight: active ? 700 : 500,
-                  color: active ? color : 'rgba(255,255,255,0.5)',
-                  textAlign: 'left',
-                }}>
-                  {w.emulator_name}
-                </span>
-                {storedCount > 0 && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontSize: 9,
-                    padding: '1px 5px',
-                    borderRadius: 8,
-                    background: 'rgba(16,124,16,0.2)',
-                    color: '#52b043',
-                  }}>
-                    {storedCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', flexDirection: mainTab === 'emulator-preferences' ? 'column' : 'row' }}>
+        {mainTab === 'general-settings' ? (
+          <>
+            {/* General Settings Mode - Emulator Tabs (sidebar) */}
+            <div
+              style={{
+                width: 180,
+                borderRight: '1px solid rgba(255,255,255,0.06)',
+                overflowY: 'auto',
+                padding: '12px 0',
+                flexShrink: 0,
+              }}
+            >
+              {writers.map((w) => {
+                const active = activeTab === w.emulator_name;
+                const color = EMULATOR_COLORS[w.emulator_name] ?? '#888';
+                const storedCount = allValues.filter((v) => v.emulator_name === w.emulator_name).length;
+                return (
+                  <button
+                    key={w.emulator_name}
+                    onClick={() => setActiveTab(w.emulator_name)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '10px 16px',
+                      border: 'none',
+                      background: active ? `${color}18` : 'transparent',
+                      borderLeft: active ? `3px solid ${color}` : '3px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{
+                      fontSize: 13,
+                      fontWeight: active ? 700 : 500,
+                      color: active ? color : 'rgba(255,255,255,0.5)',
+                      textAlign: 'left',
+                    }}>
+                      {w.emulator_name}
+                    </span>
+                    {storedCount > 0 && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: 9,
+                        padding: '1px 5px',
+                        borderRadius: 8,
+                        background: 'rgba(16,124,16,0.2)',
+                        color: '#52b043',
+                      }}>
+                        {storedCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Emulator Preferences Mode - System Carousel */}
+            <div
+              style={{
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
+                System:
+              </span>
+              {prefsLoading ? (
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Loading systems…</span>
+              ) : prefsError ? (
+                <span style={{ fontSize: 12, color: 'rgba(255,80,80,0.6)' }}>Error: {prefsError}</span>
+              ) : (
+                systems.map((sys) => {
+                  const isSelected = selectedSystemId === sys.system_id;
+                  return (
+                    <button
+                      key={sys.system_id}
+                      onClick={() => setSelectedSystemId(sys.system_id)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        border: isSelected ? '2px solid var(--color-primary, #6366f1)' : '1px solid rgba(255,255,255,0.12)',
+                        background: isSelected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.05)',
+                        color: isSelected ? '#a5b4fc' : 'rgba(255,255,255,0.6)',
+                        fontSize: 12,
+                        fontWeight: isSelected ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {sys.system_name}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </>
+        )}
 
         {/* Settings content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
-              Loading settings…
-            </div>
-          ) : !activeWriter ? (
-            <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
-              Select an emulator from the sidebar.
-            </div>
+          {mainTab === 'general-settings' ? (
+            <>
+              {loading ? (
+                <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+                  Loading settings…
+                </div>
+              ) : !activeWriter ? (
+                <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+                  Select an emulator from the sidebar.
+                </div>
+              ) : (
+                <>
+                  {/* Emulator header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <span style={{
+                      fontSize: 18, fontWeight: 700,
+                      color: EMULATOR_COLORS[activeWriter.emulator_name] ?? '#fff',
+                    }}>
+                      {activeWriter.emulator_name}
+                    </span>
+                    <span style={{
+                      fontSize: 11, padding: '2px 8px', borderRadius: 6,
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.35)',
+                    }}>
+                      .{activeWriter.config_format} format
+                    </span>
+                    <span style={{
+                      fontSize: 11, color: 'rgba(255,255,255,0.2)',
+                    }}>
+                      {activeWriter.supported_settings.length} settings supported
+                    </span>
+                    {activeWriter.default_config_path && (
+                      <span
+                        style={{
+                          fontSize: 10, color: 'rgba(255,255,255,0.2)',
+                          marginLeft: 'auto',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          maxWidth: 300,
+                        }}
+                        title={activeWriter.default_config_path}
+                      >
+                        📁 {activeWriter.default_config_path}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Settings grouped by category */}
+                  {CATEGORY_ORDER.map((cat) => {
+                    const settings = groupedSettings[cat];
+                    if (settings.length === 0) return null;
+                    return (
+                      <div key={cat} style={{ marginBottom: 24 }}>
+                        <div style={{
+                          fontSize: 12, fontWeight: 700,
+                          color: 'rgba(255,255,255,0.4)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          marginBottom: 10,
+                        }}>
+                          {CATEGORY_LABELS[cat]}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {settings.map((def) => (
+                            <SettingControl
+                              key={def.key}
+                              def={def}
+                              value={getSettingValue(activeTab, def.key)}
+                              onChange={(key, val) => handleChange(activeTab, key, val)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </>
           ) : (
             <>
-              {/* Emulator header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <span style={{
-                  fontSize: 18, fontWeight: 700,
-                  color: EMULATOR_COLORS[activeWriter.emulator_name] ?? '#fff',
-                }}>
-                  {activeWriter.emulator_name}
-                </span>
-                <span style={{
-                  fontSize: 11, padding: '2px 8px', borderRadius: 6,
-                  background: 'rgba(255,255,255,0.06)',
-                  color: 'rgba(255,255,255,0.35)',
-                }}>
-                  .{activeWriter.config_format} format
-                </span>
-                <span style={{
-                  fontSize: 11, color: 'rgba(255,255,255,0.2)',
-                }}>
-                  {activeWriter.supported_settings.length} settings supported
-                </span>
-                {activeWriter.default_config_path && (
-                  <span
-                    style={{
-                      fontSize: 10, color: 'rgba(255,255,255,0.2)',
-                      marginLeft: 'auto',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      maxWidth: 300,
+              {/* Emulator Preferences Mode - EmulatorSelector */}
+              {prefsLoading ? (
+                <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+                  Loading emulator preferences…
+                </div>
+              ) : selectedSystemId ? (
+                <div>
+                  <EmulatorSelector
+                    systemId={selectedSystemId}
+                    systemName={systems.find(s => s.system_id === selectedSystemId)?.system_name || ''}
+                    onSelectionChange={async (emulatorName) => {
+                      try {
+                        await setPreference(selectedSystemId, emulatorName);
+                        showToast(`✓ ${emulatorName} selected for this system`, 'success');
+                      } catch (e) {
+                        showToast(`Failed to set preference: ${e}`, 'error');
+                      }
                     }}
-                    title={activeWriter.default_config_path}
-                  >
-                    📁 {activeWriter.default_config_path}
-                  </span>
-                )}
-              </div>
-
-              {/* Settings grouped by category */}
-              {CATEGORY_ORDER.map((cat) => {
-                const settings = groupedSettings[cat];
-                if (settings.length === 0) return null;
-                return (
-                  <div key={cat} style={{ marginBottom: 24 }}>
-                    <div style={{
-                      fontSize: 12, fontWeight: 700,
-                      color: 'rgba(255,255,255,0.4)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      marginBottom: 10,
-                    }}>
-                      {CATEGORY_LABELS[cat]}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {settings.map((def) => (
-                        <SettingControl
-                          key={def.key}
-                          def={def}
-                          value={getSettingValue(activeTab, def.key)}
-                          onChange={(key, val) => handleChange(activeTab, key, val)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                    disabled={false}
+                  />
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', paddingTop: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+                  Select a system from the carousel above.
+                </div>
+              )}
             </>
           )}
         </div>

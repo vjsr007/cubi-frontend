@@ -55,6 +55,10 @@ import supermodel from './supermodel.svg';
 import scummvm from './scummvm.svg';
 import threeDoLogo from './3do.svg';
 import megadrive from './megadrive.svg';
+import flash from './flash.svg';
+import mugen from './mugen.svg';
+import android from './android.svg';
+import windows from './windows.svg';
 
 /**
  * Maps system IDs to their SVG logo URLs (Vite static imports).
@@ -100,7 +104,8 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   intellivision,
   wswan,
   wswanc,
-  pc: windows11,
+  pc: windows,
+  windows,
   cps1,
   cps2,
   cps3,
@@ -118,4 +123,9 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   scummvm,
   '3do': threeDoLogo,
   megadrive,
+  flash,
+  flashpoint: flash,
+  mugen,
+  android,
+  bluestacks: android,
 };

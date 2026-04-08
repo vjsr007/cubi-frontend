@@ -14,6 +14,7 @@ pub mod input_mapping_service;
 pub mod exporters;
 pub mod emulator_settings_service;
 pub mod config_writers;
+pub mod preferences_service;
 
 // PC Enhanced Metadata (REQ-015)
 pub mod steam_store_service;
@@ -28,6 +29,8 @@ pub mod media_import_service;
 pub mod verification_service;
 pub mod catalog_service;
 pub mod system_wiki_service;
+pub mod flash_input_service;
+pub mod emulator_hotkey_service;
 
 /// Normalize a game title for fuzzy matching:
 /// lowercase, remove punctuation, collapse whitespace.

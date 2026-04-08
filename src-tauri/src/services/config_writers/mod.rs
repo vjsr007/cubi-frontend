@@ -6,6 +6,7 @@ pub mod ppsspp;
 pub mod rpcs3;
 pub mod xemu;
 pub mod ryujinx;
+pub mod ruffle;
 
 use std::collections::HashMap;
 
@@ -17,6 +18,7 @@ pub use ppsspp::PpssppConfigWriter;
 pub use rpcs3::Rpcs3ConfigWriter;
 pub use xemu::XemuConfigWriter;
 pub use ryujinx::RyujinxConfigWriter;
+pub use ruffle::RuffleConfigWriter;
 
 /// Strategy trait: each emulator implements this to generate its native config format.
 pub trait EmulatorConfigWriter: Send + Sync {

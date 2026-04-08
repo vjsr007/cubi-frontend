@@ -143,6 +143,30 @@ impl Database {
             }
             log::info!("DB migration v6 complete");
         }
+
+        if version < 7 {
+            log::info!("Running DB migration v7: multi-emulator per-system support");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V7) {
+                log::warn!("Migration v7 error (ignored): {}", e);
+            }
+            log::info!("DB migration v7 complete");
+        }
+
+        if version < 8 {
+            log::info!("Running DB migration v8: flash key mappings");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V8) {
+                log::warn!("Migration v8 error (ignored): {}", e);
+            }
+            log::info!("DB migration v8 complete");
+        }
+
+        if version < 9 {
+            log::info!("Running DB migration v9: per-game emulator overrides");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V9) {
+                log::warn!("Migration v9 error (ignored): {}", e);
+            }
+            log::info!("DB migration v9 complete");
+        }
         Ok(())
     }
 
@@ -1362,5 +1386,87 @@ impl Database {
             }
         }
         log::info!("Seeded {} system wiki entries", entries.len());
+    }
+
+    // ── Flash Key Mappings ─────────────────────────────────────────────
+
+    pub fn get_flash_key_mappings(&self, game_id: &str) -> SqlResult<Vec<crate::models::FlashKeyMapping>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT game_id, gamepad_button, keyboard_key FROM flash_key_mappings WHERE game_id = ?1 ORDER BY gamepad_button"
+        )?;
+        let rows = stmt.query_map([game_id], |row| {
+            Ok(crate::models::FlashKeyMapping {
+                game_id: row.get(0)?,
+                gamepad_button: row.get(1)?,
+                keyboard_key: row.get(2)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    pub fn set_flash_key_mapping(&self, game_id: &str, gamepad_button: i32, keyboard_key: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO flash_key_mappings (game_id, gamepad_button, keyboard_key) VALUES (?1, ?2, ?3)",
+            rusqlite::params![game_id, gamepad_button, keyboard_key],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_flash_key_mapping(&self, game_id: &str, gamepad_button: i32) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM flash_key_mappings WHERE game_id = ?1 AND gamepad_button = ?2",
+            rusqlite::params![game_id, gamepad_button],
+        )?;
+        Ok(())
+    }
+
+    pub fn delete_all_flash_key_mappings(&self, game_id: &str) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM flash_key_mappings WHERE game_id = ?1",
+            [game_id],
+        )?;
+        Ok(())
+    }
+
+    // ── Flash Game Config (sticks / mouse) ─────────────────────────────
+
+    pub fn get_flash_game_config(&self, game_id: &str) -> SqlResult<Option<crate::models::FlashGameConfig>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT game_id, left_stick_mode, right_stick_mouse, mouse_sensitivity FROM flash_game_config WHERE game_id = ?1"
+        )?;
+        let mut rows = stmt.query_map([game_id], |row| {
+            let mode_str: String = row.get(1)?;
+            Ok(crate::models::FlashGameConfig {
+                game_id: row.get(0)?,
+                left_stick_mode: crate::models::LeftStickMode::from_str(&mode_str),
+                right_stick_mouse: row.get::<_, i32>(2)? != 0,
+                mouse_sensitivity: row.get(3)?,
+            })
+        })?;
+        match rows.next() {
+            Some(Ok(cfg)) => Ok(Some(cfg)),
+            Some(Err(e)) => Err(e),
+            None => Ok(None),
+        }
+    }
+
+    pub fn set_flash_game_config(&self, cfg: &crate::models::FlashGameConfig) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO flash_game_config (game_id, left_stick_mode, right_stick_mouse, mouse_sensitivity)
+             VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![
+                cfg.game_id,
+                cfg.left_stick_mode.as_str(),
+                cfg.right_stick_mouse as i32,
+                cfg.mouse_sensitivity,
+            ],
+        )?;
+        Ok(())
     }
 }

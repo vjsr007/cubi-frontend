@@ -99,6 +99,13 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             launch_template: LaunchTemplate::Custom("--fullscreen \"{rom}\""),
         },
         EmulatorDef {
+            system_ids: &["switch"],
+            name: "Yuzu",
+            emudeck_paths: &["yuzu/yuzu.exe", "Yuzu/yuzu.exe"],
+            exe_name: "yuzu",
+            launch_template: LaunchTemplate::Custom("-f -g \"{rom}\""),
+        },
+        EmulatorDef {
             system_ids: &["wiiu"],
             name: "Cemu",
             emudeck_paths: &["Cemu/Cemu.exe", "cemu/Cemu.exe"],
@@ -174,6 +181,20 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             emudeck_paths: &["lime3ds/lime3ds.exe", "azahar/azahar.exe"],
             exe_name: "lime3ds",
             launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["3ds"],
+            name: "Citra",
+            emudeck_paths: &["citra/citra-qt.exe", "Citra/citra-qt.exe"],
+            exe_name: "citra-qt",
+            launch_template: LaunchTemplate::Simple,
+        },
+        EmulatorDef {
+            system_ids: &["flash"],
+            name: "Ruffle",
+            emudeck_paths: &["Ruffle/ruffle.exe", "Ruffle/Ruffle.exe"],
+            exe_name: "ruffle",
+            launch_template: LaunchTemplate::Custom("--fullscreen \"{rom}\""),
         },
         EmulatorDef {
             system_ids: &[
@@ -254,6 +275,10 @@ fn system_display_name(id: &str) -> String {
         "scummvm"      => "ScummVM",
         "3do"          => "3DO",
         "megadrive"    => "Mega Drive",
+        "flash"        => "Adobe Flash",
+        "mugen"        => "M.U.G.E.N",
+        "android"      => "Android",
+        "web"          => "Web Apps",
         other          => other,
     };
     s.to_string()
@@ -368,6 +393,39 @@ pub fn find_emulator(system_id: &str, emudeck_path: &str) -> Option<(String, Str
     None
 }
 
+/// Find emulator executable path by emulator name
+/// Returns Option<Result> where Some(Ok) means found, Some(Err) means error, None means not found
+pub fn find_emulator_path(emulator_name: &str, emudeck_path: &str) -> Result<Option<String>, String> {
+    let registry = get_emulator_registry();
+    
+    for def in &registry {
+        if def.name != emulator_name {
+            continue;
+        }
+        
+        // Try EmuDeck paths first
+        if !emudeck_path.is_empty() {
+            for rel in def.emudeck_paths {
+                let full = PathBuf::from(emudeck_path)
+                    .join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+                if full.exists() {
+                    return Ok(Some(full.to_string_lossy().to_string()));
+                }
+            }
+        }
+        
+        // Try system PATH
+        if let Ok(found) = which::which(def.exe_name) {
+            return Ok(Some(found.to_string_lossy().to_string()));
+        }
+        
+        // Emulator exists in registry but not installed
+        return Ok(None);
+    }
+    
+    Err(format!("Unknown emulator: {}", emulator_name))
+}
+
 /// Resolved launch command: executable path + arguments.
 pub struct LaunchCommand {
     pub exe_path: String,
@@ -382,10 +440,33 @@ pub fn build_launch_command(
     emudeck_path: &str,
     data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
+    preferred_emulator: Option<&str>,
 ) -> Result<LaunchCommand, String> {
     let registry = get_emulator_registry();
-    let def = registry.iter().find(|d| d.system_ids.contains(&game.system_id.as_str()))
-        .ok_or_else(|| format!("No emulator configured for system '{}'", game.system_id))?;
+    
+    // Step 1: Determine which emulator to use
+    let def = if let Some(preferred_name) = preferred_emulator {
+        // Try to find preferred emulator
+        registry.iter().find(|d| {
+            d.system_ids.contains(&game.system_id.as_str()) && d.name == preferred_name
+        })
+        .ok_or_else(|| {
+            // Preferred emulator doesn't support this system, fall back to default
+            log::warn!(
+                "Preferred emulator '{}' does not support system '{}', using default",
+                preferred_name,
+                game.system_id
+            );
+            format!(
+                "Preferred emulator '{}' does not support system '{}'",
+                preferred_name, game.system_id
+            )
+        })?
+    } else {
+        // No preference: use first emulator for this system
+        registry.iter().find(|d| d.system_ids.contains(&game.system_id.as_str()))
+            .ok_or_else(|| format!("No emulator configured for system '{}'", game.system_id))?
+    };
 
     let ov = overrides.get(game.system_id.as_str());
 
@@ -465,14 +546,41 @@ pub async fn launch_game(
     data_root: &str,
     overrides: &HashMap<String, EmulatorOverride>,
 ) -> Result<(), String> {
-    // PC games: launch directly without emulator
-    if game.system_id == "pc" {
+    launch_game_with_preference(game, emudeck_path, data_root, overrides, None).await
+}
+
+/// Launch a game with an optional emulator preference.
+/// If preferred_emulator is Some, attempts to use that emulator; if not available, falls back to default.
+pub async fn launch_game_with_preference(
+    game: &GameInfo,
+    emudeck_path: &str,
+    data_root: &str,
+    overrides: &HashMap<String, EmulatorOverride>,
+    preferred_emulator: Option<&str>,
+) -> Result<(), String> {
+    // PC / MUGEN / Android: launch directly without emulator (.lnk shortcuts or exes)
+    if matches!(game.system_id.as_str(), "pc" | "mugen" | "android") {
         return launch_pc_game(&game.file_path).await;
     }
 
-    let cmd = build_launch_command(game, emudeck_path, data_root, overrides)?;
+    // Web: open URL in fullscreen browser (kiosk mode)
+    if game.system_id == "web" {
+        return launch_web_game(&game.file_path).await;
+    }
 
-    log::info!("Launching: {} {:?}", cmd.exe_path, cmd.args);
+    if let Some(pref) = preferred_emulator {
+        log::debug!("Using preferred emulator for {}: {}", game.system_id, pref);
+    }
+
+    let cmd = build_launch_command(game, emudeck_path, data_root, overrides, preferred_emulator)?;
+
+    log::info!(
+        "Launching {} with {}: {} {:?}",
+        game.file_path,
+        cmd.emulator_name,
+        cmd.exe_path,
+        cmd.args
+    );
     tokio::process::Command::new(&cmd.exe_path)
         .args(&cmd.args)
         .spawn()
@@ -545,6 +653,61 @@ fn write_retroarch_override_cfg(system_id: &str, data_root: &str, exe_path: &str
     Ok(cfg_path.to_string_lossy().to_string())
 }
 
+/// Launch a web game/app: read URL from .url file and open in fullscreen browser.
+pub async fn launch_web_game(file_path: &str) -> Result<(), String> {
+    let url = if file_path.ends_with(".url") {
+        // Parse .url (INI format): look for URL= line
+        let content = std::fs::read_to_string(file_path)
+            .map_err(|e| format!("Failed to read '{}': {}", file_path, e))?;
+        content.lines()
+            .find_map(|line| {
+                let trimmed = line.trim();
+                if trimmed.to_ascii_lowercase().starts_with("url=") {
+                    Some(trimmed[4..].to_string())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| format!("No URL= found in '{}'", file_path))?
+    } else if file_path.starts_with("http://") || file_path.starts_with("https://") {
+        file_path.to_string()
+    } else {
+        // .lnk — open via shell
+        return launch_pc_game(file_path).await;
+    };
+
+    log::info!("Launching web game in fullscreen: {}", url);
+
+    // Try browsers in order: Chrome → Edge → Firefox (kiosk/fullscreen flags)
+    let browsers: &[(&str, &[&str])] = &[
+        ("chrome",          &["--kiosk", "--start-fullscreen"]),
+        ("chrome.exe",      &["--kiosk", "--start-fullscreen"]),
+        ("msedge",          &["--kiosk", "--start-fullscreen"]),
+        ("msedge.exe",      &["--kiosk", "--start-fullscreen"]),
+        ("firefox",         &["--kiosk"]),
+        ("firefox.exe",     &["--kiosk"]),
+    ];
+
+    for &(exe, flags) in browsers {
+        if which::which(exe).is_ok() {
+            let mut cmd = tokio::process::Command::new(exe);
+            cmd.args(flags).arg(&url);
+            match cmd.spawn() {
+                Ok(_) => return Ok(()),
+                Err(e) => log::debug!("Failed to launch {}: {}", exe, e),
+            }
+        }
+    }
+
+    // Fallback: open with default browser via shell (not fullscreen)
+    log::warn!("No kiosk-capable browser found, opening with default browser");
+    tokio::process::Command::new("cmd")
+        .args(["/C", "start", "", &url])
+        .spawn()
+        .map_err(|e| format!("Failed to open URL '{}': {}", url, e))?;
+    Ok(())
+}
+
 /// Launch a PC game: protocol URL (Steam/Epic) or direct exe.
 pub async fn launch_pc_game(file_path: &str) -> Result<(), String> {
     let is_url = file_path.starts_with("steam://")
@@ -552,12 +715,14 @@ pub async fn launch_pc_game(file_path: &str) -> Result<(), String> {
         || file_path.starts_with("origin2://")
         || file_path.starts_with("eadm://");
 
-    if is_url {
-        log::info!("Opening PC game URL: {}", file_path);
+    let is_shortcut = file_path.ends_with(".lnk") || file_path.ends_with(".url");
+
+    if is_url || is_shortcut {
+        log::info!("Opening via shell: {}", file_path);
         tokio::process::Command::new("cmd")
             .args(["/C", "start", "", file_path])
             .spawn()
-            .map_err(|e| format!("Failed to open URL '{}': {}", file_path, e))?;
+            .map_err(|e| format!("Failed to open '{}': {}", file_path, e))?;
     } else {
         log::info!("Launching PC game exe: {}", file_path);
         let path = std::path::Path::new(file_path);

@@ -221,3 +221,49 @@ CREATE TABLE IF NOT EXISTS system_wiki (
 
 UPDATE schema_version SET version = 6;
 ";
+
+/// Migration v8: Per-game Flash key mappings + stick/mouse config
+pub const MIGRATION_V8: &str = "
+CREATE TABLE IF NOT EXISTS flash_key_mappings (
+    game_id TEXT NOT NULL,
+    gamepad_button INTEGER NOT NULL,
+    keyboard_key TEXT NOT NULL,
+    PRIMARY KEY (game_id, gamepad_button),
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS flash_game_config (
+    game_id TEXT PRIMARY KEY,
+    left_stick_mode TEXT NOT NULL DEFAULT 'disabled',
+    right_stick_mouse INTEGER NOT NULL DEFAULT 0,
+    mouse_sensitivity INTEGER NOT NULL DEFAULT 50,
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+UPDATE schema_version SET version = 8;
+";
+
+/// Migration v9: Per-game emulator override (REQ-023 extension)
+pub const MIGRATION_V9: &str = "
+CREATE TABLE IF NOT EXISTS game_emulator_overrides (
+    game_id TEXT PRIMARY KEY,
+    selected_emulator TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+);
+
+UPDATE schema_version SET version = 9;
+";
+
+/// Migration v7: Multi-emulator per-system support (REQ-023)
+pub const MIGRATION_V7: &str = "
+CREATE TABLE IF NOT EXISTS emulator_preferences (
+    system_id TEXT PRIMARY KEY,
+    selected_emulator TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (system_id) REFERENCES systems(id) ON DELETE CASCADE
+);
+
+UPDATE schema_version SET version = 7;
+";

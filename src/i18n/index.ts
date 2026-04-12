@@ -28,6 +28,8 @@ export interface LocaleStrings {
     noRomsAt: string;
     setRomPath: string;
     scanNow: string;
+    scanSystem: string;
+    scanSystemDone: string;
     openSettings: string;
     scanPrompt: string;
     scanningRoms: string;

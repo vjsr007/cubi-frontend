@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLibraryStore } from '../../stores/libraryStore';
+import { useConfigStore } from '../../stores/configStore';
+import { useUiStore } from '../../stores/uiStore';
 import { useI18nStore } from '../../stores/i18nStore';
 import type { SortField, ViewMode } from '../../types';
 
@@ -16,7 +18,10 @@ export function FilterBar({ onShowWiki }: FilterBarProps = {}) {
     gridColumns, setGridColumns,
     showFavoritesOnly, toggleFavoritesOnly,
     games, getFilteredGames,
+    selectedSystemId, isScanning, scanSystem,
   } = useLibraryStore();
+  const { config } = useConfigStore();
+  const { showToast } = useUiStore();
   const { t } = useI18nStore();
 
   const filteredCount = getFilteredGames().length;
@@ -196,6 +201,34 @@ export function FilterBar({ onShowWiki }: FilterBarProps = {}) {
       >
         {sortOrder === 'asc' ? '↑' : '↓'}
       </button>
+
+      {/* Scan this system */}
+      {selectedSystemId && selectedSystemId !== '__all__' && (
+        <button
+          onClick={async () => {
+            if (!config?.paths.data_root) return;
+            try {
+              const result = await scanSystem(config.paths.data_root, selectedSystemId);
+              showToast(t('library.scanSystemDone').replace('{count}', String(result.games_found)), 'success');
+            } catch (e) {
+              showToast(String(e), 'error');
+            }
+          }}
+          disabled={isScanning}
+          style={{
+            ...inputStyle,
+            cursor: isScanning ? 'not-allowed' : 'pointer',
+            padding: '6px 10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            opacity: isScanning ? 0.5 : 1,
+          }}
+          title={t('library.scanSystem')}
+        >
+          {isScanning ? t('settings.scanning') : t('library.scanSystem')}
+        </button>
+      )}
 
       {/* System Wiki info */}
       {onShowWiki && (

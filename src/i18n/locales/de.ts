@@ -30,6 +30,8 @@ export const de: LocaleStrings = {
     noRomsAt: 'Keine ROMs in {path}/roms/ gefunden. Stelle sicher, dass sie in Systemunterordnern liegen.',
     setRomPath: 'Lege den ROM-Ordnerpfad in den Einstellungen fest.',
     scanNow: 'Jetzt scannen',
+    scanSystem: 'Neu scannen',
+    scanSystemDone: 'Scan abgeschlossen: {count} Spiele gefunden',
     openSettings: 'Einstellungen öffnen',
     scanPrompt: 'Konfiguriere den Datenordner in den Einstellungen und scanne dann deine Bibliothek.',
     scanningRoms: 'Deine ROM-Bibliothek wird gescannt...',

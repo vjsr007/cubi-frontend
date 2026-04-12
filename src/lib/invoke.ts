@@ -35,6 +35,7 @@ export const api = {
 
   // Scanner
   scanLibrary: (dataRoot: string) => invoke<ScanResult>('scan_library', { dataRoot }),
+  scanSystem: (dataRoot: string, systemId: string) => invoke<ScanResult>('scan_system', { dataRoot, systemId }),
 
   // Launcher
   launchGame: (gameId: string) => invoke<void>('launch_game', { gameId }),

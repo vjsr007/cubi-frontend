@@ -30,6 +30,8 @@ export const es: LocaleStrings = {
     noRomsAt: 'No se encontraron ROMs en {path}/roms/. Asegúrate de que estén en subcarpetas por sistema.',
     setRomPath: 'Configura la carpeta de ROMs en Configuración para comenzar.',
     scanNow: 'Escanear ahora',
+    scanSystem: 'Re-escanear',
+    scanSystemDone: 'Escaneo completo: {count} juegos encontrados',
     openSettings: 'Abrir Configuración',
     scanPrompt: 'Configura la carpeta de datos en Ajustes y luego escanea tu biblioteca.',
     scanningRoms: 'Escaneando tu biblioteca de ROMs...',

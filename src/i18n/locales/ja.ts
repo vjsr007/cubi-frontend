@@ -30,6 +30,8 @@ export const ja: LocaleStrings = {
     noRomsAt: '{path}/roms/ にROMが見つかりません。システムのサブフォルダを確認してください。',
     setRomPath: '設定でROMフォルダのパスを設定してください。',
     scanNow: '今すぐスキャン',
+    scanSystem: '再スキャン',
+    scanSystemDone: 'スキャン完了: {count}本のゲームが見つかりました',
     openSettings: '設定を開く',
     scanPrompt: '設定でデータフォルダを設定し、ライブラリをスキャンしてください。',
     scanningRoms: 'ROMライブラリをスキャン中...',

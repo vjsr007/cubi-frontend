@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameInfo, SystemInfo, SortField, SortOrder, ViewMode } from '../types';
+import type { GameInfo, SystemInfo, SortField, SortOrder, ViewMode, ScanResult } from '../types';
 import { api } from '../lib/invoke';
 
 const PAGE_SIZE = 200;
@@ -38,6 +38,7 @@ interface LibraryState {
   toggleFavoritesOnly: () => void;
   toggleFavorite: (gameId: string) => Promise<void>;
   scanLibrary: (dataRoot: string) => Promise<void>;
+  scanSystem: (dataRoot: string, systemId: string) => Promise<ScanResult>;
   launchGame: (gameId: string) => Promise<void>;
   getFilteredGames: () => GameInfo[];
   hasMoreGames: () => boolean;
@@ -147,6 +148,27 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       await get().loadSystems();
       // Auto-refresh catalog ownership after scan (fire-and-forget)
       api.refreshCatalogOwnership().catch(e => console.warn('Catalog ownership refresh:', e));
+    } catch (e) {
+      set({ isScanning: false, error: String(e) });
+      throw e;
+    }
+  },
+
+  scanSystem: async (dataRoot: string, systemId: string) => {
+    set({ isScanning: true, scanProgress: `Scanning ${systemId}...`, error: null });
+    try {
+      const result = await api.scanSystem(dataRoot, systemId);
+      set({
+        isScanning: false,
+        scanProgress: `Found ${result.games_found} games`,
+      });
+      await get().loadSystems();
+      // Refresh current system view if we just scanned it
+      if (get().selectedSystemId === systemId) {
+        await get().selectSystem(systemId);
+      }
+      api.refreshCatalogOwnership(systemId).catch(e => console.warn('Catalog ownership refresh:', e));
+      return result;
     } catch (e) {
       set({ isScanning: false, error: String(e) });
       throw e;

@@ -26,6 +26,7 @@ pub fn run() {
             commands::library::get_game,
             commands::library::toggle_favorite,
             commands::scanner::scan_library,
+            commands::scanner::scan_system,
             commands::launcher::launch_game,
             commands::launcher::get_emulator_status,
             commands::launcher::get_all_emulator_info,

@@ -30,6 +30,8 @@ export const fr: LocaleStrings = {
     noRomsAt: 'Aucune ROM trouvée dans {path}/roms/. Vérifiez les sous-dossiers par système.',
     setRomPath: 'Configurez le dossier ROMs dans Paramètres pour commencer.',
     scanNow: 'Scanner maintenant',
+    scanSystem: 'Re-scanner',
+    scanSystemDone: 'Scan terminé : {count} jeux trouvés',
     openSettings: 'Ouvrir Paramètres',
     scanPrompt: 'Configurez le dossier de données dans Paramètres, puis scannez votre bibliothèque.',
     scanningRoms: 'Scan de votre bibliothèque ROMs...',

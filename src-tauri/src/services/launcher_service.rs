@@ -581,10 +581,25 @@ pub async fn launch_game_with_preference(
         cmd.exe_path,
         cmd.args
     );
-    tokio::process::Command::new(&cmd.exe_path)
-        .args(&cmd.args)
-        .spawn()
-        .map_err(|e| format!("Failed to launch {}: {}", cmd.emulator_name, e))?;
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        tokio::process::Command::new(&cmd.exe_path)
+            .args(&cmd.args)
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|e| format!("Failed to launch {}: {}", cmd.emulator_name, e))?;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        tokio::process::Command::new(&cmd.exe_path)
+            .args(&cmd.args)
+            .spawn()
+            .map_err(|e| format!("Failed to launch {}: {}", cmd.emulator_name, e))?;
+    }
 
     Ok(())
 }
@@ -701,9 +716,14 @@ pub async fn launch_web_game(file_path: &str) -> Result<(), String> {
 
     // Fallback: open with default browser via shell (not fullscreen)
     log::warn!("No kiosk-capable browser found, opening with default browser");
-    tokio::process::Command::new("cmd")
-        .args(["/C", "start", "", &url])
-        .spawn()
+    let mut cmd = tokio::process::Command::new("cmd");
+    cmd.args(["/C", "start", "", &url]);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+    cmd.spawn()
         .map_err(|e| format!("Failed to open URL '{}': {}", url, e))?;
     Ok(())
 }
@@ -719,9 +739,14 @@ pub async fn launch_pc_game(file_path: &str) -> Result<(), String> {
 
     if is_url || is_shortcut {
         log::info!("Opening via shell: {}", file_path);
-        tokio::process::Command::new("cmd")
-            .args(["/C", "start", "", file_path])
-            .spawn()
+        let mut cmd = tokio::process::Command::new("cmd");
+        cmd.args(["/C", "start", "", file_path]);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+        cmd.spawn()
             .map_err(|e| format!("Failed to open '{}': {}", file_path, e))?;
     } else {
         log::info!("Launching PC game exe: {}", file_path);

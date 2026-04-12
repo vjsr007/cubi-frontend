@@ -151,14 +151,34 @@ pub async fn launch_game(
 /// Check if a process with a name containing the given string is running.
 fn is_process_running(name: &str) -> bool {
     let name_lower = name.to_lowercase();
-    if let Ok(output) = std::process::Command::new("tasklist")
-        .args(["/FO", "CSV", "/NH"])
-        .output()
+
+    #[cfg(target_os = "windows")]
     {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        stdout.lines().any(|line| line.to_lowercase().contains(&name_lower))
-    } else {
-        false
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        if let Ok(output) = std::process::Command::new("tasklist")
+            .args(["/FO", "CSV", "/NH"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            stdout.lines().any(|line| line.to_lowercase().contains(&name_lower))
+        } else {
+            false
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(output) = std::process::Command::new("tasklist")
+            .args(["/FO", "CSV", "/NH"])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            stdout.lines().any(|line| line.to_lowercase().contains(&name_lower))
+        } else {
+            false
+        }
     }
 }
 

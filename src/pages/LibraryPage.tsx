@@ -9,6 +9,7 @@ import { GameList } from '../components/library/GameList';
 import { FilterBar } from '../components/library/FilterBar';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { SystemWikiPanel } from '../components/wiki/SystemWikiPanel';
+import { ArcadeButton } from '../components/arcade/ArcadeButton';
 
 export function LibraryPage() {
   const { systems, selectedSystemId, loadSystems, isScanning, scanProgress, scanLibrary, viewMode } = useLibraryStore();
@@ -60,15 +61,13 @@ export function LibraryPage() {
               ? t('library.noRomsAt').replace('{path}', config!.paths.data_root)
               : t('library.setRomPath')}
           </p>
-          <button
+          <ArcadeButton
+            variant={hasRoot ? 'cyan' : 'magenta'}
             onClick={hasRoot ? handleScan : () => navigateTo('settings')}
-            style={{
-              background: 'var(--color-primary)', color: '#fff', border: 'none',
-              borderRadius: 10, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            }}
+            pulse
           >
             {hasRoot ? t('library.scanNow') : t('library.openSettings')}
-          </button>
+          </ArcadeButton>
         </div>
       </div>
     );

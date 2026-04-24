@@ -8,6 +8,7 @@ import { api } from '../lib/invoke';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { getAllThemes } from '../themes';
 import { SUPPORTED_LANGUAGES } from '../i18n';
+import { ArcadeButton } from '../components/arcade/ArcadeButton';
 import type { Page } from '../types';
 
 const inputStyle: React.CSSProperties = {
@@ -375,21 +376,14 @@ export function SettingsPage() {
           >
             {saved ? `✓ ${t('settings.saved')}` : t('settings.save')}
           </button>
-          <button
+          <ArcadeButton
+            variant="cyan"
+            size="sm"
             onClick={handleScanNow}
             disabled={isScanning || !dataRoot}
-            style={{
-              ...btnStyle,
-              borderRadius: 10,
-              padding: '10px 24px',
-              fontSize: 14,
-              fontWeight: 500,
-              opacity: isScanning || !dataRoot ? 0.5 : 1,
-              cursor: isScanning || !dataRoot ? 'not-allowed' : 'pointer',
-            }}
           >
             {isScanning ? scanProgress : t('settings.scanLibrary')}
-          </button>
+          </ArcadeButton>
         </div>
       </div>
     </div>

@@ -209,6 +209,7 @@ export function HyperSpinTheme() {
 
   return (
     <div
+      className="theme-hyperspin"
       style={{
         height: '100%',
         display: 'flex',
@@ -218,6 +219,22 @@ export function HyperSpinTheme() {
         position: 'relative',
       }}
     >
+      {/* Marquee scroll bar */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 28,
+        background: 'linear-gradient(90deg, rgba(0,0,0,0.9), rgba(243,156,18,0.15), rgba(0,0,0,0.9))',
+        borderBottom: '1px solid rgba(243,156,18,0.3)',
+        overflow: 'hidden', zIndex: 15, display: 'flex', alignItems: 'center',
+      }}>
+        <div style={{
+          whiteSpace: 'nowrap', fontSize: 11, fontWeight: 700, letterSpacing: '0.2em',
+          textTransform: 'uppercase', color: '#f39c12',
+          textShadow: '0 0 8px #f39c12, 0 0 24px rgba(243,156,18,0.6)',
+          animation: 'marquee-scroll 20s linear infinite',
+        }}>
+          CUBI · EMULATION FRONTEND · SELECT YOUR SYSTEM · PRESS START · CUBI · EMULATION FRONTEND · SELECT YOUR SYSTEM · PRESS START ·&nbsp;
+        </div>
+      </div>
       {/* Settings button */}
       <button
         onClick={() => navigateTo('settings')}
@@ -245,8 +262,8 @@ export function HyperSpinTheme() {
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        {/* Left: Preview Panel */}
-        <div style={{ flex: '0 0 55%', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* Left: Preview Panel with CRT */}
+        <div className="fx-crt fx-scanline-sweep" style={{ flex: '0 0 55%', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
           <PreviewPanel
             system={currentSystem}
             game={view === 'games' ? (games[gameIndex] ?? null) : null}

@@ -422,6 +422,7 @@ export function AuroraTheme() {
   // ── Main Aurora UI ─────────────────────────────────────────
   return (
     <div
+      className="theme-aurora fx-scanlines-hd"
       style={{
         position: 'relative',
         width: '100%',

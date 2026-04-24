@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { toImageSrc } from '../../lib/media';
 import { useGameMedia, bestImage } from '../../hooks/useMedia';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { VideoPreview } from '../media/VideoPreview';
 import type { GameInfo } from '../../types';
+import './GameCard.css';
 
 interface Props {
   game: GameInfo;
@@ -21,37 +21,22 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
   const launchingGameId = useLibraryStore((s) => s.launchingGameId);
   const isLaunching = launchingGameId === game.id;
 
-  // Always fetch media so cover art is visible; video plays only on hover/focus
   const { data: media } = useGameMedia(game.id);
 
   const showVideo = (hovered || isFocused) && !!media?.video;
-
-  // Priority: box_art from storage/downloaded_media > downloaded_images (game.box_art)
   const richImage = bestImage(media);
   const imgPath = richImage ?? game.box_art ?? null;
   const imgSrc = !imgError ? toImageSrc(imgPath) : null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.12 }}
+    <button
+      className={`game-card ${isFocused ? 'game-card--focus' : ''}`}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{
-        borderRadius: 8,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        background: 'var(--color-surface-2)',
-        border: `1px solid ${isFocused ? 'var(--color-primary)' : 'var(--color-border)'}`,
-        boxShadow: isFocused ? '0 0 0 2px rgba(124,58,237,0.4)' : 'none',
-        transform: isFocused ? 'scale(1.02)' : 'scale(1)',
-        transition: 'transform 0.1s, border-color 0.1s, box-shadow 0.1s',
-      }}
+      aria-label={`${game.title}${game.year ? ', ' + game.year : ''}`}
     >
-      {/* Box Art / Video on hover */}
-      <div style={{ aspectRatio: '3/4', background: 'var(--color-surface-3)', position: 'relative', overflow: 'hidden' }}>
+      <div className="game-card-art">
         {showVideo && media?.video ? (
           <VideoPreview videoPath={media.video} playing={hovered || isFocused} style={{ width: '100%', height: '100%' }} />
         ) : imgSrc ? (
@@ -68,69 +53,43 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
             }}
           />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-            <span style={{ fontSize: 28, marginBottom: 6 }}>🎮</span>
-            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-              {game.title}
-            </span>
-          </div>
+          <div className="game-card-placeholder">{game.title}</div>
         )}
 
-        {/* Hover overlay with play button / launching spinner */}
-        {(hovered || isLaunching) && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: isLaunching ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 10,
-          }}>
-            {isLaunching ? (
-              <div style={{
-                width: 36, height: 36,
-                border: '3px solid rgba(255,255,255,0.2)',
-                borderTopColor: 'var(--color-primary)',
-                borderRadius: '50%',
-                animation: 'spin 0.6s linear infinite',
-              }} />
-            ) : (
-              <button
-                onClick={(e) => { e.stopPropagation(); onLaunch(); }}
-                disabled={!!launchingGameId}
-                style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: launchingGameId ? 'var(--color-surface-2)' : 'var(--color-primary)',
-                  border: 'none', cursor: launchingGameId ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 18,
-                  opacity: launchingGameId ? 0.5 : 1,
-                }}
-              >
-                ▶
-              </button>
-            )}
-          </div>
-        )}
+        <div className="game-card-scanlines" />
 
         {/* Badges */}
         {game.favorite && (
-          <div style={{ position: 'absolute', top: 4, right: 4, fontSize: 12, color: '#f59e0b', zIndex: 11 }}>★</div>
-        )}
-        {game.play_count > 0 && (
-          <div style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.7)', borderRadius: 4, padding: '1px 5px', fontSize: 10, color: '#fff', zIndex: 11 }}>
-            {game.play_count}×
-          </div>
+          <span className="game-card-badge game-card-badge--fav" title="Favorite">★</span>
         )}
         {media?.video && !hovered && (
-          <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.7)', borderRadius: 4, padding: '1px 5px', fontSize: 9, color: '#27ae60', zIndex: 11 }}>
-            🎬
+          <span className="game-card-badge game-card-badge--video" title="Has video">🎬</span>
+        )}
+        {game.play_count > 0 && (
+          <span className="game-card-badge game-card-badge--count">{game.play_count}×</span>
+        )}
+
+        {/* Play / Launch overlay */}
+        {(hovered || isLaunching) && (
+          <div className="game-card-play-overlay">
+            {isLaunching ? (
+              <div className="game-card-spinner" />
+            ) : (
+              <span
+                className="game-card-play"
+                onClick={(e) => { e.stopPropagation(); onLaunch(); }}
+              >
+                ▶
+              </span>
+            )}
           </div>
         )}
 
         {/* Favorite toggle on hover */}
         {hovered && (
           <button
+            className="game-card-fav-toggle"
             onClick={(e) => { e.stopPropagation(); onFavorite(); }}
-            style={{ position: 'absolute', top: 4, left: 4, width: 24, height: 24, borderRadius: 4, background: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer', fontSize: 12, color: game.favorite ? '#f59e0b' : '#fff', zIndex: 12 }}
             title={game.favorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             {game.favorite ? '★' : '☆'}
@@ -138,15 +97,12 @@ export function GameCard({ game, isFocused, onClick, onLaunch, onFavorite }: Pro
         )}
       </div>
 
-      {/* Title */}
-      <div style={{ padding: '6px 8px' }}>
-        <p style={{ fontSize: 11, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>
-          {game.title}
-        </p>
+      <div className="game-card-meta">
+        <div className="game-card-title" title={game.title}>{game.title}</div>
         {game.year && (
-          <p style={{ fontSize: 10, margin: '2px 0 0', color: 'var(--color-text-muted)' }}>{game.year}</p>
+          <div className="game-card-sub">{game.year}</div>
         )}
       </div>
-    </motion.div>
+    </button>
   );
 }

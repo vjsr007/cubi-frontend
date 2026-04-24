@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
   <defs>
-    <linearGradient id="bg-neogeo" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="bg-zxspectrum" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a1a1a"></stop>
       <stop offset="100%" stop-color="#0a0a0a"></stop>
     </linearGradient>
-    <filter id="glow-neogeo" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="glow-zxspectrum" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="1.2" result="b"></feGaussianBlur>
       <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
     </filter>
   </defs>
   
-  <rect x="1" y="1" width="62" height="62" rx="10" fill="url(#bg-neogeo)"></rect>
+  <rect x="1" y="1" width="62" height="62" rx="10" fill="url(#bg-zxspectrum)"></rect>
   
   <rect x="1" y="1" width="62" height="62" rx="10" fill="none" stroke="#ffea00" stroke-width="1.5" opacity=".9"></rect>
   <rect x="3" y="3" width="58" height="58" rx="8" fill="none" stroke="#ffea00" stroke-width=".5" opacity=".35"></rect>
@@ -21,13 +21,20 @@
   <circle cx="6" cy="58" r="1" fill="#ffea00" opacity=".6"></circle>
   <circle cx="58" cy="58" r="1" fill="#ffea00" opacity=".6"></circle>
   
-  <g filter="url(#glow-neogeo)">
+  <g filter="url(#glow-zxspectrum)">
     
-    <text x="32" y="30" text-anchor="middle" font-family="Arial Black" font-size="10" font-weight="900" fill="#ffea00">NEO</text>
-    <text x="32" y="44" text-anchor="middle" font-family="Arial Black" font-size="11" font-weight="900" fill="#ffea00">GEO</text>
-    <rect x="12" y="32" width="40" height="1.5" fill="#ffea00"></rect>
+    <rect x="12" y="22" width="40" height="20" rx="2" fill="#000" stroke="#ffea00" stroke-width="1"></rect>
+    <g>
+      <rect x="14" y="24" width="6" height="4" fill="#ff006e"></rect>
+      <rect x="21" y="24" width="6" height="4" fill="#ffea00"></rect>
+      <rect x="28" y="24" width="6" height="4" fill="#39ff14"></rect>
+      <rect x="35" y="24" width="6" height="4" fill="#00f0ff"></rect>
+      <rect x="42" y="24" width="8" height="4" fill="#ff006e"></rect>
+    </g>
+    <rect x="14" y="30" width="36" height="2" fill="#ffea00" opacity=".4"></rect>
+    <rect x="14" y="36" width="36" height="2" fill="#ffea00" opacity=".4"></rect>
   </g>
   
   <rect x="4" y="52" width="56" height="8" rx="2" fill="#000" opacity=".6"></rect>
-  <text x="32" y="58" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="5.5" font-weight="700" fill="#ffea00" letter-spacing="1">NEO</text>
+  <text x="32" y="58" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="5.5" font-weight="700" fill="#ffea00" letter-spacing="1">ZX</text>
 </svg>

@@ -1,4 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg version="1.1" viewBox="0 0 3839.5 1097.1" xmlns="http://www.w3.org/2000/svg">
-  <polygon class="st1" points="3608.8 268.3 3839.5 37.6 3211 37.6 3211 37.6 3204.2 37.6 2683.3 558.5 2683.3 0 2335.1 348.2 2335.1 0 1748.2 586.9 1748.3 0 1189.8 558.5 1189.8 0 841.6 348.2 841.6 0 0 841.6 348.2 841.6 662.6 527.3 662.6 875.5 943.6 594.5 943.6 804.7 651.2 1097.1 999.4 1097.1 1502 594.6 1502 841.6 1599.1 841.6 1599.1 841.6 1841.8 841.6 2156.1 527.3 2156.1 875.5 2437.1 594.5 2437.1 804.7 2400.3 841.6 3260.3 841.6 3490.9 610.9 2979.2 610.9 3035.2 554.9 3178.8 554.9 3409.5 324.3 3265.8 324.3 3321.8 268.3" style="fill: rgb(255, 255, 255);"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="bg-mame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1a"></stop>
+      <stop offset="100%" stop-color="#0a0a0a"></stop>
+    </linearGradient>
+    <filter id="glow-mame" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2" result="b"></feGaussianBlur>
+      <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+    </filter>
+  </defs>
+  
+  <rect x="1" y="1" width="62" height="62" rx="10" fill="url(#bg-mame)"></rect>
+  
+  <rect x="1" y="1" width="62" height="62" rx="10" fill="none" stroke="#f39c12" stroke-width="1.5" opacity=".9"></rect>
+  <rect x="3" y="3" width="58" height="58" rx="8" fill="none" stroke="#f39c12" stroke-width=".5" opacity=".35"></rect>
+  
+  <circle cx="6" cy="6" r="1" fill="#f39c12" opacity=".6"></circle>
+  <circle cx="58" cy="6" r="1" fill="#f39c12" opacity=".6"></circle>
+  <circle cx="6" cy="58" r="1" fill="#f39c12" opacity=".6"></circle>
+  <circle cx="58" cy="58" r="1" fill="#f39c12" opacity=".6"></circle>
+  
+  <g filter="url(#glow-mame)">
+    
+    <path d="M20 14 L44 14 Q48 14 48 18 L48 28 Q48 32 44 32 L40 32 L40 46 Q40 50 36 50 L28 50 Q24 50 24 46 L24 32 L20 32 Q16 32 16 28 L16 18 Q16 14 20 14 Z" fill="#f39c12" stroke="#fff" stroke-width="1"></path>
+    <rect x="20" y="18" width="24" height="10" fill="#000"></rect>
+    <text x="32" y="26" text-anchor="middle" font-family="Arial Black" font-size="6" font-weight="900" fill="#00f0ff">GAME</text>
+    <circle cx="28" cy="38" r="2" fill="#ff006e"></circle>
+    <circle cx="36" cy="38" r="2" fill="#ffea00"></circle>
+  </g>
+  
+  <rect x="4" y="52" width="56" height="8" rx="2" fill="#000" opacity=".6"></rect>
+  <text x="32" y="58" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="5.5" font-weight="700" fill="#f39c12" letter-spacing="1">MAME</text>
 </svg>

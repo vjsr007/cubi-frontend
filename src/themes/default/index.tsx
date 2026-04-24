@@ -17,9 +17,9 @@ export function DefaultTheme() {
   const currentPage = useUiStore((s) => s.currentPage);
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div className="theme-default" style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
       <Sidebar />
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main className="fx-scanlines-hd" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {currentPage === 'library'          && <LibraryPage />}
         {currentPage === 'settings'         && <SettingsPage />}
         {currentPage === 'game-detail'      && <GameDetailPage />}

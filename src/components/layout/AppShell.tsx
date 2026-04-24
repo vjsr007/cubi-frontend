@@ -1,12 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConfigStore } from '../../stores/configStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useI18nStore } from '../../stores/i18nStore';
 import { getTheme } from '../../themes';
 import { api } from '../../lib/invoke';
 import { useGlobalGamepad } from '../../hooks/useGlobalGamepad';
+import { SplashScreen } from '../arcade/SplashScreen';
 
 export function AppShell() {
+  const [booted, setBooted] = useState(false);
   const { loadConfig, config, saveConfig } = useConfigStore();
   const { currentPage, navigateTo } = useUiStore();
   const setLocale = useI18nStore((s) => s.setLocale);
@@ -63,5 +65,10 @@ export function AppShell() {
   }
 
   const manifest = getTheme(config.general.theme);
-  return <manifest.Component />;
+  return (
+    <>
+      {!booted && <SplashScreen onDone={() => setBooted(true)} />}
+      <manifest.Component />
+    </>
+  );
 }

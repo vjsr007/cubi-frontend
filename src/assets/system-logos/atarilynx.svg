@@ -1,13 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg id="svg2" enable-background="new 0 0 566.929 104.51" version="1.1" y="0px" x="0px" viewBox="0 0 264 35" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
-  <polygon id="polygon12" points="207.83 25.969 183.182 34.883 207.987 34.883 217.424 29.69" style="fill: rgb(255, 255, 255);" bx:origin="-5.35 -2.913"/>
-  <polygon id="polygon14" points="184.813 0.242 214.093 0.242 253.084 19.954 237.791 19.954 227.043 15.026 220.412 17.715" style="fill: rgb(255, 255, 255);" bx:origin="-2.707 -0.012"/>
-  <polygon id="polygon16" points="239.346 9.273 264 0.363 239.195 0.363 229.763 5.553" style="fill: rgb(255, 255, 255);" bx:origin="-6.711 -0.041"/>
-  <polygon id="polygon18" points="262.372 35 233.088 35 194.097 15.288 209.39 15.288 220.138 20.216 226.768 17.527" style="fill: rgb(255, 255, 255);" bx:origin="-2.843 -0.776"/>
-  <rect id="rect20" height="23.654" width="19.409" y="0.004" style="fill: rgb(255, 255, 255);" bx:origin="-0.001 0"/>
-  <rect id="rect22" height="7.242" width="49.736" y="26.554" style="fill: rgb(255, 255, 255);" bx:origin="0 -3.667"/>
-  <polygon id="polygon24" points="31.539 0.004 54.591 0.004 70.363 13.276 58.963 21.617" style="fill: rgb(255, 255, 255);" bx:origin="-0.813 0"/>
-  <polygon id="polygon26" points="60.657 22.931 60.657 33.794 78.853 33.794 78.853 22.931 114.031 0.004 97.049 0.004 61.871 22.931" style="fill: rgb(255, 255, 255);" bx:origin="-1.137 0"/>
-  <polygon id="polygon28" points="116.461 3.622 135.868 15.691 135.868 33.794 116.461 33.794" style="fill: rgb(255, 255, 255);" bx:origin="-6.002 -0.12"/>
-  <polygon id="polygon30" points="118.886 0.004 168.625 33.794 179.541 33.794 179.541 0 170.079 0 170.079 23.766 134.657 0.004" style="fill: rgb(255, 255, 255);" bx:origin="-1.96 0"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="bg-atarilynx" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1a"></stop>
+      <stop offset="100%" stop-color="#0a0a0a"></stop>
+    </linearGradient>
+    <filter id="glow-atarilynx" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2" result="b"></feGaussianBlur>
+      <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+    </filter>
+  </defs>
+  
+  <rect x="1" y="1" width="62" height="62" rx="10" fill="url(#bg-atarilynx)"></rect>
+  
+  <rect x="1" y="1" width="62" height="62" rx="10" fill="none" stroke="#ffea00" stroke-width="1.5" opacity=".9"></rect>
+  <rect x="3" y="3" width="58" height="58" rx="8" fill="none" stroke="#ffea00" stroke-width=".5" opacity=".35"></rect>
+  
+  <circle cx="6" cy="6" r="1" fill="#ffea00" opacity=".6"></circle>
+  <circle cx="58" cy="6" r="1" fill="#ffea00" opacity=".6"></circle>
+  <circle cx="6" cy="58" r="1" fill="#ffea00" opacity=".6"></circle>
+  <circle cx="58" cy="58" r="1" fill="#ffea00" opacity=".6"></circle>
+  
+  <g filter="url(#glow-atarilynx)">
+    
+    <path d="M32 14 L32 50 M24 20 L24 50 M40 20 L40 50 M32 14 Q24 14 22 22 M32 14 Q40 14 42 22" stroke="#ffea00" stroke-width="3" fill="none" stroke-linecap="round"></path>
+  </g>
+  
+  <rect x="4" y="52" width="56" height="8" rx="2" fill="#000" opacity=".6"></rect>
+  <text x="32" y="58" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="5.5" font-weight="700" fill="#ffea00" letter-spacing="1">LYNX</text>
 </svg>

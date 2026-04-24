@@ -1,0 +1,181 @@
+/* SplashScreen.css — matches preview/splash.html */
+
+.cubi-splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: radial-gradient(ellipse at center, #0a0018 0%, #000 80%);
+  display: grid; place-items: center;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  color: #fff;
+  transition: opacity .4s ease-out;
+}
+.cubi-splash.fading { opacity: 0; pointer-events: none; }
+
+.cubi-splash-stars { position: absolute; inset: 0 0 60% 0; }
+.cubi-splash-stars i {
+  position: absolute; width: 2px; height: 2px;
+  background: #fff; border-radius: 50%; opacity: 0;
+  animation: cubi-twinkle 3s infinite;
+}
+@keyframes cubi-twinkle { 0%,100% {opacity:.2} 50% {opacity:1} }
+
+.cubi-splash-sun {
+  position: absolute; top: 22%; left: 50%;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: linear-gradient(180deg, #ffea00 0%, #ff6b00 45%, #ff006e 100%);
+  box-shadow: 0 0 80px rgba(255,107,0,.7), 0 0 200px rgba(255,0,110,.5);
+  transform: translate(-50%, 0);
+  animation: cubi-sun-rise 2.2s cubic-bezier(0.16, 0.84, 0, 1) both;
+}
+.cubi-splash-sun::after {
+  content: ''; position: absolute; inset: 40% 0 0 0;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 8px, #000 8px, #000 12px);
+  mix-blend-mode: darken; opacity: .9;
+}
+@keyframes cubi-sun-rise {
+  0%   { transform: translate(-50%, 60%) scale(.9); opacity: 0; }
+  60%  { transform: translate(-50%, 0)   scale(1);   opacity: 1; }
+  100% { transform: translate(-50%, 0)   scale(1);   opacity: 1; }
+}
+
+.cubi-splash-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+  perspective: 400px; perspective-origin: 50% 0%;
+}
+.cubi-splash-floor::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(0deg, rgba(255,0,110,0) 0%, rgba(255,0,110,.18) 100%),
+    repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(0,240,255,.55) 39px, rgba(0,240,255,.55) 40px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(0,240,255,.55) 39px, rgba(0,240,255,.55) 40px);
+  transform: rotateX(62deg) translateZ(0);
+  transform-origin: 50% 0;
+  animation: cubi-floor 1.2s linear infinite;
+  mask-image: linear-gradient(0deg, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+}
+@keyframes cubi-floor { to { background-position-y: 40px; } }
+
+.cubi-splash-scan {
+  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  mix-blend-mode: overlay;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,.18) 2px, rgba(0,0,0,.18) 3px);
+}
+.cubi-splash-sweep {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden;
+}
+.cubi-splash-sweep::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+  animation: cubi-sweep 3.5s linear infinite;
+}
+@keyframes cubi-sweep {
+  0%   { top: -2%; opacity: 0; }
+  10%  { opacity: .4; }
+  90%  { opacity: .4; }
+  100% { top: 102%; opacity: 0; }
+}
+
+.cubi-splash-core { position: relative; z-index: 5; text-align: center; }
+
+.cubi-splash-logo {
+  display: inline-grid; place-items: center;
+  width: 180px; height: 180px; border-radius: 28px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+  box-shadow:
+    0 0 0 2px #00f0ff,
+    0 0 40px rgba(0,240,255,.6),
+    0 0 120px rgba(255,0,110,.4),
+    inset 0 0 40px rgba(0,240,255,.1);
+  position: relative;
+  animation: cubi-power-on 1.4s cubic-bezier(0.16, 0.84, 0, 1) both;
+}
+.cubi-splash-logo::after {
+  content: ''; position: absolute; inset: 0; border-radius: 28px; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,.18) 2px, rgba(0,0,0,.18) 3px);
+}
+@keyframes cubi-power-on {
+  0%   { transform: scale(1, 0.001); filter: brightness(4) blur(1px); opacity: 0; }
+  20%  { transform: scale(1, 0.001); opacity: 1; }
+  40%  { transform: scale(1.02, 1); filter: brightness(2); }
+  100% { transform: scale(1); filter: brightness(1); opacity: 1; }
+}
+
+.cubi-splash-mark {
+  font-size: 96px; font-weight: 900; line-height: 1; letter-spacing: -0.04em;
+  background: linear-gradient(180deg, #00f0ff 0%, #0077ff 50%, #ff006e 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 8px rgba(0,240,255,.8)) drop-shadow(0 0 24px rgba(255,0,110,.5));
+}
+
+.cubi-splash-wordmark {
+  margin-top: 28px;
+  font-size: 56px; font-weight: 900; letter-spacing: 0.18em; color: #fff;
+  text-shadow:
+    0 0 4px #00f0ff, 0 0 16px #00f0ff, 0 0 40px rgba(0,240,255,.7),
+    0 2px 0 #ff006e, 0 4px 0 rgba(255,0,110,.6);
+  animation: cubi-power-on 1.8s cubic-bezier(0.16, 0.84, 0, 1) .3s both, cubi-shiver 6s steps(4, end) 2s infinite;
+}
+@keyframes cubi-shiver {
+  0%,100% { text-shadow: 0 0 4px #00f0ff, 0 0 16px #00f0ff, 0 0 40px rgba(0,240,255,.7), -1px 0 #ff006e, 1px 0 #00f0ff; }
+  50%     { text-shadow: 0 0 4px #00f0ff, 0 0 16px #00f0ff, 0 0 40px rgba(0,240,255,.7), 0 0 #ff006e, 0 0 #00f0ff; }
+}
+
+.cubi-splash-tagline {
+  margin-top: 12px;
+  font-size: 13px; font-weight: 600; letter-spacing: .4em; text-transform: uppercase;
+  color: #00f0ff; opacity: 0;
+  animation: cubi-fadein .6s ease-out 1.2s forwards;
+}
+@keyframes cubi-fadein { to { opacity: 1; } }
+
+.cubi-splash-track {
+  margin: 48px auto 0;
+  width: 420px; max-width: 60vw; height: 10px;
+  border: 1.5px solid #00f0ff; border-radius: 999px;
+  background: rgba(0,240,255,.08);
+  box-shadow: 0 0 16px rgba(0,240,255,.3), inset 0 0 8px rgba(0,240,255,.2);
+  position: relative;
+  opacity: 0; animation: cubi-fadein .5s ease-out 1.4s forwards;
+}
+.cubi-splash-fill {
+  position: absolute; inset: 2px; width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00f0ff 0%, #ff006e 100%);
+  box-shadow: 0 0 12px currentColor; color: #ff006e;
+  animation: cubi-fill 2.4s cubic-bezier(0.8, 0, 0.2, 1) 1.5s forwards;
+}
+@keyframes cubi-fill { to { width: calc(100% - 4px); } }
+
+.cubi-splash-status {
+  margin-top: 16px; height: 16px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+  color: #888; letter-spacing: 0.1em; text-transform: uppercase;
+  opacity: 0; animation: cubi-fadein .3s ease-out 1.6s forwards;
+}
+.cubi-splash-status b { color: #00f0ff; font-weight: 500; }
+
+.cubi-splash-press {
+  margin-top: 32px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;
+  color: #ffea00;
+  text-shadow: 0 0 8px #ffea00, 0 0 24px rgba(255,234,0,.6);
+  opacity: 0;
+  animation: cubi-fadein .5s ease-out 2s forwards, cubi-blink 1s steps(2) 2.3s infinite;
+}
+@keyframes cubi-blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+.cubi-splash-hud {
+  position: absolute; z-index: 6;
+  font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.08em;
+  color: #00f0ff; opacity: .7;
+}
+.cubi-splash-tl { top: 20px; left: 20px; }
+.cubi-splash-tr { top: 20px; right: 20px; text-align: right; }
+.cubi-splash-bl { bottom: 20px; left: 20px; }
+.cubi-splash-br { bottom: 20px; right: 20px; text-align: right; }
+.cubi-splash-hud b { color: #ff006e; font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cubi-splash-sun, .cubi-splash-floor::before, .cubi-splash-sweep::after,
+  .cubi-splash-logo, .cubi-splash-wordmark, .cubi-splash-press { animation: none !important; }
+}

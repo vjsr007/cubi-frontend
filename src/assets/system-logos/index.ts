@@ -59,6 +59,25 @@ import flash from './flash.svg';
 import mugen from './mugen.svg';
 import android from './android.svg';
 import windows from './windows.svg';
+import segacd from './segacd.svg';
+import sega32x from './sega32x.svg';
+import virtualboy from './virtualboy.svg';
+import neocd from './neocd.svg';
+import pcenginecd from './pcenginecd.svg';
+import supergrafx from './supergrafx.svg';
+import vectrex from './vectrex.svg';
+import dos from './dos.svg';
+import zxspectrum from './zxspectrum.svg';
+import odyssey2 from './odyssey2.svg';
+import pcfx from './pcfx.svg';
+import x68000 from './x68000.svg';
+import pokemini from './pokemini.svg';
+import channelf from './channelf.svg';
+import jagcd from './jagcd.svg';
+import n64dd from './n64dd.svg';
+import sufami from './sufami.svg';
+import pico from './pico.svg';
+import web from './web.svg';
 
 /**
  * Maps system IDs to their SVG logo URLs (Vite static imports).
@@ -106,6 +125,7 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   wswanc,
   pc: windows,
   windows,
+  windows11,
   cps1,
   cps2,
   cps3,
@@ -128,4 +148,23 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   mugen,
   android,
   bluestacks: android,
+  segacd,
+  sega32x,
+  virtualboy,
+  neocd,
+  pcenginecd,
+  supergrafx,
+  vectrex,
+  dos,
+  zxspectrum,
+  odyssey2,
+  pcfx,
+  x68000,
+  pokemini,
+  channelf,
+  jagcd,
+  n64dd,
+  sufami,
+  pico,
+  web,
 };

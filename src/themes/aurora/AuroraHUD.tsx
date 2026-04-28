@@ -275,7 +275,7 @@ export function AuroraInfoBar({ title, current, total }: AuroraInfoBarProps) {
           fontWeight: 700,
           margin: 0,
           fontFamily: 'Arial, sans-serif',
-          textShadow: '0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(16,124,16,0.3)',
+          textShadow: '0 2px 12px rgba(0,0,0,0.9), var(--text-glow-green)',
           letterSpacing: '0.02em',
         }}
       >

@@ -64,14 +64,15 @@ function GameBadge({
       }}
     >
       <span
+        className={focused ? 'fx-neon-text fx-neon-flicker' : ''}
         style={{
           fontSize: focused ? 13 : 12,
           fontWeight: 700,
           fontFamily: 'system-ui, Arial, sans-serif',
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
-          color: focused ? '#27ae60' : '#aaa',
-          textShadow: focused ? '0 0 8px rgba(39,174,96,0.7)' : 'none',
+          color: focused ? '#f39c12' : '#aaa',
+          textShadow: focused ? undefined : 'none',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',

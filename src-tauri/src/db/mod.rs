@@ -355,8 +355,19 @@ impl Database {
                 &row.get::<_, String>(29).unwrap_or_else(|_| "unverified".to_string()),
             ),
             verification_message: row.get(30)?,
-            manual: row.get(31)?,
+            manual: None, // populated separately via get_game_manual
         })
+    }
+
+    /// Read the manual path for a single game — gracefully returns None if
+    /// the column doesn't exist yet (migration v11 not yet applied).
+    fn get_game_manual(&self, game_id: &str) -> Option<String> {
+        let conn = self.conn.lock().unwrap();
+        conn.query_row(
+            "SELECT manual FROM games WHERE id = ?1",
+            [game_id],
+            |row| row.get::<_, Option<String>>(0),
+        ).unwrap_or(None)
     }
 
     const GAME_COLS: &'static str =
@@ -365,8 +376,7 @@ impl Database {
          players, rating, last_played, play_count, favorite,
          hero_art, logo, background_art, screenshots, trailer_url,
          trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id,
-         steam_app_id, verification_status, verification_message,
-         manual";
+         steam_app_id, verification_status, verification_message";
 
     pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
@@ -381,9 +391,9 @@ impl Database {
                players, rating, play_count, last_played, favorite,
                hero_art, logo, background_art, screenshots, trailer_url,
                trailer_local, metacritic_score, tags, website,
-               pcgamingwiki_url, igdb_id, manual)
+               pcgamingwiki_url, igdb_id)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,
-                     ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29)
+                     ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28)
              ON CONFLICT(id) DO UPDATE SET
                title=excluded.title, box_art=excluded.box_art,
                description=excluded.description, developer=excluded.developer,
@@ -396,7 +406,7 @@ impl Database {
                trailer_url=excluded.trailer_url, trailer_local=excluded.trailer_local,
                metacritic_score=excluded.metacritic_score, tags=excluded.tags,
                website=excluded.website, pcgamingwiki_url=excluded.pcgamingwiki_url,
-               igdb_id=excluded.igdb_id, manual=excluded.manual",
+               igdb_id=excluded.igdb_id",
             rusqlite::params![
                 game.id, game.system_id, game.title, game.file_path,
                 game.file_name, game.file_size as i64,
@@ -408,9 +418,26 @@ impl Database {
                 screenshots_json, game.trailer_url, game.trailer_local,
                 game.metacritic_score, tags_json, game.website,
                 game.pcgamingwiki_url, game.igdb_id,
-                game.manual,
             ],
         )?;
+        // Store manual path separately — column may not exist on older DBs
+        // (migration v11 adds it); failure here is non-fatal.
+        if game.manual.is_some() {
+            drop(conn);
+            let _ = self.update_game_manual(&game.id, game.manual.as_deref());
+        }
+        Ok(())
+    }
+
+    /// Update only the manual path for a game. Silently ignores errors so this
+    /// is safe to call even before migration v11 has added the column.
+    pub fn update_game_manual(&self, game_id: &str, manual: Option<&str>) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        // Ignore "no such column" errors — column is added by migration v11.
+        let _ = conn.execute(
+            "UPDATE games SET manual = ?1 WHERE id = ?2",
+            rusqlite::params![manual, game_id],
+        );
         Ok(())
     }
 
@@ -505,7 +532,12 @@ impl Database {
         );
         let mut stmt = conn.prepare(&sql)?;
         match stmt.query_row([game_id], Self::row_to_game) {
-            Ok(g) => Ok(Some(g)),
+            Ok(mut g) => {
+                drop(stmt);
+                drop(conn);
+                g.manual = self.get_game_manual(game_id);
+                Ok(Some(g))
+            }
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e),
         }

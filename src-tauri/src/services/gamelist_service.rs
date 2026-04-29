@@ -17,6 +17,7 @@ pub struct GamelistEntry {
     pub releasedate: Option<String>,
     pub play_count: Option<String>,
     pub last_played: Option<String>,
+    pub manual: Option<String>,
 }
 
 /// Parse gamelist.xml and return a map of ROM filename -> metadata.
@@ -88,6 +89,7 @@ pub fn parse_gamelist(gamelist_path: &Path) -> HashMap<String, GamelistEntry> {
                             "releasedate" => current_entry.releasedate = Some(text),
                             "playcount" => current_entry.play_count = Some(text),
                             "lastplayed" => current_entry.last_played = Some(text),
+                            "manual" => current_entry.manual = Some(text),
                             _ => {}
                         }
                     }

@@ -94,6 +94,7 @@ pub fn resolve_game_media(
         marquee: lookup("marquees_bak", IMG_EXTS),
         mix_image: lookup("miximages", IMG_EXTS),
         video: lookup("videos", VID_EXTS),
+        manual: lookup("manual", &["pdf"]),
     }
 }
 

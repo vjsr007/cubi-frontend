@@ -36,6 +36,11 @@ export interface GeneralConfig {
   /** SteamGridDB API key — enables cover art for Epic, EA, GOG games.
    *  Get yours at https://www.steamgriddb.com/profile/preferences/api */
   steamgriddb_api_key?: string;
+  /** Steam Web API key — required for cloud library fetch (REQ-024).
+   *  Get yours at https://steamcommunity.com/dev/apikey */
+  steam_api_key?: string;
+  /** Steam ID or vanity URL — used with steam_api_key for cloud library (REQ-024). */
+  steam_id?: string;
 }
 
 export interface PathsConfig {
@@ -197,6 +202,8 @@ export interface PcImportGame {
   source_id: string;
   install_path?: string;
   box_art?: string;
+  /** Whether the game is currently installed locally (REQ-024). */
+  installed: boolean;
 }
 
 export interface PcLibraryStatus {
@@ -264,6 +271,7 @@ export interface GameMedia {
   marquee: string | null;
   mix_image: string | null;
   video: string | null;
+  manual: string | null;
 }
 
 export interface SystemMedia {

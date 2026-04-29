@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use super::steamgriddb;
 
+fn default_installed_true() -> bool { true }
+
 /// A game discovered from a PC library (Steam, Epic, EA, GOG) or added manually.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PcImportGame {
@@ -17,6 +19,9 @@ pub struct PcImportGame {
     pub source_id: String,
     pub install_path: Option<String>,
     pub box_art: Option<String>,
+    /// Whether the game is currently installed locally (default: true for local scans).
+    #[serde(default = "default_installed_true")]
+    pub installed: bool,
 }
 
 /// Detected PC library status
@@ -135,6 +140,7 @@ fn parse_steam_manifest(path: &Path) -> Option<PcImportGame> {
         source_id: appid,
         install_path,
         box_art: None,
+        installed: true,
     })
 }
 
@@ -248,6 +254,7 @@ fn parse_epic_manifest(path: &Path) -> Option<PcImportGame> {
         source_id: app_name,
         install_path: if install_location.is_empty() { None } else { Some(install_location) },
         box_art: None,
+        installed: true,
     })
 }
 
@@ -372,6 +379,7 @@ fn parse_ea_game_dir(dir: &Path) -> Option<PcImportGame> {
         source_id,
         install_path,
         box_art: None,
+        installed: true,
     })
 }
 
@@ -401,6 +409,7 @@ fn import_ea_registry() -> Vec<PcImportGame> {
                             source_id: game_name,
                             install_path: install_dir,
                             box_art: None,
+                            installed: true,
                         });
                     }
                 }
@@ -465,6 +474,7 @@ pub async fn import_gog(sgdb_key: Option<&str>) -> Vec<PcImportGame> {
                             source_id: game_id,
                             install_path,
                             box_art: None,
+                            installed: true,
                         });
                     }
                 }
@@ -753,6 +763,7 @@ pub async fn import_xbox(sgdb_key: Option<&str>) -> Vec<PcImportGame> {
                 Some(install_location.to_string())
             },
             box_art: None,
+            installed: true,
         });
     }
 

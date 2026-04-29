@@ -50,6 +50,7 @@ pub fn run() {
             commands::pc_games::save_pc_games,
             commands::pc_games::add_pc_game,
             commands::pc_games::delete_pc_game,
+            commands::pc_games::clear_pc_cloud_cache,
             commands::rom_paths::get_system_registry_list,
             commands::rom_paths::get_rom_path_overrides,
             commands::rom_paths::set_rom_path_override,

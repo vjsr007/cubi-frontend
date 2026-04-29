@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Cubi — Arcade Effects Library</title>
+<link rel="stylesheet" href="../tokens.css" />
+<link rel="stylesheet" href="../tokens-arcade.css" />
+<style>
+  body { margin:0; padding:48px; background:#050505; color:#e5e5e5; font-family: var(--font-sans); }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 28px; margin:0 0 4px; letter-spacing:-0.01em; color: #fff; }
+  .sub { color:#888; font-size:13px; margin:0 0 40px; }
+  h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #00f0ff; margin: 40px 0 14px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .demo {
+    background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 12px;
+    padding: 24px; position: relative; min-height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .demo .code {
+    position: absolute; bottom: 8px; right: 10px;
+    font-family: ui-monospace, monospace; font-size: 10px; color: #555;
+    letter-spacing: 0.04em;
+  }
+  .demo .name {
+    position: absolute; top: 8px; left: 10px;
+    font-family: ui-monospace, monospace; font-size: 10px; color: #888;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* Demo elements ------------------------------ */
+  .neon-title {
+    font-size: 40px; font-weight: 900; letter-spacing: 0.08em;
+    color: #00f0ff;
+  }
+  .neon-magenta { color: #ff006e; }
+  .neon-yellow  { color: #ffea00; }
+  .neon-green   { color: #39ff14; }
+
+  .glitch-demo {
+    font-size: 40px; font-weight: 900; color: #fff; letter-spacing: 0.04em;
+    position: relative;
+  }
+
+  .arcade-btn {
+    font-family: inherit; font-size: 14px; font-weight: 800; letter-spacing: 0.14em;
+    padding: 14px 32px; border: 2px solid #00f0ff; border-radius: 999px;
+    background: rgba(0,240,255,.08); color: #00f0ff;
+    text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 0 16px rgba(0,240,255,.4), inset 0 0 16px rgba(0,240,255,.1);
+    transition: all .15s var(--ease-snap);
+  }
+  .arcade-btn:hover {
+    background: rgba(0,240,255,.2); color: #fff;
+    box-shadow: 0 0 32px rgba(0,240,255,.8), 0 0 64px rgba(0,240,255,.4), inset 0 0 16px rgba(0,240,255,.2);
+    transform: translateY(-2px);
+  }
+
+  .coin {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, #ffea00 0%, #ff6b00 50%, #ff006e 100%);
+    box-shadow: 0 0 24px rgba(255,234,0,.7), inset 0 0 24px rgba(0,0,0,.3);
+    display: grid; place-items: center;
+    font-family: Arial Black, sans-serif; font-size: 32px; font-weight: 900;
+    color: #000; text-shadow: 0 1px 0 rgba(255,255,255,.3);
+    animation: neon-pulse 2s ease-in-out infinite;
+  }
+
+  .crt-screen {
+    width: 220px; aspect-ratio: 4/3; border-radius: 12px;
+    border: 4px solid #2a2a2a;
+    background: radial-gradient(ellipse at center, #1a2f0a 0%, #0a1a02 70%, #000 100%);
+    position: relative; overflow: hidden;
+    display: grid; place-items: center; color: #39ff14;
+    font-family: "Courier New", monospace; font-size: 14px; font-weight: bold;
+  }
+  .crt-screen::before {
+    content:''; position: absolute; inset: 0;
+    background: var(--crt-scanline); pointer-events: none;
+  }
+  .crt-screen::after {
+    content:''; position: absolute; left:0; right:0; height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+    animation: scanline-sweep 4s linear infinite;
+  }
+
+  .tilt-card {
+    width: 140px; aspect-ratio: 3/4;
+    border-radius: 10px;
+    background: linear-gradient(160deg, #ff006e, #7c3aed);
+    box-shadow: 0 8px 32px rgba(124,58,237,.5);
+    animation: tilt-breathe 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+    display: grid; place-items: end;
+    padding: 12px;
+    color: #fff; font-weight: 700; font-size: 13px;
+  }
+
+  .marquee {
+    width: 100%;
+    background: linear-gradient(180deg, #1a0a1a, #0a0a0a);
+    border: 1px solid #ff006e;
+    border-radius: 6px;
+    padding: 10px 0;
+    overflow: hidden;
+    box-shadow: 0 0 16px rgba(255,0,110,.4), inset 0 0 16px rgba(255,0,110,.1);
+  }
+  .marquee-track {
+    white-space: nowrap;
+    animation: marquee-scroll 18s linear infinite;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.2em;
+    color: #ff006e;
+    text-shadow: 0 0 8px rgba(255,0,110,.7);
+  }
+
+  .rainbow-demo {
+    font-size: 36px; font-weight: 900; letter-spacing: 0.1em;
+  }
+
+  .press-demo {
+    font-size: 24px; font-weight: 800; letter-spacing: 0.3em;
+    color: #ffea00;
+    text-shadow: 0 0 8px #ffea00, 0 0 24px rgba(255,234,0,.6);
+  }
+
+  .sparks-area {
+    width: 100%; height: 120px; position: relative;
+  }
+  .spark {
+    position: absolute; width: 6px; height: 6px; border-radius: 50%;
+    background: #00f0ff; box-shadow: 0 0 8px #00f0ff, 0 0 16px #00f0ff;
+    left: 50%; top: 80%;
+    animation: spark-float 2s ease-out infinite;
+  }
+
+  .chrome-btn {
+    font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.14em;
+    padding: 12px 28px; border: none; border-radius: 8px;
+    background: var(--chrome-gold);
+    color: #3a2400; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255,215,0,.3), inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(0,0,0,.3);
+  }
+
+  .shine-btn {
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    padding: 12px 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #ff006e);
+    color: #fff; border: none; cursor: pointer;
+    position: relative; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(124,58,237,.5);
+  }
+  .shine-btn::before {
+    content:''; position: absolute; top:0; bottom:0; width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    animation: shine 2.5s ease-out infinite;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Arcade Effects Library</h1>
+  <p class="sub">Every effect ships as a utility class in <code>tokens-arcade.css</code>. Drop on any element.</p>
+
+  <h2>Neon typography</h2>
+  <div class="grid">
+    <div class="demo"><span class="name">.fx-neon-text + cyan</span><div class="neon-title fx-neon-text">CUBI</div><span class="code">.fx-neon-text</span></div>
+    <div class="demo"><span class="name">neon flicker</span><div class="neon-title neon-magenta fx-neon-text fx-neon-flicker">PLAY</div><span class="code">.fx-neon-flicker</span></div>
+    <div class="demo"><span class="name">neon pulse</span><div class="neon-title neon-yellow fx-neon-text fx-neon-pulse">HIGH&nbsp;SCORE</div><span class="code">.fx-neon-pulse</span></div>
+    <div class="demo"><span class="name">rgb shiver</span><div class="glitch-demo fx-rgb-shiver">CUBI FRONTEND</div><span class="code">.fx-rgb-shiver</span></div>
+    <div class="demo"><span class="name">rainbow sweep</span><div class="rainbow-demo fx-rainbow-text">ARCADE</div><span class="code">.fx-rainbow-text</span></div>
+    <div class="demo"><span class="name">press start blink</span><div class="press-demo fx-press-start">PRESS START</div><span class="code">.fx-press-start</span></div>
+  </div>
+
+  <h2>CRT &amp; phosphor</h2>
+  <div class="grid">
+    <div class="demo"><span class="name">.fx-crt wrap</span>
+      <div class="fx-crt" style="width:220px;aspect-ratio:4/3;background:radial-gradient(ellipse at center,#1a2f0a,#000);display:grid;place-items:center;color:#39ff14;font-family:Courier New,monospace;font-weight:bold;font-size:14px">READY&nbsp;&nbsp;PLAYER&nbsp;1_</div>
+      <span class="code">.fx-crt</span></div>
+    <div class="demo"><span class="name">scanline sweep</span><div class="crt-screen">SCAN&nbsp;LIBRARY</div><span class="code">.fx-scanline-sweep</span></div>
+    <div class="demo"><span class="name">boot-up animation</span>
+      <div class="fx-crt fx-crt-boot" style="width:220px;aspect-ratio:4/3;background:radial-gradient(ellipse at center,#0a1a2f,#000);display:grid;place-items:center;color:#00f0ff;font-family:Courier New,monospace;font-weight:bold;font-size:14px" id="boot">CUBI&nbsp;BOOT&nbsp;◂</div>
+      <button onclick="restart('boot')" style="position:absolute;bottom:8px;left:10px;font-size:10px;background:none;border:1px solid #444;color:#888;padding:3px 8px;border-radius:4px;cursor:pointer">replay</button>
+      <span class="code">.fx-crt-boot</span></div>
+  </div>
+
+  <h2>Buttons with motion</h2>
+  <div class="grid">
+    <div class="demo"><span class="name">arcade pill</span><button class="arcade-btn">▶ Launch</button><span class="code">border + glow hover</span></div>
+    <div class="demo"><span class="name">shine sweep</span><button class="shine-btn">SCAN LIBRARY</button><span class="code">.fx-shine</span></div>
+    <div class="demo"><span class="name">chrome gold</span><button class="chrome-btn">Insert Coin</button><span class="code">--chrome-gold</span></div>
+  </div>
+
+  <h2>Motion &amp; physicality</h2>
+  <div class="grid">
+    <div class="demo"><span class="name">coin / neon pulse</span><div class="coin">$</div><span class="code">.fx-neon-pulse</span></div>
+    <div class="demo"><span class="name">tilt breathe</span><div class="tilt-card">MARIO 64</div><span class="code">.fx-tilt-breathe</span></div>
+    <div class="demo"><span class="name">marquee scroll</span><div class="marquee"><div class="marquee-track">◂ ◂  NOW PLAYING  ·  SUPER MARIO 64  ·  N64  ·  1996  ·  PLAYED 47×  ·  HIGH SCORE 120 STARS  ▸ ▸</div></div><span class="code">marquee-scroll</span></div>
+  </div>
+
+  <h2>Focus sparks (attract mode)</h2>
+  <div class="grid">
+    <div class="demo" style="grid-column: span 3; min-height: 200px">
+      <div class="sparks-area" id="sparksArea"></div>
+      <span class="code">spark-float + random dx</span>
+    </div>
+  </div>
+</div>
+<script>
+  function restart(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('fx-crt-boot');
+    void el.offsetWidth;
+    el.classList.add('fx-crt-boot');
+  }
+  // Sparks
+  const area = document.getElementById('sparksArea');
+  const colors = ['#00f0ff','#ff006e','#ffea00','#39ff14','#b026ff','#ff6b00'];
+  function makeSpark() {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = (20 + Math.random()*60) + '%';
+    s.style.background = colors[Math.floor(Math.random()*colors.length)];
+    s.style.boxShadow = `0 0 8px ${s.style.background}, 0 0 16px ${s.style.background}`;
+    s.style.setProperty('--dx', (Math.random()*160 - 80) + 'px');
+    s.style.animationDuration = (1 + Math.random()*1.2) + 's';
+    area.appendChild(s);
+    setTimeout(() => s.remove(), 2500);
+  }
+  setInterval(makeSpark, 120);
+</script>
+</body>
+</html>

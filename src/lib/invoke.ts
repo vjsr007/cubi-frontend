@@ -59,11 +59,16 @@ export const api = {
 
   // PC Games
   detectPcLibs: () => invoke<PcLibraryStatus>('detect_pc_libs'),
-  importSteamGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_steam_games', { sgdbKey }),
-  importEpicGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_epic_games', { sgdbKey }),
+  importSteamGames: (sgdbKey?: string, steamId?: string, steamApiKey?: string, forceRefresh?: boolean) =>
+    invoke<PcImportGame[]>('import_steam_games', { sgdbKey, steamId, steamApiKey, forceRefresh }),
+  importEpicGames: (sgdbKey?: string, forceRefresh?: boolean) =>
+    invoke<PcImportGame[]>('import_epic_games', { sgdbKey, forceRefresh }),
   importEaGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_ea_games', { sgdbKey }),
-  importGogGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_gog_games', { sgdbKey }),
-  importXboxGames: (sgdbKey?: string) => invoke<PcImportGame[]>('import_xbox_games', { sgdbKey }),
+  importGogGames: (sgdbKey?: string, forceRefresh?: boolean) =>
+    invoke<PcImportGame[]>('import_gog_games', { sgdbKey, forceRefresh }),
+  importXboxGames: (sgdbKey?: string, forceRefresh?: boolean) =>
+    invoke<PcImportGame[]>('import_xbox_games', { sgdbKey, forceRefresh }),
+  clearPcCloudCache: (store?: string) => invoke<void>('clear_pc_cloud_cache', { store }),
   savePcGames: (games: PcImportGame[]) => invoke<number>('save_pc_games', { games }),
   addPcGame: (
     title: string,

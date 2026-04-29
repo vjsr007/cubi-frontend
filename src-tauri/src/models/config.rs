@@ -62,6 +62,13 @@ pub struct GeneralConfig {
     /// Get yours at https://www.steamgriddb.com/profile/preferences/api
     #[serde(skip_serializing_if = "Option::is_none")]
     pub steamgriddb_api_key: Option<String>,
+    /// Steam Web API key — required for cloud library fetch (REQ-024).
+    /// Get yours at https://steamcommunity.com/dev/apikey
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steam_api_key: Option<String>,
+    /// Steam ID or vanity URL — used together with steam_api_key (REQ-024).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steam_id: Option<String>,
 }
 
 impl Default for GeneralConfig {
@@ -72,6 +79,8 @@ impl Default for GeneralConfig {
             language: "en".to_string(),
             fullscreen: true,
             steamgriddb_api_key: None,
+            steam_api_key: None,
+            steam_id: None,
         }
     }
 }

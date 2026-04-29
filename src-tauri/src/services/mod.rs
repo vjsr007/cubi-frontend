@@ -10,6 +10,11 @@ pub mod libretro;
 pub mod scraper_service;
 pub mod pc_import_service;
 pub mod steamgriddb;
+// PC Cloud Library services (REQ-024)
+pub mod steam_cloud_service;
+pub mod epic_cloud_service;
+pub mod gog_cloud_service;
+pub mod xbox_cloud_service;
 pub mod input_mapping_service;
 pub mod exporters;
 pub mod emulator_settings_service;

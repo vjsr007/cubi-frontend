@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cubi — Boot</title>
+<link rel="stylesheet" href="../tokens.css" />
+<link rel="stylesheet" href="../tokens-arcade.css" />
+<style>
+  html, body { height:100%; margin:0; background:#000; overflow:hidden; color:#fff; font-family: var(--font-sans); }
+  .stage {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, #0a0018 0%, #000 80%);
+    display: grid; place-items: center;
+    overflow: hidden;
+  }
+
+  /* Grid floor (synthwave) */
+  .grid-floor {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+    perspective: 400px;
+    perspective-origin: 50% 0%;
+  }
+  .grid-floor::before {
+    content:''; position: absolute; inset: 0;
+    background:
+      linear-gradient(0deg, rgba(255,0,110,.0) 0%, rgba(255,0,110,.18) 100%),
+      repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(0,240,255,.55) 39px, rgba(0,240,255,.55) 40px),
+      repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(0,240,255,.55) 39px, rgba(0,240,255,.55) 40px);
+    transform: rotateX(62deg) translateZ(0);
+    transform-origin: 50% 0;
+    animation: floor-march 1.2s linear infinite;
+    mask-image: linear-gradient(0deg, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+  }
+  @keyframes floor-march { to { background-position-y: 40px; } }
+
+  /* Sun */
+  .sun {
+    position: absolute; top: 22%; left: 50%; transform: translate(-50%, 0);
+    width: 280px; height: 280px; border-radius: 50%;
+    background: linear-gradient(180deg, #ffea00 0%, #ff6b00 45%, #ff006e 100%);
+    box-shadow: 0 0 80px rgba(255,107,0,.7), 0 0 200px rgba(255,0,110,.5);
+    filter: saturate(1.2);
+    animation: sun-rise 2.2s var(--ease-crt-on) both;
+  }
+  .sun::after { /* horizontal slats */
+    content:''; position: absolute; inset: 40% 0 0 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 8px, #000 8px, #000 12px);
+    mix-blend-mode: darken;
+    opacity: .9;
+  }
+  @keyframes sun-rise {
+    0%   { transform: translate(-50%, 60%) scale(.9); opacity: 0; }
+    60%  { transform: translate(-50%, 0)   scale(1);   opacity: 1; }
+    100% { transform: translate(-50%, 0)   scale(1);   opacity: 1; }
+  }
+
+  /* Stars */
+  .stars { position: absolute; inset: 0 0 60% 0; }
+  .stars i { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; opacity: 0; animation: twinkle 3s infinite; }
+  @keyframes twinkle { 0%,100% {opacity:.2} 50% {opacity:1} }
+
+  /* Scanlines over everything */
+  .scan { position: absolute; inset: 0; background: var(--crt-scanline); pointer-events: none; z-index: 4; mix-blend-mode: overlay; }
+
+  /* Core content */
+  .core { position: relative; z-index: 5; text-align: center; }
+  .logo-wrap {
+    display: inline-grid; place-items: center;
+    width: 180px; height: 180px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+    box-shadow:
+      0 0 0 2px #00f0ff,
+      0 0 40px rgba(0,240,255,.6),
+      0 0 120px rgba(255,0,110,.4),
+      inset 0 0 40px rgba(0,240,255,.1);
+    position: relative;
+    animation: crt-power-on 1.4s var(--ease-crt-on) both;
+  }
+  .logo-wrap::after { /* inner scanlines */
+    content:''; position:absolute; inset: 0; border-radius: 28px;
+    background: var(--crt-scanline);
+    pointer-events: none;
+  }
+  .mark {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 96px; font-weight: 900;
+    background: linear-gradient(180deg, #00f0ff 0%, #0077ff 50%, #ff006e 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: -0.04em;
+    filter: drop-shadow(0 0 8px rgba(0,240,255,.8)) drop-shadow(0 0 24px rgba(255,0,110,.5));
+    line-height: 1;
+  }
+
+  .wordmark {
+    margin-top: 28px;
+    font-size: 56px; font-weight: 900; letter-spacing: 0.18em;
+    color: #fff;
+    text-shadow:
+      0 0 4px #00f0ff,
+      0 0 16px #00f0ff,
+      0 0 40px rgba(0,240,255,.7),
+      0 2px 0 #ff006e,
+      0 4px 0 rgba(255,0,110,.6);
+    animation: crt-power-on 1.8s var(--ease-crt-on) .3s both, rgb-shiver 6s steps(4, end) 2s infinite;
+  }
+
+  .tagline {
+    margin-top: 12px;
+    font-size: 13px; font-weight: 600; letter-spacing: .4em;
+    color: #00f0ff;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadein .6s ease-out 1.2s forwards;
+  }
+  @keyframes fadein { to { opacity: 1; } }
+
+  /* Loading track */
+  .track {
+    margin: 48px auto 0;
+    width: 420px; max-width: 60vw;
+    height: 10px;
+    border: 1.5px solid #00f0ff;
+    border-radius: 999px;
+    position: relative;
+    background: rgba(0,240,255,.08);
+    box-shadow: 0 0 16px rgba(0,240,255,.3), inset 0 0 8px rgba(0,240,255,.2);
+    opacity: 0;
+    animation: fadein .5s ease-out 1.4s forwards;
+  }
+  .fill {
+    position: absolute; inset: 2px; width: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #00f0ff 0%, #ff006e 100%);
+    box-shadow: 0 0 12px currentColor;
+    color: #ff006e;
+    animation: fill 2.4s var(--ease-snap) 1.5s forwards;
+  }
+  @keyframes fill { to { width: calc(100% - 4px); } }
+
+  .status {
+    margin-top: 16px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    height: 16px;
+    opacity: 0;
+    animation: fadein .3s ease-out 1.6s forwards;
+  }
+  .status b { color: #00f0ff; font-weight: 500; }
+
+  .press {
+    margin-top: 32px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.3em;
+    color: #ffea00;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px #ffea00, 0 0 24px rgba(255,234,0,.6);
+    opacity: 0;
+    animation: fadein .5s ease-out 4.2s forwards, press-start 1s steps(2) 4.5s infinite;
+  }
+
+  /* Corner HUD */
+  .hud-corner {
+    position: absolute; font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 0.08em;
+    color: #00f0ff; opacity: .7; z-index: 6;
+  }
+  .hud-tl { top: 20px; left: 20px; }
+  .hud-tr { top: 20px; right: 20px; text-align: right; }
+  .hud-bl { bottom: 20px; left: 20px; }
+  .hud-br { bottom: 20px; right: 20px; text-align: right; }
+  .hud-corner b { color: #ff006e; font-weight: 500; }
+
+  /* Scanline sweep */
+  .sweep { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+  .sweep::after {
+    content:''; position: absolute; left:0; right:0; height: 4px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+    animation: scanline-sweep 3.5s linear infinite;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stars" id="stars"></div>
+  <div class="sun"></div>
+  <div class="grid-floor"></div>
+
+  <div class="hud-corner hud-tl">CUBI v0.13.1<br/><b>● READY</b></div>
+  <div class="hud-corner hud-tr">TAURI · WEBVIEW 121<br/><b>1920×1080 @ 60FPS</b></div>
+  <div class="hud-corner hud-bl">◂ INSERT COIN</div>
+  <div class="hud-corner hud-br">MEM <b>16384K</b> · CPU <b>68K</b></div>
+
+  <div class="core">
+    <div class="logo-wrap"><div class="mark">C</div></div>
+    <div class="wordmark">CUBI</div>
+    <div class="tagline">· EMULATION FRONTEND ·</div>
+    <div class="track"><div class="fill"></div></div>
+    <div class="status" id="status">◂ BOOTING…</div>
+    <div class="press">Press Start</div>
+  </div>
+
+  <div class="sweep"></div>
+  <div class="scan"></div>
+</div>
+
+<script>
+  // Stars
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('i');
+    s.style.left = Math.random()*100 + '%';
+    s.style.top  = Math.random()*100 + '%';
+    s.style.animationDelay = (Math.random()*3) + 's';
+    stars.appendChild(s);
+  }
+
+  // Fake boot-log
+  const status = document.getElementById('status');
+  const steps = [
+    '◂ DETECTING EMUDECK…',
+    '◂ LOADING CORES · MAME · MGBA · MUPEN64',
+    '◂ SCANNING E:\\EMULATION …',
+    '◂ FOUND <b>1 247 GAMES</b> ACROSS <b>41 SYSTEMS</b>',
+    '◂ SCRAPING MEDIA FROM SCREENSCRAPER…',
+    '◂ INITIALIZING GAMEPAD · <b>XBOX WIRELESS</b>',
+    '◂ READY',
+  ];
+  let i = 0;
+  setInterval(() => {
+    status.innerHTML = steps[i % steps.length];
+    i++;
+  }, 600);
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ pub struct GameMedia {
     pub marquee: Option<String>,
     pub mix_image: Option<String>,
     pub video: Option<String>,
+    pub manual: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

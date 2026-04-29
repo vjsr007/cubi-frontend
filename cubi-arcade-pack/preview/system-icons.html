@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cubi — Official White SVGs</title>
+<link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../tokens-arcade.css">
+<style>
+  body{margin:0;padding:48px;background:#050505;color:#e5e5e5;font-family:var(--font-sans)}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:32px;font-weight:900;margin:0 0 4px;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 0 4px #00f0ff,0 0 16px #00f0ff,0 2px 0 #ff006e}
+  .sub{color:#888;font-size:13px;margin:0 0 32px;letter-spacing:.04em}
+  h2{font-size:11px;font-weight:700;color:#00f0ff;text-transform:uppercase;letter-spacing:.15em;margin:40px 0 16px;text-shadow:0 0 8px rgba(0,240,255,.5)}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .tile{background:linear-gradient(180deg,#141414,#0a0a0a);border:1px solid #2a2a2a;border-radius:12px;padding:22px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .2s var(--ease-arcade);min-height:96px}
+  .tile:hover{border-color:#00f0ff;box-shadow:0 0 0 1px #00f0ff,0 0 24px rgba(0,240,255,.4);transform:translateY(-2px)}
+  .tile img{height:36px;max-width:90%;display:block;filter:drop-shadow(0 0 6px rgba(255,255,255,.2))}
+  .tile .label{font-size:10px;color:#888;font-family:ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase}
+</style></head><body><div class="wrap">
+<h1>System Icons · Official</h1><p class="sub">70 logos blancos oficiales del repo · neón en hover</p>
+<h2>Nintendo</h2><div class="grid" id="g1"></div>
+<h2>Sega</h2><div class="grid" id="g2"></div>
+<h2>Sony</h2><div class="grid" id="g3"></div>
+<h2>Microsoft / PC / Mobile</h2><div class="grid" id="g4"></div>
+<h2>Atari · NeoGeo · Coleco · Intellivision · 3DO</h2><div class="grid" id="g5"></div>
+<h2>Computers · TG/PCE · Bandai</h2><div class="grid" id="g6"></div>
+<h2>Arcade Boards · Engines</h2><div class="grid" id="g7"></div>
+<h2>Stores</h2><div class="grid" id="g8"></div>
+</div><script>
+const g={
+g1:['nes','fds','snes','satellaview','n64','gamecube','wii','wiiu','switch','gb','gbc','gba','nds','3ds','gw'],
+g2:['sg1000','mastersystem','genesis','megadrive','gamegear','saturn','dreamcast'],
+g3:['ps1','ps2','ps3','ps4','psp','psvita'],
+g4:['xbox','xbox360','xboxone','pc','windows','windows11','android','steam','epic','gog','ea'],
+g5:['atari2600','atari5200','atari7800','atarilynx','atarijaguar','atarist','neogeo','ngpc','colecovision','intellivision','3do'],
+g6:['amiga','c64','msx','zxspectrum','pcengine','tg16','wswan','wswanc'],
+g7:['arcade','mame','fbneo','cps1','cps2','cps3','model2','supermodel','mugen','scummvm','flash','pico8'],
+g8:['steam','epic','gog','ea']};
+for(const[k,ids]of Object.entries(g)){const r=document.getElementById(k);if(!r)continue;for(const id of ids){const t=document.createElement('div');t.className='tile';t.innerHTML=`<img src="../assets/system-logos/${id}.svg" alt="${id}" onerror="this.parentNode.style.opacity=.3"><div class="label">${id}</div>`;r.appendChild(t)}}
+</script></body></html>

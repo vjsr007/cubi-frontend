@@ -75,6 +75,7 @@ pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> R
     try_fill(&mut media.wheel, &game.logo);
     try_fill(&mut media.fan_art, &game.background_art);
     try_fill(&mut media.video, &game.trailer_local);
+    try_fill(&mut media.manual, &game.manual);
 
     // Screenshots: DB stores a Vec, media only has one slot
     if media.screenshot.is_none() {

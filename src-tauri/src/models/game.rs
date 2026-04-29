@@ -72,6 +72,8 @@ pub struct GameInfo {
     pub igdb_id: Option<i64>,
     // Steam integration (REQ-021)
     pub steam_app_id: Option<u32>,
+    /// Path to the game's PDF manual (from gamelist.xml <manual> or media folder)
+    pub manual: Option<String>,
     // Game health verification
     pub verification_status: VerificationStatus,
     pub verification_message: Option<String>,

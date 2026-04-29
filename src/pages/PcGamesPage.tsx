@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { useUiStore } from '../stores/uiStore';
 import { useLibraryStore } from '../stores/libraryStore';
 import { api } from '../lib/invoke';
@@ -157,6 +158,9 @@ export function PcGamesPage() {
 
   // SteamGridDB API key (loaded from config)
   const [sgdbKey, setSgdbKey] = useState('');
+  // Steam Web API credentials (REQ-024)
+  const [steamId, setSteamId] = useState('');
+  const [steamApiKey, setSteamApiKey] = useState('');
   const [savingKey, setSavingKey] = useState(false);
 
   // Import results per source
@@ -175,9 +179,11 @@ export function PcGamesPage() {
 
   useEffect(() => {
     api.detectPcLibs().then(setLibraryStatus).catch(() => {});
-    // Load stored SteamGridDB API key from app config
+    // Load stored API keys and Steam credentials from app config
     api.getConfig().then((cfg) => {
       if (cfg.general.steamgriddb_api_key) setSgdbKey(cfg.general.steamgriddb_api_key);
+      if (cfg.general.steam_id) setSteamId(cfg.general.steam_id);
+      if (cfg.general.steam_api_key) setSteamApiKey(cfg.general.steam_api_key);
     }).catch(() => {});
   }, []);
 
@@ -186,8 +192,10 @@ export function PcGamesPage() {
     try {
       const cfg = await api.getConfig();
       cfg.general.steamgriddb_api_key = sgdbKey.trim() || undefined;
+      cfg.general.steam_id = steamId.trim() || undefined;
+      cfg.general.steam_api_key = steamApiKey.trim() || undefined;
       await api.setConfig(cfg);
-      showToast('SteamGridDB API key saved', 'success');
+      showToast('Settings saved', 'success');
     } catch (e) {
       showToast(String(e), 'error');
     } finally {
@@ -195,29 +203,40 @@ export function PcGamesPage() {
     }
   };
 
-  const scan = useCallback(async (source: Tab) => {
+  const scan = useCallback(async (source: Tab, forceRefresh = false) => {
     setScanning((s) => ({ ...s, [source]: true }));
     try {
       const key = sgdbKey.trim() || undefined;
       let games: PcImportGame[] = [];
-      if (source === 'steam') games = await api.importSteamGames(key);
-      else if (source === 'epic') games = await api.importEpicGames(key);
-      else if (source === 'ea') games = await api.importEaGames(key);
-      else if (source === 'gog') games = await api.importGogGames(key);
-      else if (source === 'xbox') games = await api.importXboxGames(key);
+      if (source === 'steam') {
+        games = await api.importSteamGames(
+          key,
+          steamId.trim() || undefined,
+          steamApiKey.trim() || undefined,
+          forceRefresh,
+        );
+      } else if (source === 'epic') {
+        games = await api.importEpicGames(key, forceRefresh);
+      } else if (source === 'ea') {
+        games = await api.importEaGames(key);
+      } else if (source === 'gog') {
+        games = await api.importGogGames(key, forceRefresh);
+      } else if (source === 'xbox') {
+        games = await api.importXboxGames(key, forceRefresh);
+      }
 
       setResults((r) => ({ ...r, [source]: games }));
-      // Select all by default
+      // Select only installed games by default
       setSelected((s) => ({
         ...s,
-        [source]: new Set(games.map((g) => g.file_path)),
+        [source]: new Set(games.filter((g) => g.installed).map((g) => g.file_path)),
       }));
     } catch (e) {
       showToast(String(e), 'error');
     } finally {
       setScanning((s) => ({ ...s, [source]: false }));
     }
-  }, [showToast, sgdbKey]);
+  }, [showToast, sgdbKey, steamId, steamApiKey]);
 
   const toggleGame = (source: Tab, filePath: string) => {
     setSelected((s) => {
@@ -240,7 +259,8 @@ export function PcGamesPage() {
   const importSelected = async (source: Tab) => {
     const games = results[source] ?? [];
     const sel = selected[source] ?? new Set();
-    const toImport = games.filter((g) => sel.has(g.file_path));
+    // Only import installed games (uninstalled games can't be launched locally)
+    const toImport = games.filter((g) => sel.has(g.file_path) && g.installed);
     if (toImport.length === 0) return;
 
     try {
@@ -359,7 +379,7 @@ export function PcGamesPage() {
         )}
       </div>
 
-      {/* SteamGridDB API key bar */}
+      {/* API Keys / Steam credentials bar */}
       <div
         style={{
           padding: '8px 20px',
@@ -369,23 +389,40 @@ export function PcGamesPage() {
           alignItems: 'center',
           gap: 10,
           flexShrink: 0,
+          flexWrap: 'wrap',
         }}
       >
+        {/* SteamGridDB key */}
         <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, whiteSpace: 'nowrap' }}>
-          🎨 SteamGridDB API Key
+          🎨 SGDB Key
         </span>
         <input
           type="password"
           value={sgdbKey}
           onChange={(e) => setSgdbKey(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') saveApiKey(); }}
-          placeholder="Optional — enables cover art for Epic / EA / GOG games"
-          style={{
-            ...inputStyle,
-            flex: 1,
-            fontSize: 12,
-            padding: '5px 10px',
-          }}
+          placeholder="SteamGridDB API key (optional)"
+          style={{ ...inputStyle, width: 220, flex: 'none', fontSize: 12, padding: '5px 10px' }}
+        />
+        {/* Steam credentials (REQ-024) */}
+        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, whiteSpace: 'nowrap', marginLeft: 8 }}>
+          🎮 Steam ID
+        </span>
+        <input
+          type="text"
+          value={steamId}
+          onChange={(e) => setSteamId(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') saveApiKey(); }}
+          placeholder="Steam ID or vanity URL"
+          style={{ ...inputStyle, width: 180, flex: 'none', fontSize: 12, padding: '5px 10px' }}
+        />
+        <input
+          type="password"
+          value={steamApiKey}
+          onChange={(e) => setSteamApiKey(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') saveApiKey(); }}
+          placeholder="Steam Web API Key"
+          style={{ ...inputStyle, width: 190, flex: 'none', fontSize: 12, padding: '5px 10px' }}
         />
         <button
           onClick={saveApiKey}
@@ -395,7 +432,7 @@ export function PcGamesPage() {
           {savingKey ? 'Saving…' : 'Save'}
         </button>
         <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11, whiteSpace: 'nowrap' }}>
-          Steam covers work without a key
+          Steam cloud lib requires API key
         </span>
       </div>
 
@@ -456,6 +493,7 @@ export function PcGamesPage() {
             selected={selected[tab] ?? new Set()}
             scanning={!!scanning[tab]}
             onScan={() => scan(tab)}
+            onRefresh={() => scan(tab, true)}
             onToggle={(fp) => toggleGame(tab, fp)}
             onSelectAll={() => selectAll(tab)}
             onDeselectAll={() => deselectAll(tab)}
@@ -471,7 +509,7 @@ export function PcGamesPage() {
 
 function ImportTab({
   source, available, games, selected, scanning,
-  onScan, onToggle, onSelectAll, onDeselectAll, onImport,
+  onScan, onRefresh, onToggle, onSelectAll, onDeselectAll, onImport,
 }: {
   source: Tab;
   available: boolean;
@@ -479,6 +517,7 @@ function ImportTab({
   selected: Set<string>;
   scanning: boolean;
   onScan: () => void;
+  onRefresh: () => void;
   onToggle: (fp: string) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
@@ -500,6 +539,8 @@ function ImportTab({
 
   const selectedCount = selected.size;
   const totalCount = games?.length ?? 0;
+  const installedCount = games?.filter((g) => g.installed).length ?? 0;
+  const uninstalledCount = totalCount - installedCount;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -527,12 +568,19 @@ function ImportTab({
             }}
           >
             <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-              {totalCount} games found · {selectedCount} selected
+              {totalCount} games
+              {uninstalledCount > 0 && (
+                <> · <span style={{ color: 'rgba(255,255,255,0.3)' }}>{uninstalledCount} not installed</span></>
+              )}
+              {' '}· {selectedCount} selected
             </span>
             <button onClick={onSelectAll} style={btnSecondary}>Select All</button>
             <button onClick={onDeselectAll} style={btnSecondary}>Deselect All</button>
             <button onClick={onScan} style={btnSecondary} disabled={scanning}>
               {scanning ? 'Scanning…' : '🔄 Rescan'}
+            </button>
+            <button onClick={onRefresh} style={btnSecondary} disabled={scanning} title="Force-refresh from cloud API">
+              {scanning ? '…' : '☁ Refresh library'}
             </button>
             <button
               onClick={onImport}
@@ -546,14 +594,22 @@ function ImportTab({
           {/* Game list */}
           {totalCount === 0 ? (
             <div style={{ ...card, color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: 30 }}>
-              No installed games found.
+              No games found.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {games.map((g) => (
                 <div
                   key={g.file_path}
-                  onClick={() => onToggle(g.file_path)}
+                  onClick={() => {
+                    if (g.installed) {
+                      onToggle(g.file_path);
+                    } else {
+                      // Open the store page / install URL for uninstalled games
+                      openUrl(g.file_path).catch(() => {});
+                    }
+                  }}
+                  title={g.installed ? undefined : `Click to open install page in ${g.source}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -561,18 +617,27 @@ function ImportTab({
                     padding: '10px 14px',
                     borderRadius: 8,
                     cursor: 'pointer',
-                    background: selected.has(g.file_path)
+                    background: g.installed && selected.has(g.file_path)
                       ? 'rgba(16,124,16,0.15)'
                       : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${selected.has(g.file_path) ? 'rgba(16,124,16,0.4)' : 'transparent'}`,
+                    border: `1px solid ${g.installed && selected.has(g.file_path) ? 'rgba(16,124,16,0.4)' : 'transparent'}`,
                     transition: 'background 0.15s',
+                    opacity: g.installed ? 1 : 0.65,
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={selected.has(g.file_path)}
-                    onChange={() => {}}
-                    style={{ accentColor: '#107c10', width: 16, height: 16, flexShrink: 0 }}
+                    checked={g.installed && selected.has(g.file_path)}
+                    disabled={!g.installed}
+                    onChange={() => g.installed && onToggle(g.file_path)}
+                    style={{
+                      accentColor: '#107c10',
+                      width: 16,
+                      height: 16,
+                      flexShrink: 0,
+                      cursor: g.installed ? 'pointer' : 'not-allowed',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                   />
                   {/* Box art thumbnail */}
                   <GameThumbnail url={g.box_art} />
@@ -585,9 +650,42 @@ function ImportTab({
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
                       }}
                     >
                       {g.title}
+                      {/* Installed / Not installed badge */}
+                      {g.installed ? (
+                        <span style={{
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase' as const,
+                          background: 'rgba(16,124,16,0.2)',
+                          color: '#4ece4e',
+                          flexShrink: 0,
+                        }}>
+                          Installed
+                        </span>
+                      ) : (
+                        <span style={{
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase' as const,
+                          background: 'rgba(255,255,255,0.07)',
+                          color: 'rgba(255,255,255,0.4)',
+                          flexShrink: 0,
+                        }}>
+                          Not installed
+                        </span>
+                      )}
                     </div>
                     <div
                       style={{

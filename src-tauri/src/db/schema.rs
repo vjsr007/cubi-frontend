@@ -255,6 +255,29 @@ CREATE TABLE IF NOT EXISTS game_emulator_overrides (
 UPDATE schema_version SET version = 9;
 ";
 
+/// Migration v10: PC store cloud library cache (REQ-024)
+pub const MIGRATION_V10: &str = "
+CREATE TABLE IF NOT EXISTS pc_cloud_cache (
+    store        TEXT NOT NULL,
+    game_id      TEXT NOT NULL,
+    title        TEXT NOT NULL,
+    box_art      TEXT,
+    developer    TEXT,
+    publisher    TEXT,
+    protocol_url TEXT NOT NULL,
+    fetched_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (store, game_id)
+);
+
+UPDATE schema_version SET version = 10;
+";
+
+/// Migration v11: Game manual PDF path (EmulationStation gamelist.xml <manual> support)
+pub const MIGRATION_V11: &str = "
+ALTER TABLE games ADD COLUMN manual TEXT;
+UPDATE schema_version SET version = 11;
+";
+
 /// Migration v7: Multi-emulator per-system support (REQ-023)
 pub const MIGRATION_V7: &str = "
 CREATE TABLE IF NOT EXISTS emulator_preferences (

@@ -1,0 +1,260 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cubi — Arcade Themes</title>
+<link rel="stylesheet" href="../tokens.css"><link rel="stylesheet" href="../tokens-arcade.css">
+<style>
+  body{margin:0;padding:48px;background:#050505;color:#e5e5e5;font-family:var(--font-sans)}
+  .wrap{max-width:1280px;margin:0 auto}
+  h1{font-size:32px;font-weight:900;margin:0 0 4px;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 0 4px #00f0ff,0 0 16px #00f0ff,0 2px 0 #ff006e}
+  .sub{color:#888;font-size:13px;margin:0 0 32px;letter-spacing:.04em}
+  h2{font-size:11px;font-weight:700;color:#00f0ff;text-transform:uppercase;letter-spacing:.15em;margin:48px 0 16px;text-shadow:0 0 8px rgba(0,240,255,.4)}
+  .plate{border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;height:640px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .meta{display:flex;justify-content:space-between;margin-top:12px;font-size:10px;color:#555;font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}
+  .meta b{color:#00f0ff;font-weight:600;text-shadow:0 0 6px rgba(0,240,255,.5)}
+
+  /* ─── DEFAULT — Neon Dashboard ─── */
+  .dft{display:grid;grid-template-columns:72px 168px 1fr;height:100%;background:radial-gradient(ellipse at 10% 0%,rgba(124,58,237,.15),transparent 50%),radial-gradient(ellipse at 90% 100%,rgba(255,0,110,.12),transparent 50%),#0a0a0a;position:relative}
+  .dft::before{content:'';position:absolute;inset:0;background:var(--crt-scanline-hd);pointer-events:none;z-index:10;opacity:.4;mix-blend-mode:overlay}
+  .dft .nav{background:rgba(0,0,0,.5);border-right:1px solid #2a2a2a;display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:10px}
+  .dft .brand{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#ff006e);display:grid;place-items:center;font-size:22px;font-weight:900;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 20px rgba(124,58,237,.6);animation:neon-pulse 3s ease-in-out infinite}
+  .dft .sep{width:28px;height:1px;background:linear-gradient(90deg,transparent,#7c3aed,transparent);margin:6px 0}
+  .dft .btn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#666;font-size:20px;border:1px solid transparent;cursor:pointer;transition:all .15s var(--ease-snap)}
+  .dft .btn:hover{color:#00f0ff;border-color:rgba(0,240,255,.3);background:rgba(0,240,255,.08)}
+  .dft .btn.on{color:#fff;background:linear-gradient(135deg,#7c3aed,#ff006e);box-shadow:0 0 20px rgba(124,58,237,.6)}
+  .dft .sys{padding:12px 8px;display:flex;flex-direction:column;gap:4px;overflow:hidden;border-right:1px solid #2a2a2a;background:rgba(0,0,0,.4);backdrop-filter:blur(8px)}
+  .dft .stitle{font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.2em;padding:4px 10px 8px;display:flex;justify-content:space-between}
+  .dft .stitle b{color:#00f0ff}
+  .dft .item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:12px;color:#aaa;cursor:pointer;border:1px solid transparent;transition:all .15s}
+  .dft .item img{height:22px;max-width:108px;flex-shrink:0;filter:brightness(.75) contrast(1.1);object-fit:contain}
+  .dft .item .n{font-size:10px;color:#555;font-family:ui-monospace,monospace;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid #2a2a2a;margin-left:auto}
+  .dft .item:hover{background:rgba(255,255,255,.03);color:#fff}
+  .dft .item:hover img{filter:brightness(1)}
+  .dft .item.on{background:linear-gradient(90deg,rgba(124,58,237,.25),rgba(255,0,110,.1));border-color:rgba(124,58,237,.6);color:#fff;box-shadow:0 0 16px rgba(124,58,237,.25)}
+  .dft .item.on img{filter:drop-shadow(0 0 4px rgba(255,255,255,.5))}
+  .dft .item.on .n{color:#00f0ff;border-color:rgba(0,240,255,.4);background:rgba(0,240,255,.1)}
+  .dft .main{display:flex;flex-direction:column;min-width:0}
+  .dft .filter{height:52px;border-bottom:1px solid #2a2a2a;padding:0 16px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.3)}
+  .dft .search{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.5);border:1px solid #2a2a2a;border-radius:10px;padding:6px 12px;font-size:12px;width:240px;color:#666}
+  .dft .search b{color:#00f0ff}
+  .dft .chip{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid #2a2a2a;background:rgba(255,255,255,.03);color:#888;text-transform:uppercase;letter-spacing:.08em}
+  .dft .chip.on{background:linear-gradient(135deg,#7c3aed,#ff006e);color:#fff;border-color:transparent;box-shadow:0 0 12px rgba(124,58,237,.5)}
+  .dft .grid{padding:16px;display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-content:start}
+  .dft .card{background:linear-gradient(160deg,#1a1a1a,#0a0a0a);border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;transition:all .2s var(--ease-arcade);position:relative}
+  .dft .card:hover{transform:translateY(-4px);border-color:#00f0ff;box-shadow:0 0 0 1px #00f0ff,0 0 32px rgba(0,240,255,.4)}
+  .dft .card.foc{transform:translateY(-4px) scale(1.03);border:2px solid transparent;background:linear-gradient(#0a0a0a,#0a0a0a) padding-box,linear-gradient(135deg,#7c3aed,#ff006e,#00f0ff) border-box;box-shadow:0 0 32px rgba(124,58,237,.6),0 0 64px rgba(255,0,110,.3);animation:neon-pulse 2s ease-in-out infinite}
+  .dft .art{aspect-ratio:3/4;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);padding:8px;text-align:center;letter-spacing:.02em;overflow:hidden;position:relative}
+  .dft .art::after{content:'';position:absolute;inset:0;background:var(--crt-scanline);opacity:.3;pointer-events:none}
+  .dft .card.foc .art::before{content:'▶';position:absolute;inset:0;display:grid;place-items:center;font-size:32px;color:#fff;text-shadow:0 0 16px rgba(0,0,0,.8);z-index:2}
+  .dft .cmeta{padding:8px 10px;border-top:1px solid rgba(255,255,255,.04)}
+  .dft .ct{font-size:11px;font-weight:600;color:#e5e5e5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dft .cy{font-size:9px;color:#666;margin-top:2px;font-family:ui-monospace,monospace;letter-spacing:.08em}
+  .dft .badge{position:absolute;top:6px;right:6px;font-size:9px;color:#ffea00;text-shadow:0 0 4px #ffea00;z-index:2}
+
+  /* ─── HYPERSPIN — Neon Cabinet (animation-heavy) ─── */
+  .hs{height:100%;position:relative;background:radial-gradient(ellipse at 30% 40%,rgba(243,156,18,.15),transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(255,0,110,.1),transparent 50%),linear-gradient(180deg,#1a0404 0%,#0a0a0a 70%,#000 100%);display:grid;grid-template-columns:55% 45%;overflow:hidden}
+  .hs .floor{position:absolute;left:0;right:0;bottom:0;height:50%;perspective:400px}
+  .hs .floor::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(243,156,18,.4) 59px,rgba(243,156,18,.4) 60px),repeating-linear-gradient(0deg,transparent 0,transparent 39px,rgba(243,156,18,.4) 39px,rgba(243,156,18,.4) 40px);transform:rotateX(65deg);transform-origin:50% 0;mask-image:linear-gradient(0deg,#000 10%,transparent 90%);animation:floor-march 1.2s linear infinite}
+  @keyframes floor-march{to{background-position-y:40px}}
+  .hs .stars{position:absolute;inset:0;pointer-events:none}
+  .hs .stars i{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3s infinite}
+  @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1;box-shadow:0 0 6px #fff}}
+  .hs .marquee{position:absolute;top:12px;left:12px;right:12px;height:30px;border:1px solid #f39c12;border-radius:6px;background:linear-gradient(180deg,#1a0800,#000);overflow:hidden;z-index:3;box-shadow:0 0 16px rgba(243,156,18,.4),inset 0 0 12px rgba(243,156,18,.15);display:flex;align-items:center}
+  .hs .marquee::before{content:'';position:absolute;inset:0;background:var(--crt-scanline);opacity:.3;pointer-events:none}
+  .hs .marquee .track{white-space:nowrap;animation:marquee-scroll 18s linear infinite;font-size:11px;font-weight:700;letter-spacing:.3em;color:#f39c12;text-shadow:0 0 6px rgba(243,156,18,.8);padding-left:100%}
+  .hs .marquee-bulbs{position:absolute;top:0;left:0;right:0;height:100%;pointer-events:none;display:flex;justify-content:space-around;align-items:center;padding:0 8px}
+  .hs .marquee-bulbs i{width:4px;height:4px;border-radius:50%;background:#ffea00;box-shadow:0 0 6px #ffea00,0 0 12px #ff6b00;animation:bulb 1s steps(2,end) infinite}
+  .hs .marquee-bulbs i:nth-child(2n){animation-delay:.5s}
+  @keyframes bulb{0%,49%{opacity:1}50%,100%{opacity:.2}}
+
+  .hs .tv-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px 56px;gap:14px;position:relative;z-index:2}
+  .hs .crt{width:100%;max-width:520px;aspect-ratio:4/3;border-radius:18px;border:8px solid;border-image:var(--chrome-metal) 1;background:radial-gradient(ellipse at center,#2a1a00,#0a0500 60%,#000);box-shadow:0 0 40px rgba(243,156,18,.3),inset 0 0 40px rgba(0,0,0,.8);position:relative;overflow:hidden;display:grid;place-items:center;animation:crt-power-on 1.4s var(--ease-crt-on) both}
+  .hs .crt::before{content:'';position:absolute;inset:0;background:var(--crt-scanline);pointer-events:none;z-index:2}
+  .hs .crt::after{content:'';position:absolute;inset:0;background:var(--crt-vignette);pointer-events:none;z-index:1}
+  .hs .crt .sweep{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,rgba(255,234,0,.7),transparent);animation:scanline-sweep 4s linear infinite;z-index:3}
+  .hs .crt-art{font-size:120px;filter:drop-shadow(0 0 24px rgba(243,156,18,.8));animation:tilt-breathe 4s ease-in-out infinite;transform-style:preserve-3d}
+
+  .hs .title{font-size:28px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#f39c12;text-shadow:var(--text-glow-amber);text-align:center;animation:neon-flicker 6s steps(2,end) 1s infinite}
+  .hs .stars-row{display:flex;gap:3px;font-size:14px;color:#f39c12;text-shadow:0 0 8px #f39c12}
+  .hs .subtitle{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.2em;font-family:ui-monospace,monospace}
+
+  .hs .wheel-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px 56px 0;gap:6px;position:relative;z-index:2}
+  .hs .wheel-indicator{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:14px solid #f39c12;border-top:10px solid transparent;border-bottom:10px solid transparent;filter:drop-shadow(0 0 8px rgba(243,156,18,.8));animation:indicator-pulse 1s ease-in-out infinite}
+  @keyframes indicator-pulse{0%,100%{transform:translateY(-50%) scale(1);opacity:1}50%{transform:translateY(-50%) scale(1.2);opacity:.7}}
+  .hs .oval{width:280px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;transition:all .35s var(--ease-wheel);overflow:hidden;position:relative}
+  .hs .oval img{height:26px;max-width:170px;object-fit:contain;filter:drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor)}
+  .hs .oval.idle img{filter:brightness(.5) contrast(.8)}
+  .hs .oval.near img{filter:brightness(.85)}
+  .hs .oval.idle{background:linear-gradient(180deg,#2a2a2a,#111 50%,#1e1e1e);border:2px solid #333;color:#555;opacity:.3;transform:scale(.78);filter:blur(1px)}
+  .hs .oval.near{background:linear-gradient(180deg,#3a3a3a,#1a1a1a 50%,#2a2a2a);border:2px solid #555;color:#888;opacity:.7;transform:scale(.9)}
+  .hs .oval.foc{background:linear-gradient(180deg,#3a2800,#1a1200 50%,#2a1e00);border:2px solid #f39c12;color:#f39c12;box-shadow:0 0 24px rgba(243,156,18,.8),0 0 48px rgba(243,156,18,.4),inset 0 0 16px rgba(243,156,18,.15);transform:scale(1.12);height:60px;width:300px;font-size:14px;text-shadow:0 0 8px rgba(243,156,18,.8);animation:wheel-snap .4s var(--ease-wheel) both}
+  .hs .oval.foc img{height:32px;max-width:200px;filter:drop-shadow(0 0 8px #f39c12) drop-shadow(0 0 16px rgba(243,156,18,.6))}
+  .hs .oval.foc::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:translateX(-100%);animation:shine 3s ease-out infinite}
+
+  .hs .hud{position:absolute;font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.12em;color:#f39c12;opacity:.7;z-index:4;text-transform:uppercase}
+  .hs .hud b{color:#fff}
+  .hs-bl{bottom:12px;left:16px} .hs-br{bottom:12px;right:16px;text-align:right}
+  .hs .insert-coin{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;letter-spacing:.3em;color:#ffea00;text-shadow:0 0 8px #ffea00,0 0 16px rgba(255,234,0,.6);animation:press-start 1.2s steps(2,end) infinite;z-index:4}
+
+  /* sparks */
+  .hs .sparks{position:absolute;left:30%;bottom:120px;width:1px;height:1px;z-index:3;pointer-events:none}
+  .hs .sparks i{position:absolute;width:4px;height:4px;border-radius:50%;background:#f39c12;box-shadow:0 0 8px #f39c12,0 0 16px #f39c12;animation:spark-float 2s ease-out infinite}
+
+  /* ─── AURORA — Holo Dashboard (animation-heavy) ─── */
+  .aur{height:100%;position:relative;overflow:hidden;background:linear-gradient(160deg,#001108 0%,#0a2e1a 40%,#001a0d 80%,#000 100%);display:flex;flex-direction:column}
+  .aur::before{content:'';position:absolute;inset:0;background:var(--crt-scanline-hd);pointer-events:none;z-index:10;opacity:.5}
+  .aur .bokeh{position:absolute;border-radius:50%;filter:blur(40px);pointer-events:none;animation:bokeh-float 12s ease-in-out infinite}
+  .aur .b1{width:300px;height:300px;background:rgba(82,176,67,.3);top:10%;left:5%}
+  .aur .b2{width:240px;height:240px;background:rgba(16,124,16,.4);top:40%;right:10%;animation-delay:-4s}
+  .aur .b3{width:180px;height:180px;background:rgba(0,240,255,.2);bottom:10%;left:30%;animation-delay:-8s}
+  .aur .b4{width:140px;height:140px;background:rgba(255,107,0,.15);top:60%;left:60%;animation-delay:-2s}
+  .aur .b5{width:200px;height:200px;background:rgba(176,38,255,.15);top:20%;right:30%;animation-delay:-6s}
+
+  /* particle dust drifting up */
+  .aur .dust{position:absolute;inset:0;pointer-events:none;z-index:1}
+  .aur .dust i{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(82,176,67,.8);box-shadow:0 0 6px rgba(82,176,67,.8);animation:dust-rise 8s linear infinite}
+  @keyframes dust-rise{0%{transform:translateY(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-600px);opacity:0}}
+
+  .aur .top{height:60px;padding:0 28px;display:flex;align-items:center;gap:16px;position:relative;z-index:3;border-bottom:1px solid rgba(82,176,67,.2);background:rgba(0,0,0,.3);backdrop-filter:blur(12px);animation:slide-down .8s var(--ease-snap) both}
+  @keyframes slide-down{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .aur .av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff006e);display:grid;place-items:center;color:#fff;font-size:18px;font-weight:900;box-shadow:0 0 0 2px #52b043,0 0 20px rgba(82,176,67,.6);animation:av-pulse 3s ease-in-out infinite}
+  @keyframes av-pulse{0%,100%{box-shadow:0 0 0 2px #52b043,0 0 20px rgba(82,176,67,.6)}50%{box-shadow:0 0 0 2px #52b043,0 0 32px rgba(82,176,67,.9),0 0 48px rgba(82,176,67,.4)}}
+  .aur .gt{line-height:1.3}
+  .aur .name{font-size:15px;font-weight:700;color:#fff;text-shadow:0 0 12px rgba(82,176,67,.4)}
+  .aur .stt{font-size:10px;color:#52b043;letter-spacing:.15em;text-transform:uppercase;font-weight:600}
+  .aur .stt::before{content:'●';color:#39ff14;margin-right:4px;text-shadow:0 0 6px #39ff14;animation:dot-pulse 1.5s ease-in-out infinite}
+  @keyframes dot-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .aur .sp{flex:1}
+  .aur .score{font-family:ui-monospace,monospace;font-size:14px;font-weight:700;color:#52b043;letter-spacing:.1em;text-shadow:0 0 8px rgba(82,176,67,.6);padding:6px 12px;border:1px solid rgba(82,176,67,.4);border-radius:6px;background:rgba(0,0,0,.3)}
+  .aur .time{font-family:ui-monospace,monospace;font-size:12px;color:#fff;letter-spacing:.08em}
+
+  .aur .carousel{flex:1;display:flex;align-items:center;gap:16px;padding:0 28px;position:relative;z-index:2;perspective:1200px}
+  .aur .tile{width:150px;height:180px;border-radius:8px;border:1px solid rgba(255,255,255,.08);flex-shrink:0;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;transition:all .35s var(--ease-wheel);cursor:pointer}
+  .aur .tile::before{content:'';position:absolute;inset:0;background:var(--crt-scanline);opacity:.2}
+  .aur .tile::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.08) 50%,transparent 70%);transform:translateX(-100%);transition:transform .8s}
+  .aur .tile:hover::after{transform:translateX(100%)}
+  .aur .label{position:relative;z-index:2;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+  .aur .g1{background:linear-gradient(160deg,#4a2570,#1a0a2e)}
+  .aur .g2{background:linear-gradient(160deg,#8b2d2dcc,#2a0a0a)}
+  .aur .g3{background:linear-gradient(160deg,#107c10,#052a05)}
+  .aur .g4{background:linear-gradient(160deg,#d35417cc,#3a1a05)}
+  .aur .g5{background:linear-gradient(160deg,#1a5276cc,#0a2030)}
+  .aur .tile.foc{width:220px;height:260px;border:2px solid #52b043;box-shadow:0 0 0 1px #52b043,0 0 40px rgba(82,176,67,.6),0 0 80px rgba(16,124,16,.4);animation:aur-foc 2.5s ease-in-out infinite}
+  @keyframes aur-foc{0%,100%{box-shadow:0 0 0 1px #52b043,0 0 40px rgba(82,176,67,.6),0 0 80px rgba(16,124,16,.4)}50%{box-shadow:0 0 0 2px #52b043,0 0 60px rgba(82,176,67,.9),0 0 120px rgba(16,124,16,.7)}}
+  .aur .tile.foc .label{font-size:14px}
+  .aur .tile.foc .play{position:absolute;top:12px;right:12px;background:#107c10;color:#fff;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;z-index:3;box-shadow:0 0 16px rgba(16,124,16,.6);animation:neon-pulse 2s ease-in-out infinite}
+
+  .aur .info{padding:16px 28px 8px;position:relative;z-index:2;animation:info-in .6s var(--ease-snap) both}
+  @keyframes info-in{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .aur .gname{font-size:28px;font-weight:900;color:#fff;letter-spacing:.02em;text-shadow:0 2px 8px rgba(0,0,0,.9),0 0 24px rgba(82,176,67,.3)}
+  .aur .gmeta{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;letter-spacing:.06em}
+  .aur .gmeta b{color:#52b043;font-weight:600}
+
+  .aur .ticker{height:32px;background:rgba(0,0,0,.5);border-top:1px solid rgba(82,176,67,.2);display:flex;align-items:center;position:relative;z-index:2;overflow:hidden}
+  .aur .ticker .track{white-space:nowrap;animation:marquee-scroll 24s linear infinite;font-size:10px;font-weight:600;color:rgba(82,176,67,.9);letter-spacing:.2em;text-transform:uppercase;text-shadow:0 0 6px rgba(82,176,67,.4);padding-left:100%}
+  .aur .hud{position:absolute;font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.12em;color:rgba(82,176,67,.7);z-index:3;text-transform:uppercase;top:72px;right:28px;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+  .aur .hud span{padding:3px 8px;border-radius:4px;background:rgba(0,0,0,.4);border:1px solid rgba(82,176,67,.2)}
+</style></head><body><div class="wrap">
+<h1>Arcade Themes</h1><p class="sub">SVGs blancos oficiales sobre fondos neón · animaciones máximas en wheel + dashboard</p>
+
+<h2>01 · Default · Neon Dashboard</h2>
+<div class="plate"><div class="dft">
+  <div class="nav"><div class="brand">C</div><div class="sep"></div><div class="btn on">⊞</div><div class="btn">📚</div><div class="btn">★</div><div class="btn">🎬</div><div class="btn">⚙</div></div>
+  <div class="sys"><div class="stitle"><span>Systems</span><b>12/47</b></div>
+    <div class="item on"><img src="../assets/system-logos/n64.svg"><span class="n">47</span></div>
+    <div class="item"><img src="../assets/system-logos/snes.svg"><span class="n">82</span></div>
+    <div class="item"><img src="../assets/system-logos/nes.svg"><span class="n">124</span></div>
+    <div class="item"><img src="../assets/system-logos/genesis.svg"><span class="n">56</span></div>
+    <div class="item"><img src="../assets/system-logos/ps1.svg"><span class="n">203</span></div>
+    <div class="item"><img src="../assets/system-logos/gba.svg"><span class="n">68</span></div>
+    <div class="item"><img src="../assets/system-logos/dreamcast.svg"><span class="n">31</span></div>
+    <div class="item"><img src="../assets/system-logos/arcade.svg"><span class="n">612</span></div>
+    <div class="item"><img src="../assets/system-logos/neogeo.svg"><span class="n">48</span></div>
+  </div>
+  <div class="main">
+    <div class="filter"><div class="search">🔍 Search <b>47 games</b>…</div><span class="chip on">All</span><span class="chip">★ Favs</span><span class="chip">Recent</span><span style="flex:1"></span><span style="font-size:11px;color:#666;font-family:ui-monospace,monospace">47/120 · ⊞ · <b style="color:#00f0ff">TITLE ↓</b></span></div>
+    <div class="grid">
+      <div class="card foc"><div class="art" style="background:linear-gradient(160deg,#c0392b,#641a1a)"><span class="badge">★</span>SUPER MARIO 64</div><div class="cmeta"><div class="ct">Super Mario 64</div><div class="cy">1996 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#1a5276,#0a2030)">OCARINA</div><div class="cmeta"><div class="ct">Ocarina of Time</div><div class="cy">1998 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#2e865f,#0a3020)">BANJO</div><div class="cmeta"><div class="ct">Banjo-Kazooie</div><div class="cy">1998 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#c0392b,#641a1a)"><span class="badge">★</span>GOLDEN EYE</div><div class="cmeta"><div class="ct">GoldenEye 007</div><div class="cy">1997 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#e67e22,#8b3a05)">DIDDY K</div><div class="cmeta"><div class="ct">Diddy Kong Racing</div><div class="cy">1997 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#34495e,#1a1f2a)">KART</div><div class="cmeta"><div class="ct">Mario Kart 64</div><div class="cy">1996 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#8e44ad,#2a1540)">PAPER</div><div class="cmeta"><div class="ct">Paper Mario</div><div class="cy">2000 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#16a085,#0a4035)">PARTY 2</div><div class="cmeta"><div class="ct">Mario Party 2</div><div class="cy">1999 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#e67e22,#8b3a05)"><span class="badge">★</span>STAR FOX</div><div class="cmeta"><div class="ct">Star Fox 64</div><div class="cy">1997 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#2c3e50,#0a1015)">PERFECT</div><div class="cmeta"><div class="ct">Perfect Dark</div><div class="cy">2000 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#d35400,#5a2000)">PILOT W</div><div class="cmeta"><div class="ct">Pilotwings 64</div><div class="cy">1996 · N64</div></div></div>
+      <div class="card"><div class="art" style="background:linear-gradient(160deg,#27ae60,#0a3a1a)">WAVE R</div><div class="cmeta"><div class="ct">Wave Race 64</div><div class="cy">1996 · N64</div></div></div>
+    </div>
+  </div>
+</div></div>
+<div class="meta"><b>default · neon dashboard</b><span>logos blancos · scanlines · gradient focus · 6-col grid</span></div>
+
+<h2>02 · HyperSpin · Neon Cabinet · animation-heavy</h2>
+<div class="plate"><div class="hs">
+  <div class="floor"></div>
+  <div class="stars" id="hsStars"></div>
+  <div class="marquee">
+    <div class="track">◂ ◂  INSERT COIN TO PLAY  ·  NOW PLAYING SUPER MARIO 64  ·  1 247 GAMES READY  ·  PRESS START  ·  HIGH SCORE  ·  CREDITS 01  ▸ ▸</div>
+    <div class="marquee-bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="tv-wrap">
+    <div class="crt"><div class="crt-art">🎮</div><div class="sweep"></div></div>
+    <div class="title">SUPER MARIO 64</div>
+    <div class="stars-row">★ ★ ★ ★ ★</div>
+    <div class="subtitle">Nintendo 64 · 1996 · ★★★★★</div>
+  </div>
+  <div class="wheel-wrap">
+    <div class="wheel-indicator"></div>
+    <div class="oval idle"><img src="../assets/system-logos/atari2600.svg"></div>
+    <div class="oval idle"><img src="../assets/system-logos/nes.svg"></div>
+    <div class="oval near"><img src="../assets/system-logos/snes.svg"></div>
+    <div class="oval foc"><img src="../assets/system-logos/n64.svg"></div>
+    <div class="oval near"><img src="../assets/system-logos/gamecube.svg"></div>
+    <div class="oval idle"><img src="../assets/system-logos/nds.svg"></div>
+    <div class="oval idle"><img src="../assets/system-logos/switch.svg"></div>
+  </div>
+  <div class="sparks" id="hsSparks"></div>
+  <div class="hud hs-bl">◂ LB · SYSTEM ▸ RB</div>
+  <div class="hud hs-br"><b>A</b> LAUNCH · <b>B</b> BACK · <b>Y</b> FAV</div>
+  <div class="insert-coin">◂ Press Start ▸</div>
+</div></div>
+<div class="meta"><b>hyperspin · neon cabinet</b><span>marquee w/bulbs · synthwave floor · CRT boot · oval wheel + shine · twinkling stars · sparks</span></div>
+
+<h2>03 · Aurora · Holo Dashboard · animation-heavy</h2>
+<div class="plate"><div class="aur">
+  <div class="bokeh b1"></div><div class="bokeh b2"></div><div class="bokeh b3"></div><div class="bokeh b4"></div><div class="bokeh b5"></div>
+  <div class="dust" id="aurDust"></div>
+  <div class="top">
+    <div class="av">P</div>
+    <div class="gt"><div class="name">PLAYR1</div><div class="stt">Online · Level 47</div></div>
+    <div class="sp"></div>
+    <div class="score">9,450 G</div>
+    <div class="time">14:22 · TUE</div>
+  </div>
+  <div class="hud"><span>FPS 60</span><span>WIRELESS CTRL · 89%</span></div>
+  <div class="carousel">
+    <div class="tile g1"><span class="label">Fable II</span></div>
+    <div class="tile g2"><span class="label">Gears of War</span></div>
+    <div class="tile g3 foc"><span class="play">▶ LAUNCH</span><span class="label">Halo: Combat Evolved</span></div>
+    <div class="tile g4"><span class="label">Forza Horizon</span></div>
+    <div class="tile g5"><span class="label">Mass Effect</span></div>
+    <div class="tile g1"><span class="label">Fallout 3</span></div>
+  </div>
+  <div class="info">
+    <div class="gname">Halo: Combat Evolved</div>
+    <div class="gmeta">XBOX · 2001 · Bungie · <b>▶ Played 47× · 12h last session</b></div>
+  </div>
+  <div class="ticker"><div class="track">◂ ◂ LAST PLAYED · HALO: COMBAT EVOLVED · 2 HOURS AGO · GEARS OF WAR · YESTERDAY · FABLE II · MONDAY · FORZA HORIZON · 3 DAYS AGO ▸ ▸</div></div>
+</div></div>
+<div class="meta"><b>aurora · holo dashboard</b><span>5 bokeh layers drifting · dust particles rising · gamertag pulse · holo shimmer on tiles · ticker</span></div>
+</div>
+<script>
+const hs=document.getElementById('hsStars');
+for(let i=0;i<40;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'%';s.style.top=Math.random()*60+'%';s.style.animationDelay=(Math.random()*3)+'s';hs.appendChild(s)}
+const sp=document.getElementById('hsSparks');
+const cols=['#f39c12','#ffea00','#ff6b00','#ff006e'];
+function spark(){const e=document.createElement('i');e.style.background=cols[Math.floor(Math.random()*4)];e.style.boxShadow=`0 0 8px ${e.style.background},0 0 16px ${e.style.background}`;e.style.setProperty('--dx',(Math.random()*120-60)+'px');e.style.animationDuration=(1.2+Math.random()*1.2)+'s';sp.appendChild(e);setTimeout(()=>e.remove(),2500)}
+setInterval(spark,180);
+const aur=document.getElementById('aurDust');
+for(let i=0;i<25;i++){const d=document.createElement('i');d.style.left=Math.random()*100+'%';d.style.bottom=(-Math.random()*20)+'px';d.style.animationDelay=(Math.random()*8)+'s';d.style.animationDuration=(6+Math.random()*4)+'s';if(Math.random()>.7){d.style.background='rgba(0,240,255,.7)';d.style.boxShadow='0 0 6px rgba(0,240,255,.7)'}aur.appendChild(d)}
+</script></body></html>

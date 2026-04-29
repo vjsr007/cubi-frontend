@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { motion } from 'framer-motion';
 import { useUiStore } from '../stores/uiStore';
 import { useLibraryStore } from '../stores/libraryStore';
@@ -315,7 +316,25 @@ export function GameDetailPage() {
                 {game.favorite ? `★ ${t('game.favorite')}` : `☆ ${t('game.favorite')}`}
               </button>
             </div>
-
+            {/* Manual button — shown when a PDF manual is available */}
+            {media?.manual && (
+              <div style={{ marginBottom: 24 }}>
+                <button
+                  onClick={() => openUrl(media.manual!)}
+                  style={{
+                    background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                    borderRadius: 8, padding: '8px 16px', fontSize: 13, cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'border-color 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+                  title={media.manual}
+                >
+                  📖 {t('game.manual') || 'Manual'}
+                </button>
+              </div>
+            )}
             {/* File info */}
             <div style={{ background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)', padding: '12px 16px' }}>
               <p style={{ fontSize: 11, color: 'var(--color-text-muted)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('game.file')}</p>

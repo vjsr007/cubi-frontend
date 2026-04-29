@@ -1,0 +1,150 @@
+/* ─────────────────────────────────────────────────────────────
+   Cubi Design System — Core Tokens
+   Shared across Default, HyperSpin and Aurora themes.
+   Pulled from src/index.css and the three theme modules.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Brand ─────────────────────────────────────────── */
+  --cubi-violet:        #7c3aed;  /* primary brand */
+  --cubi-violet-hover:  #6d28d9;
+  --cubi-violet-light:  #8b5cf6;
+  --cubi-amber:         #f39c12;  /* HyperSpin focus glow */
+  --cubi-amber-dim:     #f59e0b;  /* favorite stars / warnings */
+  --cubi-green:         #107c10;  /* Aurora / Xbox 360 */
+  --cubi-green-light:   #52b043;
+  --cubi-crimson:       #cc2244;  /* Aurora gradient */
+  --cubi-orange:        #ff6b35;
+
+  /* ── Default theme surfaces (dark-first) ───────────── */
+  --color-primary:        #7c3aed;
+  --color-primary-hover:  #6d28d9;
+  --color-primary-light:  #8b5cf6;
+
+  --color-bg:         #0a0a0a;
+  --color-surface:    #141414;
+  --color-surface-2:  #1e1e1e;
+  --color-surface-3:  #282828;
+
+  --color-border:        #2a2a2a;
+  --color-border-hover:  #404040;
+
+  --color-text:        #e5e5e5;
+  --color-text-muted:  #888888;
+  --color-text-dim:    #555555;
+
+  --color-accent:   #f59e0b;
+  --color-success:  #10b981;
+  --color-error:    #ef4444;
+  --color-warning:  #f59e0b;
+
+  /* ── HyperSpin palette ─────────────────────────────── */
+  --hs-bg-radial:     radial-gradient(ellipse at 30% 50%, #3a0808 0%, #1a0404 40%, #0a0a0a 100%);
+  --hs-badge-focus:   linear-gradient(180deg, #3a2800 0%, #1a1200 50%, #2a1e00 100%);
+  --hs-badge-idle:    linear-gradient(180deg, #2a2a2a 0%, #111 50%, #1e1e1e 100%);
+  --hs-focus-border:  #f39c12;
+  --hs-focus-glow:    0 0 24px rgba(243,156,18,0.70), 0 0 8px rgba(243,156,18,0.40);
+  --hs-panel-bg:      #000;
+  --hs-tv-bezel:      #2a2a2a;
+
+  /* ── Aurora palette (Xbox 360 inspired) ────────────── */
+  --aurora-bg:        linear-gradient(160deg, #0d0005 0%, #140008 50%, #0a0003 100%);
+  --aurora-green:     #107c10;
+  --aurora-green-2:   #52b043;
+  --aurora-avatar:    linear-gradient(135deg, #ff6b35 0%, #cc2244 100%);
+  --aurora-focus-ring: 0 0 30px rgba(16,124,16,0.5), 0 0 60px rgba(16,124,16,0.25);
+
+  /* ── Typography ────────────────────────────────────── */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-hyperspin: Arial, "Helvetica Neue", sans-serif; /* strong caps, uppercase display */
+  --font-aurora:    Arial, "Helvetica Neue", sans-serif; /* dashboard-like */
+
+  /* Type scale (px) */
+  --fs-10: 10px;  --fs-11: 11px;  --fs-12: 12px;  --fs-13: 13px;
+  --fs-14: 14px;  --fs-15: 15px;  --fs-16: 16px;  --fs-18: 18px;
+  --fs-22: 22px;  --fs-24: 24px;  --fs-28: 28px;  --fs-32: 32px;
+
+  --lh-tight: 1.2;
+  --lh-body:  1.5;
+
+  /* Letter spacing — Cubi favors tracked-out caps for display */
+  --tr-tight:   -0.01em;
+  --tr-normal:   0;
+  --tr-wide:     0.05em;
+  --tr-wider:    0.08em;
+  --tr-widest:   0.10em;
+
+  /* ── Radii (generous — everything is a pill or rounded card) ── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+  --r-2xl: 16px;
+  --r-pill: 999px;
+
+  /* ── Spacing scale (4px baseline) ──────────────────── */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;  --sp-4: 16px;
+  --sp-5: 20px;  --sp-6: 24px;  --sp-8: 32px;  --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px;
+
+  /* ── Shadows ───────────────────────────────────────── */
+  --sh-card:    0 2px 8px rgba(0,0,0,0.5);
+  --sh-card-lg: 0 8px 24px rgba(0,0,0,0.3);
+  --sh-modal:   0 20px 60px rgba(0,0,0,0.5);
+  --sh-focus:   0 0 0 2px rgba(124,58,237,0.4);
+  --sh-focus-hs: var(--hs-focus-glow);
+
+  /* ── Motion ────────────────────────────────────────── */
+  --ease-nav:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-card:   cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:    0.1s;
+  --dur-base:    0.15s;
+  --dur-nav:     0.3s;
+  --dur-flip:    0.6s;
+
+  /* ── Layout rails ──────────────────────────────────── */
+  --rail-sidebar: 60px;     /* default theme vertical nav */
+  --rail-systemlist: 144px; /* library system column */
+  --rail-top: 44px;
+  --rail-bottom: 26px;      /* aurora ticker */
+
+  /* ── Gamepad focus ring (shared) ───────────────────── */
+  --focus-ring-default: 0 0 0 2px rgba(124,58,237,0.45);
+  --focus-ring-hyperspin: 0 0 24px rgba(243,156,18,0.7);
+  --focus-ring-aurora:    0 0 30px rgba(16,124,16,0.55);
+}
+
+/* ── Base reset (matches src/index.css) ───────────────── */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+/* Scrollbars — thin, chrome-less */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-hover); }
+
+/* Shared keyframes */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes aurora-ticker {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes aurora-focus-ring {
+  0%,100% { box-shadow: 0 0 30px rgba(16,124,16,0.5), 0 0 60px rgba(16,124,16,0.25); }
+  50%     { box-shadow: 0 0 45px rgba(16,124,16,0.7), 0 0 90px rgba(16,124,16,0.35); }
+}

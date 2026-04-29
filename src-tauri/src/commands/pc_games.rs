@@ -5,6 +5,7 @@ use crate::services::pc_import_service::{
     PcImportGame, PcLibraryStatus,
     detect_pc_libraries, import_steam, import_epic, import_ea, import_gog, import_xbox,
 };
+use crate::services::{steam_cloud_service, epic_cloud_service, gog_cloud_service, xbox_cloud_service};
 
 const PC_SYSTEM_ID: &str = "pc";
 
@@ -43,16 +44,52 @@ pub fn detect_pc_libs() -> Result<PcLibraryStatus, String> {
 }
 
 /// Scan and return all discovered Steam games (not yet saved).
-/// `sgdb_key` is optional — falls back to the `STEAMGRIDDB_API_KEY` env var.
-/// Steam CDN covers are always fetched, even without a key.
+/// When `steam_id` and `steam_api_key` are provided, fetches the full
+/// cloud library (installed + uninstalled). Otherwise falls back to the
+/// local ACF manifest scan.
 #[tauri::command]
-pub async fn import_steam_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
-    Ok(import_steam(resolve_sgdb_key(sgdb_key).as_deref()).await)
+pub async fn import_steam_games(
+    db: State<'_, Database>,
+    sgdb_key: Option<String>,
+    steam_id: Option<String>,
+    steam_api_key: Option<String>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<PcImportGame>, String> {
+    let sgdb = resolve_sgdb_key(sgdb_key);
+    let refresh = force_refresh.unwrap_or(false);
+
+    // Use cloud service if we have both a Steam ID and API key
+    if let (Some(sid), Some(key)) = (&steam_id, &steam_api_key) {
+        if !sid.trim().is_empty() && !key.trim().is_empty() {
+            let games = steam_cloud_service::fetch_steam_owned(
+                &db,
+                sid.trim(),
+                key.trim(),
+                refresh,
+            )
+            .await;
+            return Ok(games);
+        }
+    }
+
+    // Fallback: local ACF manifest scan
+    Ok(import_steam(sgdb.as_deref()).await)
 }
 
 /// Scan and return all discovered Epic Games Launcher games.
 #[tauri::command]
-pub async fn import_epic_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
+pub async fn import_epic_games(
+    db: State<'_, Database>,
+    sgdb_key: Option<String>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<PcImportGame>, String> {
+    let refresh = force_refresh.unwrap_or(false);
+    // Try cloud service first; if it returns results, use them
+    let cloud = epic_cloud_service::fetch_epic_owned(&db, refresh).await;
+    if !cloud.is_empty() {
+        return Ok(cloud);
+    }
+    // Fallback to local scan
     Ok(import_epic(resolve_sgdb_key(sgdb_key).as_deref()).await)
 }
 
@@ -64,14 +101,44 @@ pub async fn import_ea_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGam
 
 /// Scan and return all discovered GOG Galaxy games.
 #[tauri::command]
-pub async fn import_gog_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
+pub async fn import_gog_games(
+    db: State<'_, Database>,
+    sgdb_key: Option<String>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<PcImportGame>, String> {
+    let refresh = force_refresh.unwrap_or(false);
+    // Try cloud service; fall back to local scan
+    let cloud = gog_cloud_service::fetch_gog_owned(&db, refresh).await;
+    if !cloud.is_empty() {
+        return Ok(cloud);
+    }
     Ok(import_gog(resolve_sgdb_key(sgdb_key).as_deref()).await)
 }
 
 /// Scan and return all discovered Xbox Game Pass games.
 #[tauri::command]
-pub async fn import_xbox_games(sgdb_key: Option<String>) -> Result<Vec<PcImportGame>, String> {
+pub async fn import_xbox_games(
+    db: State<'_, Database>,
+    sgdb_key: Option<String>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<PcImportGame>, String> {
+    let refresh = force_refresh.unwrap_or(false);
+    // Try public Game Pass catalog; fall back to local UWP scan
+    let cloud = xbox_cloud_service::fetch_xbox_catalog(&db, refresh).await;
+    if !cloud.is_empty() {
+        return Ok(cloud);
+    }
     Ok(import_xbox(resolve_sgdb_key(sgdb_key).as_deref()).await)
+}
+
+/// Clear the pc_cloud_cache for a specific store or all stores.
+/// Pass `store = None` (or omit) to clear all; pass `"steam"`, `"epic"`, `"gog"`, or `"xbox"` to clear one.
+#[tauri::command]
+pub fn clear_pc_cloud_cache(
+    db: State<'_, Database>,
+    store: Option<String>,
+) -> Result<(), String> {
+    db.clear_cloud_cache(store.as_deref()).map_err(|e| e.to_string())
 }
 
 /// Persist a list of imported PC games to the database.

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -p \"require\\('./package.json'\\).version\")",
+      "Bash(node -p \"require\\('./src-tauri/tauri.conf.json'\\).version\")",
+      "Bash(gh run *)",
+      "Bash(gh release *)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

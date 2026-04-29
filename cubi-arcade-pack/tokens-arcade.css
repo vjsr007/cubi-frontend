@@ -1,0 +1,295 @@
+/* ═══════════════════════════════════════════════════════════════
+   Cubi Arcade Tokens — overlay on tokens.css
+   Import AFTER tokens.css to layer neon + CRT + motion extras.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Neon palette (arcade cabinet vibes) ────────────── */
+  --neon-cyan:     #00f0ff;
+  --neon-magenta:  #ff006e;
+  --neon-yellow:   #ffea00;
+  --neon-green:    #39ff14;
+  --neon-purple:   #b026ff;
+  --neon-orange:   #ff6b00;
+  --neon-pink:     #ff1493;
+  --neon-blue:     #0066ff;
+
+  /* ── CRT / Phosphor ─────────────────────────────────── */
+  --crt-scanline:    repeating-linear-gradient(0deg,
+                       transparent 0, transparent 2px,
+                       rgba(0,0,0,.18) 2px, rgba(0,0,0,.18) 3px);
+  --crt-scanline-hd: repeating-linear-gradient(0deg,
+                       transparent 0, transparent 1px,
+                       rgba(255,255,255,.02) 1px, rgba(0,0,0,.15) 2px);
+  --crt-phosphor:    radial-gradient(ellipse at center,
+                       rgba(0,240,255,.05) 0%, transparent 70%);
+  --crt-vignette:    radial-gradient(ellipse at center,
+                       transparent 40%, rgba(0,0,0,.6) 100%);
+  --crt-rgb-shift:   drop-shadow(-1px 0 0 #ff006e44) drop-shadow(1px 0 0 #00f0ff44);
+
+  /* ── Glow presets ───────────────────────────────────── */
+  --glow-cyan-sm:    0 0 4px #00f0ff, 0 0 8px #00f0ff;
+  --glow-cyan-md:    0 0 8px #00f0ff, 0 0 16px #00f0ff, 0 0 32px rgba(0,240,255,.5);
+  --glow-cyan-lg:    0 0 12px #00f0ff, 0 0 24px #00f0ff, 0 0 48px rgba(0,240,255,.7), 0 0 96px rgba(0,240,255,.4);
+  --glow-magenta-md: 0 0 8px #ff006e, 0 0 16px #ff006e, 0 0 32px rgba(255,0,110,.5);
+  --glow-yellow-md:  0 0 8px #ffea00, 0 0 16px #ffea00, 0 0 32px rgba(255,234,0,.5);
+  --glow-green-md:   0 0 8px #39ff14, 0 0 16px #39ff14, 0 0 32px rgba(57,255,20,.5);
+  --glow-amber-md:   0 0 8px #f39c12, 0 0 16px #f39c12, 0 0 32px rgba(243,156,18,.6);
+  --glow-violet-md:  0 0 8px #7c3aed, 0 0 16px #7c3aed, 0 0 32px rgba(124,58,237,.6);
+
+  /* Text-shadow neon (for titles / wheel labels) */
+  --text-glow-cyan:    0 0 4px #00f0ff, 0 0 12px #00f0ff, 0 0 24px rgba(0,240,255,.7);
+  --text-glow-amber:   0 0 4px #f39c12, 0 0 12px #f39c12, 0 0 24px rgba(243,156,18,.7);
+  --text-glow-magenta: 0 0 4px #ff006e, 0 0 12px #ff006e, 0 0 24px rgba(255,0,110,.7);
+  --text-glow-green:   0 0 4px #39ff14, 0 0 12px #39ff14, 0 0 24px rgba(57,255,20,.7);
+
+  /* ── Gradients (neon + chromatic) ───────────────────── */
+  --grad-neon-sunset:  linear-gradient(135deg, #ff006e 0%, #ff6b00 50%, #ffea00 100%);
+  --grad-neon-cyber:   linear-gradient(135deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
+  --grad-neon-aqua:    linear-gradient(135deg, #00f0ff 0%, #39ff14 100%);
+  --grad-neon-violet:  linear-gradient(135deg, #7c3aed 0%, #ff006e 100%);
+  --grad-hyperspin-bg: radial-gradient(ellipse at 30% 50%, #3a0808 0%, #1a0404 40%, #0a0a0a 100%),
+                       radial-gradient(ellipse at 70% 80%, rgba(243,156,18,.08) 0%, transparent 50%);
+  --grad-aurora-bg:    linear-gradient(160deg, #001a0d 0%, #0a2e1a 30%, #001108 70%, #000 100%);
+  --grad-arcade-floor: linear-gradient(180deg, transparent 0%, rgba(255,0,110,.15) 100%);
+
+  /* ── Motion (arcade feels snappy + physical) ────────── */
+  --ease-arcade:    cubic-bezier(0.34, 1.56, 0.64, 1);   /* overshoot, coin-drop */
+  --ease-wheel:     cubic-bezier(0.22, 1, 0.36, 1);       /* out-quint, wheel */
+  --ease-snap:      cubic-bezier(0.8, 0, 0.2, 1);         /* d-pad confirm */
+  --ease-crt-on:    cubic-bezier(0.16, 0.84, 0, 1);       /* power-on */
+
+  --dur-instant:  80ms;
+  --dur-tap:      120ms;
+  --dur-pop:      220ms;
+  --dur-swipe:    320ms;
+  --dur-spin:     480ms;
+  --dur-flip:     600ms;
+  --dur-boot:     2400ms;
+
+  /* ── Focus rings (upgraded — triple-stop neon) ──────── */
+  --ring-default:   0 0 0 2px rgba(124,58,237,.5), 0 0 20px rgba(124,58,237,.4), 0 0 40px rgba(124,58,237,.2);
+  --ring-hyperspin: 0 0 0 2px #f39c12, 0 0 24px rgba(243,156,18,.8), 0 0 48px rgba(243,156,18,.4);
+  --ring-aurora:    0 0 0 2px #52b043, 0 0 30px rgba(82,176,67,.7), 0 0 60px rgba(16,124,16,.4);
+  --ring-neon:      0 0 0 2px #00f0ff, 0 0 24px rgba(0,240,255,.8), 0 0 48px rgba(0,240,255,.4);
+
+  /* ── Arcade chrome ──────────────────────────────────── */
+  --bezel-thin:   inset 0 0 0 1px rgba(255,255,255,.08), inset 0 2px 0 rgba(255,255,255,.1), inset 0 -2px 0 rgba(0,0,0,.6);
+  --bezel-deep:   inset 0 0 0 2px rgba(0,0,0,.8), inset 0 4px 12px rgba(255,255,255,.08), inset 0 -4px 12px rgba(0,0,0,.8);
+  --chrome-metal: linear-gradient(180deg, #3a3a3a 0%, #1a1a1a 48%, #0a0a0a 52%, #2a2a2a 100%);
+  --chrome-gold:  linear-gradient(180deg, #ffd700 0%, #b8860b 48%, #8b6508 52%, #daa520 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Keyframes — the arcade animation pack
+   ═══════════════════════════════════════════════════════════════ */
+
+/* CRT boot-up: old tube powers on */
+@keyframes crt-power-on {
+  0%   { transform: scale(1, 0.001); filter: brightness(4) blur(1px); opacity: 0; }
+  20%  { transform: scale(1, 0.001); filter: brightness(4) blur(1px); opacity: 1; }
+  40%  { transform: scale(1.02, 1); filter: brightness(2) blur(.5px); }
+  70%  { transform: scale(1); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1) blur(0); opacity: 1; }
+}
+
+/* CRT power-off */
+@keyframes crt-power-off {
+  0%   { transform: scale(1); filter: brightness(1); opacity: 1; }
+  60%  { transform: scale(1, 0.004); filter: brightness(4); }
+  100% { transform: scale(0, 0.004); filter: brightness(4); opacity: 0; }
+}
+
+/* Scanline slow drift */
+@keyframes scanline-drift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 4px; }
+}
+
+/* Scanline fast sweep (single bright line moving top→bottom) */
+@keyframes scanline-sweep {
+  0%   { top: -2%; opacity: 0; }
+  10%  { opacity: .4; }
+  90%  { opacity: .4; }
+  100% { top: 102%; opacity: 0; }
+}
+
+/* RGB chromatic aberration shiver */
+@keyframes rgb-shiver {
+  0%, 100% { text-shadow: -1px 0 #ff006e, 1px 0 #00f0ff; }
+  25%      { text-shadow: -2px 0 #ff006e, 2px 0 #00f0ff; }
+  50%      { text-shadow:  0   0 #ff006e, 0   0 #00f0ff; }
+  75%      { text-shadow:  1px 0 #ff006e,-1px 0 #00f0ff; }
+}
+
+/* Glitch slice */
+@keyframes glitch-slice {
+  0%,100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20%     { clip-path: inset(20% 0 40% 0); transform: translate(-2px,1px); }
+  40%     { clip-path: inset(60% 0 20% 0); transform: translate(2px,-1px); }
+  60%     { clip-path: inset(10% 0 70% 0); transform: translate(-1px,2px); }
+  80%     { clip-path: inset(80% 0 5% 0); transform: translate(1px,-2px); }
+}
+
+/* Neon pulse (loop) */
+@keyframes neon-pulse {
+  0%,100% { filter: brightness(1) drop-shadow(0 0 8px currentColor); }
+  50%     { filter: brightness(1.3) drop-shadow(0 0 24px currentColor) drop-shadow(0 0 48px currentColor); }
+}
+
+/* Neon flicker (broken sign) */
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1; filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor);
+  }
+  20%, 22%, 24%, 55% { opacity: .4; filter: none; }
+}
+
+/* Coin drop (new focus pop) */
+@keyframes coin-drop {
+  0%   { transform: translateY(-40px) rotateX(90deg); opacity: 0; }
+  60%  { transform: translateY(6px) rotateX(0deg); opacity: 1; }
+  80%  { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+/* Press-Start blink */
+@keyframes press-start {
+  0%, 49%  { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+
+/* Wheel spin (used by HyperSpin wheel item enter) */
+@keyframes wheel-snap {
+  0%   { transform: translateY(40px) scale(.8); opacity: 0; filter: blur(4px); }
+  60%  { transform: translateY(-4px) scale(1.05); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Marquee horizontal scroll (arcade cabinet top) */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Parallax bokeh float */
+@keyframes bokeh-float {
+  0%,100% { transform: translate(0,0) scale(1); opacity: .3; }
+  33%     { transform: translate(30px,-20px) scale(1.1); opacity: .5; }
+  66%     { transform: translate(-20px,30px) scale(.95); opacity: .4; }
+}
+
+/* Rainbow sweep (idle attract-mode highlight) */
+@keyframes rainbow-sweep {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Shine / glint crossing a button */
+@keyframes shine {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+
+/* Card tilt breathing (idle) */
+@keyframes tilt-breathe {
+  0%,100% { transform: perspective(800px) rotateX(0deg) rotateY(0deg); }
+  50%     { transform: perspective(800px) rotateX(1deg) rotateY(-1deg); }
+}
+
+/* Box case 3D flip */
+@keyframes box-flip {
+  0%   { transform: perspective(1000px) rotateY(0deg); }
+  100% { transform: perspective(1000px) rotateY(180deg); }
+}
+
+/* Screen glitch jump (page-transition) */
+@keyframes screen-jump {
+  0%   { transform: translateY(0) skewX(0); filter: hue-rotate(0); }
+  30%  { transform: translateY(-6px) skewX(-3deg); filter: hue-rotate(90deg); }
+  60%  { transform: translateY(4px) skewX(2deg); filter: hue-rotate(-60deg); }
+  100% { transform: translateY(0) skewX(0); filter: hue-rotate(0); }
+}
+
+/* Particle float-up (confetti-ish sparks behind focus) */
+@keyframes spark-float {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx,0), -60px) scale(0); opacity: 0; }
+}
+
+/* Reduced motion — kill the animated chaos */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Utility classes (drop-in)
+   ═══════════════════════════════════════════════════════════════ */
+
+.fx-scanlines        { position: relative; }
+.fx-scanlines::after { content:''; position:absolute; inset:0; background: var(--crt-scanline); pointer-events:none; z-index: 3; }
+
+.fx-scanlines-hd::after { background: var(--crt-scanline-hd); }
+
+.fx-vignette::before { content:''; position:absolute; inset:0; background: var(--crt-vignette); pointer-events:none; z-index: 2; }
+
+.fx-crt {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: inset 0 0 60px rgba(0,0,0,.8), 0 0 40px rgba(0,0,0,.6);
+}
+.fx-crt::before { content:''; position:absolute; inset:0; background: var(--crt-scanline); z-index: 3; pointer-events:none; }
+.fx-crt::after  { content:''; position:absolute; inset:0; background: var(--crt-vignette); z-index: 2; pointer-events:none; }
+
+.fx-crt-boot  { animation: crt-power-on var(--dur-boot) var(--ease-crt-on) both; }
+
+.fx-scanline-sweep { position: relative; overflow: hidden; }
+.fx-scanline-sweep::after {
+  content:''; position:absolute; left:0; right:0; height:3px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent);
+  animation: scanline-sweep 4s linear infinite;
+  pointer-events:none; z-index: 4;
+}
+
+.fx-neon-pulse   { animation: neon-pulse 2s ease-in-out infinite; }
+.fx-neon-flicker { animation: neon-flicker 3s steps(2, end) infinite; }
+.fx-rgb-shiver   { animation: rgb-shiver 2s steps(4, end) infinite; }
+.fx-glitch       { animation: glitch-slice 1.2s steps(5, end) infinite; }
+.fx-press-start  { animation: press-start 1s steps(2, end) infinite; }
+.fx-tilt-breathe { animation: tilt-breathe 6s ease-in-out infinite; transform-style: preserve-3d; }
+
+.fx-shine { position: relative; overflow: hidden; }
+.fx-shine::before {
+  content:''; position:absolute; top:0; bottom:0; width:40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  pointer-events:none;
+}
+.fx-shine:hover::before,
+.fx-shine:focus-visible::before { animation: shine .8s ease-out; }
+
+.fx-rainbow-text {
+  background: linear-gradient(90deg, #ff006e, #ff6b00, #ffea00, #39ff14, #00f0ff, #b026ff, #ff006e);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  animation: rainbow-sweep 4s linear infinite;
+}
+
+/* Neon outlined text (arcade title) */
+.fx-neon-text {
+  color: currentColor;
+  text-shadow:
+    0 0 4px currentColor,
+    0 0 12px currentColor,
+    0 0 24px currentColor;
+}
+
+/* Pixel-perfect rendering for sprite/icon SVGs at small sizes */
+.pixel-sharp { image-rendering: pixelated; image-rendering: crisp-edges; }

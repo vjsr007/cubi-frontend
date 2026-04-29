@@ -167,6 +167,14 @@ impl Database {
             }
             log::info!("DB migration v9 complete");
         }
+
+        if version < 10 {
+            log::info!("Running DB migration v10: pc_cloud_cache (REQ-024)");
+            if let Err(e) = conn.execute_batch(schema::MIGRATION_V10) {
+                log::warn!("Migration v10 error (ignored): {}", e);
+            }
+            log::info!("DB migration v10 complete");
+        }
         Ok(())
     }
 
@@ -347,6 +355,7 @@ impl Database {
                 &row.get::<_, String>(29).unwrap_or_else(|_| "unverified".to_string()),
             ),
             verification_message: row.get(30)?,
+            manual: row.get(31)?,
         })
     }
 
@@ -356,7 +365,8 @@ impl Database {
          players, rating, last_played, play_count, favorite,
          hero_art, logo, background_art, screenshots, trailer_url,
          trailer_local, metacritic_score, tags, website, pcgamingwiki_url, igdb_id,
-         steam_app_id, verification_status, verification_message";
+         steam_app_id, verification_status, verification_message,
+         manual";
 
     pub fn upsert_game(&self, game: &GameInfo) -> SqlResult<()> {
         let conn = self.conn.lock().unwrap();
@@ -371,9 +381,9 @@ impl Database {
                players, rating, play_count, last_played, favorite,
                hero_art, logo, background_art, screenshots, trailer_url,
                trailer_local, metacritic_score, tags, website,
-               pcgamingwiki_url, igdb_id)
+               pcgamingwiki_url, igdb_id, manual)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,
-                     ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28)
+                     ?18,?19,?20,?21,?22,?23,?24,?25,?26,?27,?28,?29)
              ON CONFLICT(id) DO UPDATE SET
                title=excluded.title, box_art=excluded.box_art,
                description=excluded.description, developer=excluded.developer,
@@ -386,7 +396,7 @@ impl Database {
                trailer_url=excluded.trailer_url, trailer_local=excluded.trailer_local,
                metacritic_score=excluded.metacritic_score, tags=excluded.tags,
                website=excluded.website, pcgamingwiki_url=excluded.pcgamingwiki_url,
-               igdb_id=excluded.igdb_id",
+               igdb_id=excluded.igdb_id, manual=excluded.manual",
             rusqlite::params![
                 game.id, game.system_id, game.title, game.file_path,
                 game.file_name, game.file_size as i64,
@@ -398,6 +408,7 @@ impl Database {
                 screenshots_json, game.trailer_url, game.trailer_local,
                 game.metacritic_score, tags_json, game.website,
                 game.pcgamingwiki_url, game.igdb_id,
+                game.manual,
             ],
         )?;
         Ok(())
@@ -1469,4 +1480,72 @@ impl Database {
         )?;
         Ok(())
     }
+
+    // ── PC Cloud Cache (REQ-024) ────────────────────────────────────────
+
+    /// Upsert a batch of cloud-fetched game rows for a store.
+    pub fn upsert_cloud_cache(&self, store: &str, games: &[PcCacheRow]) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        for g in games {
+            conn.execute(
+                "INSERT OR REPLACE INTO pc_cloud_cache
+                 (store, game_id, title, box_art, developer, publisher, protocol_url, fetched_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'))",
+                rusqlite::params![
+                    store,
+                    g.game_id,
+                    g.title,
+                    g.box_art,
+                    g.developer,
+                    g.publisher,
+                    g.protocol_url,
+                ],
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Read cached rows for a store that are fresher than `max_age_secs` seconds.
+    /// Returns an empty vec if no fresh rows found.
+    pub fn read_cloud_cache(&self, store: &str, max_age_secs: u64) -> SqlResult<Vec<PcCacheRow>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT game_id, title, box_art, developer, publisher, protocol_url
+             FROM pc_cloud_cache
+             WHERE store = ?1
+               AND fetched_at >= datetime('now', printf('-%d seconds', ?2))",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![store, max_age_secs as i64], |row| {
+            Ok(PcCacheRow {
+                game_id: row.get(0)?,
+                title: row.get(1)?,
+                box_art: row.get(2)?,
+                developer: row.get(3)?,
+                publisher: row.get(4)?,
+                protocol_url: row.get(5)?,
+            })
+        })?;
+        rows.collect()
+    }
+
+    /// Delete cache rows. Pass `None` to clear all stores, or `Some(store)` for one.
+    pub fn clear_cloud_cache(&self, store: Option<&str>) -> SqlResult<()> {
+        let conn = self.conn.lock().unwrap();
+        match store {
+            Some(s) => conn.execute("DELETE FROM pc_cloud_cache WHERE store = ?1", [s])?,
+            None    => conn.execute("DELETE FROM pc_cloud_cache", [])?,
+        };
+        Ok(())
+    }
+}
+
+/// A game row stored in the pc_cloud_cache table.
+#[derive(Debug, Clone)]
+pub struct PcCacheRow {
+    pub game_id: String,
+    pub title: String,
+    pub box_art: Option<String>,
+    pub developer: Option<String>,
+    pub publisher: Option<String>,
+    pub protocol_url: String,
 }

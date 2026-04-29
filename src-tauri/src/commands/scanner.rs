@@ -134,6 +134,12 @@ pub async fn scan_library(
                 .and_then(|s| s.parse::<u32>().ok())
                 .unwrap_or(0);
             let last_played = meta.and_then(|m| m.last_played.clone());
+            // Resolve <manual> path relative to the system ROM directory
+            let manual = meta.and_then(|m| m.manual.as_deref()).map(|mp| {
+                let p = std::path::Path::new(mp);
+                if p.is_absolute() { mp.to_string() }
+                else { path.join(mp.trim_start_matches("./")).to_string_lossy().to_string() }
+            });
 
             games.push(GameInfo {
                 id,
@@ -153,6 +159,7 @@ pub async fn scan_library(
                 last_played,
                 play_count,
                 favorite: false,
+                manual,
                 ..Default::default()
             });
         }
@@ -295,6 +302,11 @@ pub async fn scan_system(
         let rating = meta.and_then(|m| m.rating.as_deref()).map(gamelist_service::parse_rating).unwrap_or(0.0);
         let play_count = meta.and_then(|m| m.play_count.as_deref()).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
         let last_played = meta.and_then(|m| m.last_played.clone());
+        let manual = meta.and_then(|m| m.manual.as_deref()).map(|mp| {
+            let p = std::path::Path::new(mp);
+            if p.is_absolute() { mp.to_string() }
+            else { path.join(mp.trim_start_matches("./")).to_string_lossy().to_string() }
+        });
 
         games.push(GameInfo {
             id,
@@ -314,6 +326,7 @@ pub async fn scan_system(
             last_played,
             play_count,
             favorite: false,
+            manual,
             ..Default::default()
         });
     }

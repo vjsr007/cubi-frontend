@@ -39,6 +39,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.16.2" date="2026-04-28">
+      <description>
+        <p>Launcher now uses flatpak-spawn --host so external emulators (RetroArch, Dolphin, etc.) run against the host on Steam Deck.</p>
+      </description>
+    </release>
     <release version="0.16.1" date="2026-04-28">
       <description>
         <p>First Flatpak release — installable from KDE Discover on Steam Deck Desktop Mode.</p>

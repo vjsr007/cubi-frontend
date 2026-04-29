@@ -127,11 +127,11 @@ jobs:
         uses: robinraju/release-downloader@v1
         with:
           tag: ${{ github.ref_name }}
-          fileName: 'cubi-frontend_*_amd64.deb'
+          fileName: '*_amd64.deb'
           out-file-path: 'flatpak'
 
       - name: Stage .deb for manifest
-        run: mv flatpak/cubi-frontend_*_amd64.deb flatpak/cubi-frontend.deb
+        run: mv flatpak/*_amd64.deb flatpak/cubi-frontend.deb
 
       - name: Build Flatpak bundle
         working-directory: flatpak

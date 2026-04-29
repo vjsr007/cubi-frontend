@@ -39,6 +39,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.16.4" date="2026-04-29">
+      <description>
+        <p>CI fix — match Tauri's actual .deb naming (Cubi.Frontend_X.Y.Z_amd64.deb) so the Flatpak job finds the artifact.</p>
+      </description>
+    </release>
     <release version="0.16.2" date="2026-04-28">
       <description>
         <p>Launcher now uses flatpak-spawn --host so external emulators (RetroArch, Dolphin, etc.) run against the host on Steam Deck.</p>

@@ -21,7 +21,9 @@ modules:
       - ar x cubi-frontend.deb
       - mkdir -p extracted
       - tar -xf data.tar.* -C extracted
-      - install -Dm755 extracted/usr/bin/cubi-frontend /app/bin/cubi-frontend
+      - |
+        binsrc=$(find extracted/usr/bin -type f | head -n1)
+        install -Dm755 "$binsrc" /app/bin/cubi-frontend
       - |
         for size in 32x32 64x64 128x128 256x256 512x512; do
           src=$(find extracted/usr/share/icons/hicolor/${size}/apps -name "*.png" 2>/dev/null | head -n1)

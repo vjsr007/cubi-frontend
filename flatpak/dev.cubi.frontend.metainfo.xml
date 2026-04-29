@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.cubi.frontend</id>
+  <name>Cubi Frontend</name>
+  <summary>Multiplayer emulator frontend with gamepad navigation</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>
+      Cubi Frontend is a fast, gamepad-navigable launcher for retro and modern
+      emulators. Browse and launch games across 70+ systems with scraped
+      metadata, box art, and CRT-style themes.
+    </p>
+    <p>Highlights:</p>
+    <ul>
+      <li>Native gamepad navigation tuned for the Steam Deck and arcade cabinets</li>
+      <li>Auto-detects EmuDeck and other common emulator installations</li>
+      <li>Supports multiple data roots — internal storage, USB drives, NAS</li>
+      <li>Metadata scrapers for ScreenScraper, IGDB, Steam, and more</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">dev.cubi.frontend.desktop</launchable>
+
+  <url type="homepage">https://github.com/vjsr007/cubi-frontend</url>
+  <url type="bugtracker">https://github.com/vjsr007/cubi-frontend/issues</url>
+
+  <developer id="dev.cubi">
+    <name>Cubi</name>
+  </developer>
+
+  <categories>
+    <category>Game</category>
+    <category>Emulator</category>
+  </categories>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.16.0" date="2026-04-28">
+      <description>
+        <p>Full system logo coverage — every supported system now ships with a white SVG logo.</p>
+      </description>
+    </release>
+  </releases>
+
+  <recommends>
+    <control>gamepad</control>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+</component>

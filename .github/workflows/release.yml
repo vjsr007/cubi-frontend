@@ -84,6 +84,7 @@ jobs:
             | macOS Apple Silicon | `.dmg` disk image |
             | macOS Intel | `.dmg` disk image |
             | Linux | `.AppImage` (portable) or `.deb` (Debian/Ubuntu) |
+            | Steam Deck / SteamOS | `.flatpak` (installable from KDE Discover) |
 
             ### Installation
 
@@ -95,9 +96,52 @@ jobs:
 
             **Linux (deb):** `sudo dpkg -i cubi-frontend_*.deb`
 
+            **Steam Deck / SteamOS (Flatpak):** Switch to Desktop Mode, download the `.flatpak`, then double-click it — KDE Discover will prompt to install. Or run `flatpak install ./Cubi-Frontend-*-x86_64.flatpak`.
+
             ---
 
             See the [README](https://github.com/vjsr007/cubi-frontend#readme) for full setup instructions.
           releaseDraft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           args: ${{ matrix.args }}
+
+  build-flatpak:
+    name: Build — Steam Deck / Flatpak
+    needs: publish-tauri
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak + flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y --noninteractive flathub \
+            org.gnome.Platform//46 \
+            org.gnome.Sdk//46
+
+      - name: Download .deb from release
+        uses: robinraju/release-downloader@v1
+        with:
+          tag: ${{ github.ref_name }}
+          fileName: 'cubi-frontend_*_amd64.deb'
+          out-file-path: 'flatpak'
+
+      - name: Stage .deb for manifest
+        run: mv flatpak/cubi-frontend_*_amd64.deb flatpak/cubi-frontend.deb
+
+      - name: Build Flatpak bundle
+        working-directory: flatpak
+        run: |
+          flatpak-builder --force-clean --repo=repo build-dir dev.cubi.frontend.yml
+          VERSION="${GITHUB_REF_NAME#v}"
+          flatpak build-bundle repo "Cubi-Frontend-${VERSION}-x86_64.flatpak" dev.cubi.frontend
+
+      - name: Upload Flatpak to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: flatpak/Cubi-Frontend-*-x86_64.flatpak

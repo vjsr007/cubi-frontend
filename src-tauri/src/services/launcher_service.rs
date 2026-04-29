@@ -635,13 +635,28 @@ pub async fn launch_game_with_preference(
 
     #[cfg(not(target_os = "windows"))]
     {
-        tokio::process::Command::new(&cmd.exe_path)
+        host_command(&cmd.exe_path)
             .args(&cmd.args)
             .spawn()
             .map_err(|e| format!("Failed to launch {}: {}", cmd.emulator_name, e))?;
     }
 
     Ok(())
+}
+
+/// Build a `tokio::process::Command` that escapes the Flatpak sandbox when this
+/// binary is running inside one (detected via the `FLATPAK_ID` env var). On the
+/// host, native emulators and their dependencies are visible; from inside the
+/// sandbox they are not. Outside Flatpak this is a plain `Command::new(exe)`.
+#[cfg(not(target_os = "windows"))]
+fn host_command(exe: &str) -> tokio::process::Command {
+    if std::env::var_os("FLATPAK_ID").is_some() {
+        let mut cmd = tokio::process::Command::new("flatpak-spawn");
+        cmd.arg("--host").arg(exe);
+        cmd
+    } else {
+        tokio::process::Command::new(exe)
+    }
 }
 
 fn shell_split(s: &str) -> Vec<String> {
@@ -745,6 +760,9 @@ pub async fn launch_web_game(file_path: &str) -> Result<(), String> {
 
     for &(exe, flags) in browsers {
         if which::which(exe).is_ok() {
+            #[cfg(not(target_os = "windows"))]
+            let mut cmd = host_command(exe);
+            #[cfg(target_os = "windows")]
             let mut cmd = tokio::process::Command::new(exe);
             cmd.args(flags).arg(&url);
             match cmd.spawn() {

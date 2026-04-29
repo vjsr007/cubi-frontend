@@ -4,6 +4,7 @@ pub mod launcher_service;
 pub mod media_service;
 pub mod downloader_service;
 pub mod gamelist_service;
+pub mod ps3_service;
 pub mod screenscraper;
 pub mod thegamesdb;
 pub mod libretro;

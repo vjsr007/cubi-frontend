@@ -3,7 +3,7 @@ use walkdir::WalkDir;
 use crate::db::Database;
 use crate::models::{GameInfo, SystemInfo, ScanProgress, ScanResult};
 use crate::models::system::get_system_registry;
-use crate::services::gamelist_service;
+use crate::services::{gamelist_service, ps3_service};
 
 #[tauri::command]
 pub async fn scan_library(
@@ -110,8 +110,23 @@ pub async fn scan_library(
             // Try to enrich from gamelist.xml metadata
             let meta = gamelist.get(&file_name);
 
+            // For PS3: derive title from PARAM.SFO or game directory name
+            let ps3_title = if system_def.id == "ps3"
+                && file_name.to_ascii_uppercase() == "EBOOT.BIN"
+            {
+                ps3_service::title_from_eboot(fpath)
+                    .or_else(|| {
+                        // Fall back to the direct game subdirectory name under the system path
+                        ps3_game_dir(fpath, &path)
+                            .map(|d| ps3_service::title_from_game_dir(d))
+                    })
+            } else {
+                None
+            };
+
             let title = meta
                 .and_then(|m| m.name.clone())
+                .or(ps3_title)
                 .unwrap_or_else(|| GameInfo::title_from_filename(&file_name));
 
             let description = meta.and_then(|m| m.desc.clone());
@@ -292,7 +307,20 @@ pub async fn scan_system(
         let box_art = find_box_art(&path, &file_name);
         let meta = gamelist.get(&file_name);
 
-        let title = meta.and_then(|m| m.name.clone()).unwrap_or_else(|| GameInfo::title_from_filename(&file_name));
+        // For PS3: derive title from PARAM.SFO or game directory name
+        let ps3_title = if system_def.id == "ps3"
+            && file_name.to_ascii_uppercase() == "EBOOT.BIN"
+        {
+            ps3_service::title_from_eboot(fpath)
+                .or_else(|| {
+                    ps3_game_dir(fpath, &path)
+                        .map(|d| ps3_service::title_from_game_dir(d))
+                })
+        } else {
+            None
+        };
+
+        let title = meta.and_then(|m| m.name.clone()).or(ps3_title).unwrap_or_else(|| GameInfo::title_from_filename(&file_name));
         let description = meta.and_then(|m| m.desc.clone());
         let developer = meta.and_then(|m| m.developer.clone());
         let publisher = meta.and_then(|m| m.publisher.clone());
@@ -375,4 +403,21 @@ fn find_box_art(system_folder: &std::path::Path, file_name: &str) -> Option<Stri
         }
     }
     None
+}
+
+/// Walk up from `file_path` and return the first ancestor directory that is a
+/// direct child of `system_path`. This is the "game root" for directory-based
+/// systems like PS3 (e.g. `roms/ps3/GameTitle.ps3/` or `roms/ps3/BLUS30001/`).
+fn ps3_game_dir<'a>(file_path: &'a std::path::Path, system_path: &std::path::Path) -> Option<&'a std::path::Path> {
+    let mut current = file_path.parent()?;
+    loop {
+        if let Some(parent) = current.parent() {
+            if parent == system_path {
+                return Some(current);
+            }
+            current = parent;
+        } else {
+            return None;
+        }
+    }
 }

@@ -52,6 +52,7 @@ import satellaview from './satellaview.svg';
 import gw from './gw.svg';
 import model2 from './model2.svg';
 import supermodel from './supermodel.svg';
+import teknoparrot from './teknoparrot.svg';
 import scummvm from './scummvm.svg';
 import threeDoLogo from './3do.svg';
 import megadrive from './megadrive.svg';
@@ -140,6 +141,7 @@ export const SYSTEM_LOGOS: Record<string, string> = {
   gw,
   model2,
   supermodel,
+  teknoparrot,
   scummvm,
   '3do': threeDoLogo,
   megadrive,

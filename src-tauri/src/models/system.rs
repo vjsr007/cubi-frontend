@@ -171,6 +171,13 @@ pub fn get_system_registry() -> Vec<SystemDef> {
             folder_names: &["arcade", "mame", "fba"],
         },
         SystemDef {
+            id: "teknoparrot",
+            name: "TeknoParrot",
+            full_name: "Arcade (TeknoParrot)",
+            extensions: &["xml"],
+            folder_names: &["teknoparrot", "tp", "arcade-pc"],
+        },
+        SystemDef {
             id: "fbneo",
             name: "FBNeo",
             full_name: "FinalBurn Neo",

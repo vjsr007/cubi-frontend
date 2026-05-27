@@ -176,6 +176,13 @@ pub fn get_emulator_registry() -> Vec<EmulatorDef> {
             launch_template: LaunchTemplate::Simple,
         },
         EmulatorDef {
+            system_ids: &["teknoparrot"],
+            name: "TeknoParrot",
+            emudeck_paths: &["TeknoParrot/TeknoParrotUi.exe", "teknoparrot/TeknoParrotUi.exe"],
+            exe_name: "TeknoParrotUi",
+            launch_template: LaunchTemplate::Custom("--profile={rom_stem}.xml --emulator"),
+        },
+        EmulatorDef {
             system_ids: &["3ds"],
             name: "Lime3DS",
             emudeck_paths: &["lime3ds/lime3ds.exe", "azahar/azahar.exe"],
@@ -276,6 +283,7 @@ fn system_display_name(id: &str) -> String {
         "gw"           => "Game & Watch",
         "model2"       => "Model 2 Arcade",
         "supermodel"   => "Model 3 Arcade",
+        "teknoparrot"  => "Arcade (TeknoParrot)",
         "atarijaguar"  => "Atari Jaguar",
         "scummvm"      => "ScummVM",
         "3do"          => "3DO",
@@ -534,14 +542,19 @@ pub fn build_launch_command(
     };
 
     let rom = &game.file_path;
+    let rom_stem = std::path::Path::new(rom)
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| rom.clone());
+    let expand = |s: &str| s.replace("{rom_stem}", &rom_stem).replace("{rom}", rom);
 
     // Resolve args: custom override → default template
     let args: Vec<String> = if let Some(custom_args) = ov.and_then(|o| o.extra_args.as_deref()).filter(|a| !a.is_empty()) {
-        shell_split(&custom_args.replace("{rom}", rom))
+        shell_split(&expand(custom_args))
     } else {
         match &def.launch_template {
             LaunchTemplate::Simple => vec![rom.clone()],
-            LaunchTemplate::Custom(tmpl) => shell_split(&tmpl.replace("{rom}", rom)),
+            LaunchTemplate::Custom(tmpl) => shell_split(&expand(tmpl)),
             LaunchTemplate::RetroArch => {
                 let core_name = ov.and_then(|o| o.core.as_deref()).filter(|c| !c.is_empty())
                     .unwrap_or_else(|| get_retroarch_core(&game.system_id));

@@ -37,6 +37,7 @@ pub mod catalog_service;
 pub mod system_wiki_service;
 pub mod flash_input_service;
 pub mod emulator_hotkey_service;
+pub mod teknoparrot_service;
 
 /// Normalize a game title for fuzzy matching:
 /// lowercase, remove punctuation, collapse whitespace.

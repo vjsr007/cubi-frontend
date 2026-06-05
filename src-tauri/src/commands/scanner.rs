@@ -3,7 +3,7 @@ use walkdir::WalkDir;
 use crate::db::Database;
 use crate::models::{GameInfo, SystemInfo, ScanProgress, ScanResult};
 use crate::models::system::get_system_registry;
-use crate::services::{gamelist_service, ps3_service};
+use crate::services::{gamelist_service, ps3_service, config_service, teknoparrot_service};
 
 #[tauri::command]
 pub async fn scan_library(
@@ -23,6 +23,11 @@ pub async fn scan_library(
     let mut systems_found = 0u32;
     let mut games_found = 0u32;
     let mut errors: Vec<String> = Vec::new();
+
+    // TeknoParrot games are discovered from the emulator's UserProfiles dir
+    // rather than the roms folder. Resolve it once so the generic walk below
+    // can skip the roms/teknoparrot folder when a profile source is available.
+    let tp_userprofiles = resolve_teknoparrot_userprofiles();
 
     let entries: Vec<_> = std::fs::read_dir(&roms_path)
         .map_err(|e| format!("Cannot read roms directory: {}", e))?
@@ -47,6 +52,11 @@ pub async fn scan_library(
                 continue;
             }
         };
+
+        // TeknoParrot is imported from UserProfiles below; skip the generic walk.
+        if system_def.id == "teknoparrot" && tp_userprofiles.is_some() {
+            continue;
+        }
 
         let _ = app.emit(
             "scan-progress",
@@ -208,6 +218,26 @@ pub async fn scan_library(
         games_found += game_count;
     }
 
+    // Import TeknoParrot games from the emulator's UserProfiles directory.
+    if let Some(up_dir) = &tp_userprofiles {
+        let _ = app.emit(
+            "scan-progress",
+            ScanProgress {
+                total: 0,
+                current: systems_found,
+                current_system: "Arcade (TeknoParrot)".to_string(),
+                status: "Scanning Arcade (TeknoParrot)...".to_string(),
+            },
+        );
+        match import_teknoparrot(&db, up_dir, &mut errors) {
+            Some(count) if count > 0 => {
+                systems_found += 1;
+                games_found += count;
+            }
+            _ => {}
+        }
+    }
+
     let result = ScanResult {
         systems_found,
         games_found,
@@ -216,6 +246,75 @@ pub async fn scan_library(
     let _ = app.emit("scan-complete", &result);
 
     Ok(result)
+}
+
+/// Resolve the TeknoParrot `UserProfiles` directory from the saved config
+/// (configured executable path → EmuDeck install). Returns `None` when
+/// TeknoParrot isn't installed/configured, in which case callers fall back to
+/// scanning the `roms/teknoparrot` folder.
+fn resolve_teknoparrot_userprofiles() -> Option<std::path::PathBuf> {
+    let config = config_service::load_config().ok()?;
+    let exe_path = config
+        .emulators
+        .get("teknoparrot")
+        .and_then(|o| o.exe_path.as_deref());
+    teknoparrot_service::resolve_userprofiles_dir(exe_path, &config.paths.emudeck_path)
+}
+
+/// Import installed TeknoParrot games from `up_dir` into the database.
+///
+/// Surfaces every profile whose `<GamePath>` exists on disk, using the profile's
+/// bundled icon as box art. Stale TeknoParrot rows (removed profiles or legacy
+/// `roms/teknoparrot` entries) are pruned so UserProfiles stays the single
+/// source of truth. Returns the number of games imported.
+fn import_teknoparrot(
+    db: &Database,
+    up_dir: &std::path::Path,
+    errors: &mut Vec<String>,
+) -> Option<u32> {
+    let games = teknoparrot_service::scan_profiles(up_dir);
+
+    // Prune DB rows that are no longer backed by a configured profile.
+    let fresh_ids: std::collections::HashSet<&str> = games.iter().map(|g| g.id.as_str()).collect();
+    if let Ok(existing) = db.get_games("teknoparrot") {
+        for g in existing {
+            if !fresh_ids.contains(g.id.as_str()) {
+                if let Err(e) = db.delete_game(&g.id) {
+                    errors.push(format!("DB error pruning '{}': {}", g.title, e));
+                }
+            }
+        }
+    }
+
+    if games.is_empty() {
+        // Keep the system row count in sync even when nothing is installed.
+        let _ = db.update_system_game_count("teknoparrot");
+        return Some(0);
+    }
+
+    let registry = get_system_registry();
+    if let Some(def) = registry.iter().find(|d| d.id == "teknoparrot") {
+        let system = SystemInfo {
+            id: def.id.to_string(),
+            name: def.name.to_string(),
+            full_name: def.full_name.to_string(),
+            extensions: def.extensions.iter().map(|e| e.to_string()).collect(),
+            game_count: games.len() as u32,
+            rom_path: up_dir.to_string_lossy().to_string(),
+            icon: None,
+        };
+        if let Err(e) = db.upsert_system(&system) {
+            errors.push(format!("DB error for TeknoParrot: {}", e));
+        }
+    }
+
+    for game in &games {
+        if let Err(e) = db.upsert_game(game) {
+            errors.push(format!("DB error for game '{}': {}", game.title, e));
+        }
+    }
+
+    Some(games.len() as u32)
 }
 
 /// Scan (or re-scan) a single system by its ID.
@@ -232,6 +331,31 @@ pub async fn scan_system(
         .iter()
         .find(|d| d.id == system_id)
         .ok_or_else(|| format!("Unknown system: {}", system_id))?;
+
+    // TeknoParrot: import from the emulator's UserProfiles dir instead of walking
+    // the roms folder. Falls through to the generic scan if no profiles resolve.
+    if system_def.id == "teknoparrot" {
+        if let Some(up_dir) = resolve_teknoparrot_userprofiles() {
+            let _ = app.emit(
+                "scan-progress",
+                ScanProgress {
+                    total: 0,
+                    current: 0,
+                    current_system: system_def.full_name.to_string(),
+                    status: format!("Scanning {}...", system_def.full_name),
+                },
+            );
+            let mut errors: Vec<String> = Vec::new();
+            let count = import_teknoparrot(&db, &up_dir, &mut errors).unwrap_or(0);
+            let result = ScanResult {
+                systems_found: if count > 0 { 1 } else { 0 },
+                games_found: count,
+                errors: errors.clone(),
+            };
+            let _ = app.emit("scan-complete", &result);
+            return Ok(result);
+        }
+    }
 
     // Resolve path: check for a per-system custom path override first
     let overrides = db.get_rom_path_overrides().map_err(|e| e.to_string())?;

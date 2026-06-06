@@ -63,6 +63,20 @@ pub async fn get_available_emulators_for_system(
         }
     }
 
+    // Include custom emulator from config if one was manually added for this system
+    if let Some(ov) = config.emulators.get(&system_id) {
+        if let Some(exe) = ov.exe_path.as_deref().filter(|p| !p.is_empty()) {
+            let custom_name = ov.name.clone().unwrap_or_else(|| "Custom".to_string());
+            if !seen_emulators.contains(&custom_name) {
+                available.push(EmulatorChoice {
+                    emulator_name: custom_name,
+                    detected_path: Some(exe.to_string()),
+                    is_installed: std::path::Path::new(exe).exists(),
+                });
+            }
+        }
+    }
+
     // Get system name first (acquires + releases the DB lock internally)
     let systems = db.get_systems().map_err(|e| e.to_string())?;
     let system_name = systems
@@ -82,6 +96,31 @@ pub async fn get_available_emulators_for_system(
         available_emulators: available,
         selected_emulator,
     })
+}
+
+/// Save a manually-configured custom emulator for a system and set it as the preference
+#[tauri::command]
+pub async fn set_custom_emulator_for_system(
+    system_id: String,
+    name: String,
+    exe_path: String,
+    extra_args: Option<String>,
+    db: State<'_, Database>,
+) -> Result<(), String> {
+    let mut config = config_service::load_config()?;
+    let ov = config.emulators.entry(system_id.clone()).or_default();
+    ov.name = Some(name.clone());
+    ov.exe_path = Some(exe_path);
+    ov.extra_args = extra_args;
+    config_service::save_config(&config)?;
+
+    // Also set this as the selected preference so it launches by default
+    let conn = db.conn.lock().map_err(|_| "Failed to acquire database lock".to_string())?;
+    preferences_service::set_preference(&system_id, &name, &conn)?;
+    drop(conn);
+
+    log::info!("Custom emulator '{}' saved for system {}", name, system_id);
+    Ok(())
 }
 
 /// Get all systems with their available emulators and current preferences

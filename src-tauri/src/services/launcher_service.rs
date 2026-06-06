@@ -493,52 +493,52 @@ pub fn build_launch_command(
     let registry = get_emulator_registry();
     
     // Step 1: Determine which emulator to use
+    // Returns None when a custom (non-registry) emulator is preferred — handled below.
     let def = if let Some(preferred_name) = preferred_emulator {
-        // Try to find preferred emulator
-        registry.iter().find(|d| {
+        let found = registry.iter().find(|d| {
             d.system_ids.contains(&game.system_id.as_str()) && d.name == preferred_name
-        })
-        .ok_or_else(|| {
-            // Preferred emulator doesn't support this system, fall back to default
-            log::warn!(
-                "Preferred emulator '{}' does not support system '{}', using default",
-                preferred_name,
-                game.system_id
-            );
-            format!(
-                "Preferred emulator '{}' does not support system '{}'",
+        });
+        if found.is_none() {
+            log::info!(
+                "Preferred emulator '{}' not in registry for '{}', checking config override",
                 preferred_name, game.system_id
-            )
-        })?
+            );
+        }
+        found
     } else {
-        // No preference: use first emulator for this system
         registry.iter().find(|d| d.system_ids.contains(&game.system_id.as_str()))
-            .ok_or_else(|| format!("No emulator configured for system '{}'", game.system_id))?
     };
 
     let ov = overrides.get(game.system_id.as_str());
 
-    // Resolve exe: custom override → EmuDeck auto-detect → PATH search
+    // Resolve exe: config override → EmuDeck auto-detect → PATH search
     let exe_path = if let Some(custom) = ov.and_then(|o| o.exe_path.as_deref()).filter(|p| !p.is_empty()) {
         custom.to_string()
-    } else if !emudeck_path.is_empty() {
-        let found = def.emudeck_paths.iter().find_map(|rel| {
-            let p = PathBuf::from(emudeck_path).join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
-            if p.exists() { Some(p.to_string_lossy().to_string()) } else { None }
-        });
-        found
-            .or_else(|| which::which(def.exe_name).ok().map(|p| p.to_string_lossy().to_string()))
-            .ok_or_else(|| format!(
-                "{} not found. Please configure the executable path in Emulator Settings.",
-                def.name
-            ))?
+    } else if let Some(d) = def {
+        if !emudeck_path.is_empty() {
+            let found = d.emudeck_paths.iter().find_map(|rel| {
+                let p = PathBuf::from(emudeck_path).join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
+                if p.exists() { Some(p.to_string_lossy().to_string()) } else { None }
+            });
+            found
+                .or_else(|| which::which(d.exe_name).ok().map(|p| p.to_string_lossy().to_string()))
+                .ok_or_else(|| format!(
+                    "{} not found. Please configure the executable path in Emulator Settings.",
+                    d.name
+                ))?
+        } else {
+            which::which(d.exe_name)
+                .map(|p| p.to_string_lossy().to_string())
+                .map_err(|_| format!(
+                    "{} not found. Please configure the executable path in Emulator Settings.",
+                    d.name
+                ))?
+        }
     } else {
-        which::which(def.exe_name)
-            .map(|p| p.to_string_lossy().to_string())
-            .map_err(|_| format!(
-                "{} not found. Please configure the executable path in Emulator Settings.",
-                def.name
-            ))?
+        return Err(format!(
+            "No emulator configured for system '{}'. Add one in Emulator Preferences.",
+            game.system_id
+        ));
     };
 
     let rom = &game.file_path;
@@ -548,11 +548,11 @@ pub fn build_launch_command(
         .unwrap_or_else(|| rom.clone());
     let expand = |s: &str| s.replace("{rom_stem}", &rom_stem).replace("{rom}", rom);
 
-    // Resolve args: custom override → default template
+    // Resolve args: custom override → registry template → Simple fallback for custom emulators
     let args: Vec<String> = if let Some(custom_args) = ov.and_then(|o| o.extra_args.as_deref()).filter(|a| !a.is_empty()) {
         shell_split(&expand(custom_args))
-    } else {
-        match &def.launch_template {
+    } else if let Some(d) = def {
+        match &d.launch_template {
             LaunchTemplate::Simple => vec![rom.clone()],
             LaunchTemplate::Custom(tmpl) => shell_split(&expand(tmpl)),
             LaunchTemplate::RetroArch => {
@@ -584,12 +584,19 @@ pub fn build_launch_command(
                 launch_args
             }
         }
+    } else {
+        // Custom emulator with no extra_args: pass ROM path as sole argument
+        vec![rom.clone()]
     };
+
+    let emulator_name = def.map(|d| d.name.to_string())
+        .or_else(|| ov.and_then(|o| o.name.clone()))
+        .unwrap_or_else(|| "Custom".to_string());
 
     Ok(LaunchCommand {
         exe_path,
         args,
-        emulator_name: def.name.to_string(),
+        emulator_name,
     })
 }
 

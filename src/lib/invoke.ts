@@ -212,6 +212,10 @@ export const api = {
   setFlashGameConfig: (gameId: string, leftStickMode: string, rightStickMouse: boolean, mouseSensitivity: number) =>
     invoke<void>('set_flash_game_config', { gameId, leftStickMode, rightStickMouse, mouseSensitivity }),
 
+  // System-level emulator preferences
+  setCustomEmulatorForSystem: (systemId: string, name: string, exePath: string, extraArgs?: string) =>
+    invoke<void>('set_custom_emulator_for_system', { systemId, name, exePath, extraArgs }),
+
   // Game Emulator Overrides (per-game emulator selection)
   setGameEmulatorOverride: (gameId: string, emulatorName: string) =>
     invoke<void>('set_game_emulator_override', { gameId, emulatorName }),

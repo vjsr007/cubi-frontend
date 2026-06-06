@@ -1,4 +1,6 @@
 export interface EmulatorOverride {
+  /** Display name for manually-added custom emulators. */
+  name?: string;
   /** Custom path to the emulator executable. */
   exe_path?: string;
   /** Custom launch args with {rom} placeholder. */

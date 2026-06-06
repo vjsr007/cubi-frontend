@@ -3,6 +3,9 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EmulatorOverride {
+    /// Display name for manually-added custom emulators (not in the built-in registry).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     /// Custom path to the emulator executable (overrides auto-detection).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exe_path: Option<String>,

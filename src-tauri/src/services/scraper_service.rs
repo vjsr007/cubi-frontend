@@ -58,21 +58,27 @@ pub async fn run_scrape_job(
     // Get app data dir for media storage
     let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
 
+    // Throttle: emit progress at most every EMIT_EVERY games to avoid overwhelming the UI
+    const EMIT_EVERY: usize = 10;
+    const MAX_MESSAGES: usize = 50;
+
     for (idx, game) in games.iter().enumerate() {
         if cancel_flag.load(Ordering::Relaxed) {
             messages.push("Scrape job cancelled by user".into());
             break;
         }
 
-        // Emit progress
-        let _ = app.emit("scrape-progress", ScrapeProgress {
-            total,
-            current: idx,
-            game_title: game.title.clone(),
-            status: "scraping".into(),
-            errors: vec![],
-            done: false,
-        });
+        // Emit progress every EMIT_EVERY games (not every single game — prevents JS event storm)
+        if idx % EMIT_EVERY == 0 {
+            let _ = app.emit("scrape-progress", ScrapeProgress {
+                total,
+                current: idx,
+                game_title: game.title.clone(),
+                status: "scraping".into(),
+                errors: vec![],
+                done: false,
+            });
+        }
 
         // Skip logic for MissingOnly
         if job.filter == ScrapeFilter::MissingOnly {
@@ -99,8 +105,12 @@ pub async fn run_scrape_job(
             }
             Err(e) => {
                 errors += 1;
-                messages.push(format!("ERROR {}: {}", game.title, e));
                 log::warn!("Scrape error for {}: {}", game.title, e);
+                if messages.len() < MAX_MESSAGES {
+                    messages.push(format!("ERROR {}: {}", game.title, e));
+                } else if messages.len() == MAX_MESSAGES {
+                    messages.push(format!("... and more errors (showing first {})", MAX_MESSAGES));
+                }
             }
         }
     }

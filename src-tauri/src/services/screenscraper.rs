@@ -46,6 +46,8 @@ fn ss_system_id(system_id: &str) -> Option<u32> {
         "sg1000"       => Some(109),
         "wswan"        => Some(45),
         "wswanc"       => Some(46),
+        "msx"          => Some(60),
+        "msx2"         => Some(64),
         _ => None,
     }
 }
@@ -250,7 +252,7 @@ pub async fn download_ss_media(url: &str, dest: &Path) -> Result<(), String> {
     if bytes.len() < 8 {
         return Err("Response too small".into());
     }
-    std::fs::write(dest, &bytes).map_err(|e| e.to_string())
+    tokio::fs::write(dest, &bytes).await.map_err(|e| e.to_string())
 }
 
 /// Map SS media type to our media folder name

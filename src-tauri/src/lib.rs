@@ -118,6 +118,7 @@ pub fn run() {
             commands::emulator_commands::get_emulator_preference,
             commands::emulator_commands::get_available_emulators_for_system,
             commands::emulator_commands::get_all_systems_with_emulators,
+            commands::emulator_commands::set_custom_emulator_for_system,
             commands::emulator_commands::set_game_emulator_override,
             commands::emulator_commands::get_game_emulator_override,
             commands::emulator_commands::delete_game_emulator_override,

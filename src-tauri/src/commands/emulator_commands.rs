@@ -63,17 +63,18 @@ pub async fn get_available_emulators_for_system(
         }
     }
 
-    // Get current preference for this system
-    let conn = db.conn.lock().map_err(|_| "Failed to acquire database lock".to_string())?;
-    let selected_emulator = preferences_service::get_preference(&system_id, &conn)?;
-
-    // Find system name from the database
+    // Get system name first (acquires + releases the DB lock internally)
     let systems = db.get_systems().map_err(|e| e.to_string())?;
     let system_name = systems
         .iter()
         .find(|s| s.id == system_id)
         .map(|s| s.full_name.clone())
         .unwrap_or_else(|| system_id.clone());
+
+    // Now acquire the lock for preferences (no longer nested)
+    let conn = db.conn.lock().map_err(|_| "Failed to acquire database lock".to_string())?;
+    let selected_emulator = preferences_service::get_preference(&system_id, &conn)?;
+    drop(conn);
 
     Ok(SystemEmulatorChoice {
         system_id,

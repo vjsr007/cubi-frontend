@@ -82,8 +82,14 @@ pub async fn scrape_game(
         return Err("ScreenScraper username not configured".into());
     }
 
-    // Compute CRC32 of the ROM file for accurate matching
-    let crc = compute_crc32(&game.file_path).unwrap_or_default();
+    // Compute CRC32 — skip for large files (>64 MB) to avoid OOM / blocking the runtime
+    let crc = {
+        let path = game.file_path.clone();
+        tokio::task::spawn_blocking(move || compute_crc32(&path))
+            .await
+            .unwrap_or(None)
+            .unwrap_or_default()
+    };
     let rom_name = Path::new(&game.file_name)
         .file_name()
         .and_then(|n| n.to_str())
@@ -200,20 +206,26 @@ fn find_text_by_lang(arr: Option<&serde_json::Value>, lang: &str) -> Option<Stri
 }
 
 fn compute_crc32(path: &str) -> Option<String> {
-    let data = std::fs::read(path).ok()?;
-    // Simple CRC32 using crc32fast or manual — use a lightweight approach
-    let mut crc: u32 = 0xFFFFFFFF;
-    for byte in &data {
-        crc ^= *byte as u32;
-        for _ in 0..8 {
-            if crc & 1 != 0 {
-                crc = (crc >> 1) ^ 0xEDB88320;
-            } else {
-                crc >>= 1;
+    use std::io::Read;
+    // Skip large files (>64 MB) — ISOs/CHDs cause OOM if read entirely into RAM
+    let metadata = std::fs::metadata(path).ok()?;
+    if metadata.len() > 64 * 1024 * 1024 {
+        return None;
+    }
+    let mut file = std::fs::File::open(path).ok()?;
+    let mut crc: u32 = 0xFFFF_FFFF;
+    let mut buf = [0u8; 65536];
+    loop {
+        let n = file.read(&mut buf).ok()?;
+        if n == 0 { break; }
+        for byte in &buf[..n] {
+            crc ^= *byte as u32;
+            for _ in 0..8 {
+                if crc & 1 != 0 { crc = (crc >> 1) ^ 0xEDB8_8320; } else { crc >>= 1; }
             }
         }
     }
-    Some(format!("{:08X}", crc ^ 0xFFFFFFFF))
+    Some(format!("{:08X}", crc ^ 0xFFFF_FFFF))
 }
 
 /// Download a ScreenScraper media file to the given destination path

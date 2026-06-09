@@ -11,6 +11,7 @@ import { InputMappingPage } from '../../pages/InputMappingPage';
 import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import { GameVerificationPage } from '../../pages/GameVerificationPage';
 import { CatalogPage } from '../../pages/CatalogPage';
+import { RandomPickerPage } from '../../pages/RandomPickerPage';
 import { useUiStore } from '../../stores/uiStore';
 
 export function DefaultTheme() {
@@ -31,6 +32,7 @@ export function DefaultTheme() {
         {currentPage === 'emulator-settings' && <EmulatorSettingsPage />}
         {currentPage === 'game-verification' && <GameVerificationPage />}
         {currentPage === 'catalog'            && <CatalogPage />}
+        {currentPage === 'random-picker'     && <RandomPickerPage />}
       </main>
       <Toast />
     </div>

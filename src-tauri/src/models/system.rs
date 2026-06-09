@@ -350,7 +350,7 @@ pub fn get_system_registry() -> Vec<SystemDef> {
             id: "psvita",
             name: "PS Vita",
             full_name: "Sony PlayStation Vita",
-            extensions: &["vpk"],
+            extensions: &["vpk", "zip", "7z", "iso"],
             folder_names: &["psvita", "vita"],
         },
         SystemDef {

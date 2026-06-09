@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLibraryStore } from '../stores/libraryStore';
 import { api } from '../lib/invoke';
+import { toImageSrc } from '../lib/media';
 import type { GameInfo, SystemInfo } from '../types';
 
 const CELL_H = 150;
-const REEL_CENTER = 220; // px from top to center band midpoint
+const REEL_CENTER = 220;
 
 const GENRE_EMOJI: Record<string, string> = {
   'Action':       '⚔️', 'Acción': '⚔️', 'ACCIÓN': '⚔️',
@@ -35,6 +36,13 @@ function fmtNum(n: number): string {
   return n.toLocaleString('es');
 }
 
+function ratingStars(rating: number): string {
+  if (!rating) return '';
+  const stars = Math.round(rating * 5);
+  const clamped = Math.max(0, Math.min(5, stars));
+  return '★'.repeat(clamped) + '☆'.repeat(5 - clamped);
+}
+
 const CONFETTI_COLORS = ['#00f0ff', '#ff006e', '#ffce5e', '#39ff14', '#b026ff', '#ff6b00'];
 
 export function RandomPickerPage() {
@@ -43,7 +51,7 @@ export function RandomPickerPage() {
 
   const [allGames, setAllGames] = useState<GameInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null);
+  const [selectedSystemIds, setSelectedSystemIds] = useState<string[]>([]);
   const [pickedGame, setPickedGame] = useState<GameInfo | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -55,10 +63,10 @@ export function RandomPickerPage() {
   const [reelWin, setReelWin] = useState(false);
   const [cabWin, setCabWin] = useState(false);
   const [leverDown, setLeverDown] = useState(false);
+  const [coverError, setCoverError] = useState(false);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const confettiId = useRef(0);
-
   const [reelStrip, setReelStrip] = useState<GameInfo[]>([]);
 
   useEffect(() => {
@@ -68,10 +76,10 @@ export function RandomPickerPage() {
     });
   }, []);
 
-  const filteredGames = useMemo(() =>
-    selectedSystemId ? allGames.filter((g) => g.system_id === selectedSystemId) : allGames,
-    [allGames, selectedSystemId]
-  );
+  const filteredGames = useMemo(() => {
+    if (selectedSystemIds.length === 0) return allGames;
+    return allGames.filter((g) => selectedSystemIds.includes(g.system_id));
+  }, [allGames, selectedSystemIds]);
 
   const buildStrip = useCallback((landOn: GameInfo, pool: GameInfo[]): GameInfo[] => {
     const strip: GameInfo[] = [];
@@ -100,6 +108,7 @@ export function RandomPickerPage() {
     const isJackpot = Math.random() < 0.12;
     const strip = buildStrip(landOn, filteredGames);
     setReelStrip(strip);
+    setCoverError(false);
 
     setSpinning(true);
     setReelWin(false);
@@ -155,8 +164,8 @@ export function RandomPickerPage() {
     try { await launchGame(pickedGame.id); } finally { setLaunching(false); }
   };
 
-  const handleSystemSelect = (id: string | null) => {
-    setSelectedSystemId(id);
+  const toggleSystem = (id: string) => {
+    setCoverError(false);
     setPickedGame(null);
     setStreak(0);
     setReelWin(false);
@@ -166,6 +175,23 @@ export function RandomPickerPage() {
       trackRef.current.style.transition = 'none';
       trackRef.current.style.transform = 'translateY(0px)';
     }
+    setSelectedSystemIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    setCoverError(false);
+    setPickedGame(null);
+    setStreak(0);
+    setReelWin(false);
+    setReelStrip([]);
+    setMarquee('◂ READY TO ROLL ▸');
+    if (trackRef.current) {
+      trackRef.current.style.transition = 'none';
+      trackRef.current.style.transform = 'translateY(0px)';
+    }
+    setSelectedSystemIds([]);
   };
 
   const systemName = pickedGame
@@ -173,6 +199,7 @@ export function RandomPickerPage() {
     : null;
 
   const poolCount = filteredGames.length;
+  const coverSrc = pickedGame?.box_art ? toImageSrc(pickedGame.box_art) : null;
 
   return (
     <div style={{
@@ -216,14 +243,19 @@ export function RandomPickerPage() {
         </span>
       </div>
 
-      {/* Filter chips */}
+      {/* Filter chips — multi-select */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 40px 18px',
         position: 'relative', zIndex: 5, maxHeight: 170, overflow: 'hidden',
         maskImage: 'linear-gradient(180deg, black 80%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(180deg, black 80%, transparent 100%)',
       }}>
-        <Chip label="Todos" count={allGames.length} active={selectedSystemId === null} onClick={() => handleSystemSelect(null)} />
+        <Chip
+          label="ALL"
+          count={allGames.length}
+          active={selectedSystemIds.length === 0}
+          onClick={selectAll}
+        />
         {systems
           .filter((s) => allGames.some((g) => g.system_id === s.id))
           .map((s) => (
@@ -231,8 +263,8 @@ export function RandomPickerPage() {
               key={s.id}
               label={s.name}
               count={allGames.filter((g) => g.system_id === s.id).length}
-              active={selectedSystemId === s.id}
-              onClick={() => handleSystemSelect(s.id)}
+              active={selectedSystemIds.includes(s.id)}
+              onClick={() => toggleSystem(s.id)}
             />
           ))}
       </div>
@@ -284,7 +316,6 @@ export function RandomPickerPage() {
                   background: '#05040c',
                   boxShadow: 'inset 0 0 40px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,255,255,.04)',
                 }}>
-                  {/* Top/bottom fade masks */}
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 90, background: 'linear-gradient(180deg, #05040c, transparent)', zIndex: 6, pointerEvents: 'none' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, background: 'linear-gradient(0deg, #05040c, transparent)', zIndex: 6, pointerEvents: 'none' }} />
 
@@ -337,7 +368,7 @@ export function RandomPickerPage() {
             </div>
 
             {/* Result panel */}
-            <div style={{ maxWidth: 560 }}>
+            <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 0 }}>
               <div style={{
                 fontSize: 13, fontWeight: 700, letterSpacing: '0.32em', color: '#00f0ff',
                 textTransform: 'uppercase', textShadow: '0 0 12px rgba(0,240,255,.5)',
@@ -347,26 +378,92 @@ export function RandomPickerPage() {
                 Tu próximo juego
               </div>
 
-              <h2 style={{
-                fontSize: 64, fontWeight: 900, lineHeight: 1, margin: '0 0 18px',
-                color: '#fff', letterSpacing: '-0.01em',
-                textShadow: '0 4px 24px rgba(0,0,0,.6)',
-                minHeight: 64,
-                opacity: spinning ? 0.4 : 1,
-                filter: spinning ? 'blur(2px)' : 'none',
-                transition: 'opacity .2s, filter .2s',
-              }}>
-                {pickedGame?.title ?? '—'}
-              </h2>
+              {/* Cover art + info row */}
+              <div style={{ display: 'flex', gap: 24, marginBottom: 16, alignItems: 'flex-start' }}>
+                {/* Cover art */}
+                <div style={{
+                  flexShrink: 0, width: 120, height: 160,
+                  borderRadius: 10,
+                  border: `2px solid ${pickedGame && !coverError ? 'rgba(0,240,255,.4)' : 'rgba(255,255,255,.08)'}`,
+                  background: '#0d0a1a',
+                  overflow: 'hidden',
+                  boxShadow: pickedGame && !coverError ? '0 0 20px rgba(0,240,255,.2)' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color .3s, box-shadow .3s',
+                  opacity: spinning ? 0.3 : 1,
+                }}>
+                  {coverSrc && !coverError ? (
+                    <img
+                      src={coverSrc}
+                      alt={pickedGame?.title}
+                      onError={() => setCoverError(true)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 48, opacity: 0.25 }}>{pickedGame ? genreEmoji(pickedGame.genre) : '🎰'}</span>
+                  )}
+                </div>
 
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 34 }}>
-                {systemName && <TagEl>{systemName}</TagEl>}
-                {pickedGame?.year && <TagEl meta>{pickedGame.year}</TagEl>}
-                {pickedGame?.genre && <TagEl meta>{pickedGame.genre.toUpperCase()}</TagEl>}
-                {pickedGame?.favorite && <TagEl>♥ Favorito</TagEl>}
+                {/* Title + tags */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{
+                    fontSize: 36, fontWeight: 900, lineHeight: 1.1, margin: '0 0 12px',
+                    color: '#fff', letterSpacing: '-0.01em',
+                    textShadow: '0 4px 24px rgba(0,0,0,.6)',
+                    opacity: spinning ? 0.4 : 1,
+                    filter: spinning ? 'blur(2px)' : 'none',
+                    transition: 'opacity .2s, filter .2s',
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {pickedGame?.title ?? '—'}
+                  </h2>
+
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {systemName && <TagEl>{systemName}</TagEl>}
+                    {pickedGame?.year && <TagEl meta>{pickedGame.year}</TagEl>}
+                    {pickedGame?.genre && <TagEl meta>{genreEmoji(pickedGame.genre)} {pickedGame.genre}</TagEl>}
+                    {pickedGame?.favorite && <TagEl accent>♥ Favorito</TagEl>}
+                  </div>
+
+                  {/* Developer / publisher / rating */}
+                  {(pickedGame?.developer || pickedGame?.publisher || pickedGame?.rating) && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {pickedGame.developer && (
+                        <span style={{ fontSize: 12, color: '#7a7a92' }}>
+                          <span style={{ color: '#555', marginRight: 6 }}>DEV</span>
+                          <span style={{ color: '#c4a8ff' }}>{pickedGame.developer}</span>
+                        </span>
+                      )}
+                      {pickedGame.publisher && pickedGame.publisher !== pickedGame.developer && (
+                        <span style={{ fontSize: 12, color: '#7a7a92' }}>
+                          <span style={{ color: '#555', marginRight: 6 }}>PUB</span>
+                          <span style={{ color: '#b0b0c8' }}>{pickedGame.publisher}</span>
+                        </span>
+                      )}
+                      {pickedGame.rating && (
+                        <span style={{ fontSize: 13, color: '#ffce5e', letterSpacing: '0.1em' }}>
+                          {ratingStars(pickedGame.rating)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+              {/* Description */}
+              {pickedGame?.description && (
+                <p style={{
+                  fontSize: 13, lineHeight: 1.7, color: '#8a8aa8', margin: '0 0 18px',
+                  display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  opacity: spinning ? 0.3 : 1, transition: 'opacity .2s',
+                }}>
+                  {pickedGame.description}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 24 }}>
                 <BtnPlay onClick={handleLaunch} disabled={!pickedGame || launching || spinning}>
                   <span style={{ fontSize: 20 }}>▶</span> {launching ? 'Lanzando…' : 'Jugar ahora'}
                 </BtnPlay>
@@ -375,7 +472,7 @@ export function RandomPickerPage() {
                 </BtnReroll>
               </div>
 
-              <div style={{ display: 'flex', gap: 28, marginTop: 34, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,.06)' }}>
+              <div style={{ display: 'flex', gap: 28, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,.06)' }}>
                 <Stat label="Tiradas hoy" value={rolls} color="#00f0ff" />
                 <Stat label="Racha" value={streak} color="#ffce5e" />
                 <Stat label="En el bombo" value={poolCount} />
@@ -477,13 +574,13 @@ function Chip({ label, count, active, onClick }: { label: string; count: number;
   );
 }
 
-function TagEl({ children, meta }: { children: React.ReactNode; meta?: boolean }) {
+function TagEl({ children, meta, accent }: { children: React.ReactNode; meta?: boolean; accent?: boolean }) {
   return (
     <span style={{
-      padding: '6px 16px', borderRadius: 999, fontSize: meta ? 12 : 14, fontWeight: meta ? 500 : 700,
-      background: meta ? 'rgba(255,255,255,.04)' : 'rgba(124,58,237,.18)',
-      border: `1px solid ${meta ? 'rgba(255,255,255,.1)' : 'rgba(124,58,237,.5)'}`,
-      color: meta ? '#9a9ab0' : '#c4a8ff',
+      padding: '4px 12px', borderRadius: 999, fontSize: meta ? 12 : 13, fontWeight: meta ? 500 : 700,
+      background: accent ? 'rgba(255,0,110,.18)' : meta ? 'rgba(255,255,255,.04)' : 'rgba(124,58,237,.18)',
+      border: `1px solid ${accent ? 'rgba(255,0,110,.5)' : meta ? 'rgba(255,255,255,.1)' : 'rgba(124,58,237,.5)'}`,
+      color: accent ? '#ff6e9a' : meta ? '#9a9ab0' : '#c4a8ff',
       fontFamily: meta ? 'ui-monospace, monospace' : undefined,
     }}>
       {children}
@@ -494,12 +591,12 @@ function TagEl({ children, meta }: { children: React.ReactNode; meta?: boolean }
 function BtnPlay({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      position: 'relative', fontFamily: 'inherit', fontSize: 19, fontWeight: 800,
-      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '20px 44px',
+      position: 'relative', fontFamily: 'inherit', fontSize: 17, fontWeight: 800,
+      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '16px 36px',
       borderRadius: 999, cursor: disabled ? 'not-allowed' : 'pointer',
       border: '2px solid #00f0ff', background: 'rgba(0,240,255,.08)', color: '#00f0ff',
       boxShadow: '0 0 20px rgba(0,240,255,.4), inset 0 0 20px rgba(0,240,255,.06)',
-      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 14,
+      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 12,
       opacity: disabled ? 0.4 : 1,
       transition: 'all .18s',
     }}>
@@ -511,12 +608,12 @@ function BtnPlay({ children, onClick, disabled }: { children: React.ReactNode; o
 function BtnReroll({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      position: 'relative', fontFamily: 'inherit', fontSize: 19, fontWeight: 800,
-      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '20px 44px',
+      position: 'relative', fontFamily: 'inherit', fontSize: 17, fontWeight: 800,
+      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '16px 36px',
       borderRadius: 999, cursor: disabled ? 'not-allowed' : 'pointer',
       border: '2px solid #ff006e', background: 'rgba(255,0,110,.08)', color: '#ff006e',
       boxShadow: '0 0 20px rgba(255,0,110,.4), inset 0 0 20px rgba(255,0,110,.06)',
-      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 14,
+      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 12,
       opacity: disabled ? 0.4 : 1,
       transition: 'all .18s',
     }}>

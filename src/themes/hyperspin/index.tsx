@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { useLibraryStore } from '../../stores/libraryStore';
 import { useUiStore } from '../../stores/uiStore';
-import { useConfigStore } from '../../stores/configStore';
-import { WheelCarousel } from './WheelCarousel';
-import { GameWheel } from './GameWheel';
-import { PreviewPanel } from './PreviewPanel';
-import { BottomBar } from './BottomBar';
+import { HyperSpinTheme as HSTheme } from './HyperSpinTheme';
+import type { HSGame } from './HyperSpinTheme';
 import { Toast } from '../../components/common/Toast';
 import { SettingsPage } from '../../pages/SettingsPage';
 import { ScraperPage } from '../../pages/ScraperPage';
@@ -16,299 +14,123 @@ import { InputMappingPage } from '../../pages/InputMappingPage';
 import { EmulatorSettingsPage } from '../../pages/EmulatorSettingsPage';
 import { GameVerificationPage } from '../../pages/GameVerificationPage';
 import { CatalogPage } from '../../pages/CatalogPage';
-import { useAudio } from '../../hooks/useAudio';
-import { useI18nStore } from '../../stores/i18nStore';
-import type { GameInfo } from '../../types';
+import { RandomPickerPage } from '../../pages/RandomPickerPage';
 
 type HyperView = 'systems' | 'games';
 
+function mediaSrc(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return convertFileSrc(path);
+}
+
 export function HyperSpinTheme() {
   const { systems, games, loadSystems, selectSystem, selectedSystemId, launchGame } = useLibraryStore();
-  const { showToast, currentPage, navigateTo } = useUiStore();
-  const { config } = useConfigStore();
-
+  const { currentPage, navigateTo, showToast } = useUiStore();
   const [view, setView] = useState<HyperView>('systems');
   const [systemIndex, setSystemIndex] = useState(0);
-  const [gameIndex, setGameIndex] = useState(0);
-  const [previewGame, setPreviewGame] = useState<GameInfo | null>(null);
 
-  // Gamepad polling refs for system wheel
-  const rafRef = useRef<number>(0);
-  const lastMoveRef = useRef(0);
-  const { playTick, playEnter } = useAudio();
-  const { t } = useI18nStore();
+  useEffect(() => { loadSystems(); }, []);
 
-  useEffect(() => {
-    loadSystems();
-  }, []);
-
-  // Auto-select first system
   useEffect(() => {
     if (systems.length > 0 && !selectedSystemId) {
       selectSystem(systems[0].id);
     }
   }, [systems]);
 
-  // Sync preview game with focused game
-  useEffect(() => {
-    if (view === 'games' && games.length > 0) {
-      setPreviewGame(games[gameIndex] ?? null);
-    } else {
-      setPreviewGame(null);
-    }
-  }, [view, games, gameIndex]);
-
-  // Load games when system changes
   useEffect(() => {
     if (systems[systemIndex]) {
       selectSystem(systems[systemIndex].id);
-      setGameIndex(0);
     }
   }, [systemIndex]);
 
-  // Gamepad polling for system wheel
-  useEffect(() => {
-    if (view !== 'systems') return;
-    let running = true;
-    function poll() {
-      if (!running) return;
-      const gp = navigator.getGamepads()[0];
-      if (gp) {
-        const axis = gp.axes[1] ?? 0;
-        const now = Date.now();
-        if (Math.abs(axis) > 0.5 && now - lastMoveRef.current > 150) {
-          lastMoveRef.current = now;
-          playTick();
-          if (axis < -0.5) setSystemIndex((i) => (i - 1 + systems.length) % systems.length);
-          else setSystemIndex((i) => (i + 1) % systems.length);
-        }
-        if (gp.buttons[0]?.pressed && now - lastMoveRef.current > 300) {
-          lastMoveRef.current = now;
-          playEnter();
-          setView('games');
-        }
-        if (gp.buttons[8]?.pressed && now - lastMoveRef.current > 300) {
-          lastMoveRef.current = now;
-          navigateTo('settings');
-        }
-      }
-      rafRef.current = requestAnimationFrame(poll);
-    }
-    rafRef.current = requestAnimationFrame(poll);
-    return () => { running = false; cancelAnimationFrame(rafRef.current); };
-  }, [view, systems, playTick, playEnter]);
+  const systemGames = useMemo<HSGame[]>(() =>
+    systems.map((s) => ({
+      id: s.id,
+      title: s.full_name || s.name,
+      systemId: s.id,
+      systemName: 'Systems',
+      wheelArt: mediaSrc(s.icon),
+    })), [systems]);
 
-  const handleSelectSystem = (_id: string) => {
-    setView('games');
-    setGameIndex(0);
-  };
+  const hsGames = useMemo<HSGame[]>(() =>
+    games.map((g) => ({
+      id: g.id,
+      title: g.title,
+      systemId: g.system_id,
+      systemName: systems.find((s) => s.id === g.system_id)?.name ?? g.system_id,
+      year: g.year ? Number(g.year) : undefined,
+      genre: g.genre,
+      developer: g.developer,
+      publisher: g.publisher,
+      players: g.players > 1 ? `${g.players}` : '1',
+      rating: g.rating ? Math.round(g.rating * 5) : undefined,
+      playCount: g.play_count,
+      description: g.description,
+      wheelArt: mediaSrc(g.box_art),
+      logoArt: mediaSrc(g.logo ?? g.box_art),
+      fanart: mediaSrc(g.hero_art ?? g.background_art),
+      videoPath: mediaSrc(g.trailer_local ?? g.trailer_url),
+    })), [games, systems]);
 
-  const handleSelectGame = async (game: GameInfo) => {
+  const handleLaunchGame = async (g: HSGame) => {
     try {
-      await launchGame(game.id);
-      showToast(`Launching ${game.title}...`, 'success');
+      await launchGame(g.id);
+      showToast(`Launching ${g.title}…`, 'success');
     } catch (e) {
       showToast(String(e), 'error');
     }
   };
 
-  const handleBackToSystems = () => {
-    setView('systems');
-    setGameIndex(0);
+  const handleSelectSystem = (s: HSGame) => {
+    const idx = systems.findIndex((sys) => sys.id === s.id);
+    if (idx >= 0) setSystemIndex(idx);
+    setView('games');
   };
 
-  const currentSystem = systems[systemIndex] ?? null;
+  const overlayStyle = { height: '100%', background: '#0d0d0d', display: 'flex' as const, flexDirection: 'column' as const };
 
-  // Settings overlay
   if (currentPage === 'settings') {
     return (
-      <div style={{ height: '100%', background: '#0d0d0d', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '12px 20px', background: '#1a1a1a', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={() => navigateTo('library')}
-            style={{ background: 'none', border: '1px solid #444', borderRadius: 6, color: '#aaa', padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}
-          >
-            {t('hyperspin.back')}
-          </button>
-          <span style={{ color: '#f39c12', fontWeight: 600, fontSize: 15 }}>{t('hyperspin.settings')}</span>
+      <div style={overlayStyle}>
+        <div style={{ padding: '10px 16px', background: '#1a1a1a', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => navigateTo('library')} style={{ background: 'none', border: '1px solid #444', borderRadius: 6, color: '#aaa', padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}>← Back</button>
+          <span style={{ color: '#f39c12', fontWeight: 600, fontSize: 15 }}>Settings</span>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <SettingsPage />
-        </div>
+        <div style={{ flex: 1, overflow: 'hidden' }}><SettingsPage /></div>
         <Toast />
       </div>
     );
   }
-
-  if (currentPage === 'scraper') {
-    return <ScraperPage />;
-  }
-
-  if (currentPage === 'pc-games') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <PcGamesPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'emulator-config') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <EmulatorConfigPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'rom-paths') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <RomPathsPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'input-mapping') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <InputMappingPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'emulator-settings') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <EmulatorSettingsPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'game-verification') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <GameVerificationPage />
-        <Toast />
-      </div>
-    );
-  }
-
-  if (currentPage === 'catalog') {
-    return (
-      <div style={{ height: '100%', background: '#0d0d0d' }}>
-        <CatalogPage />
-        <Toast />
-      </div>
-    );
-  }
+  if (currentPage === 'scraper')          return <><ScraperPage /><Toast /></>;
+  if (currentPage === 'pc-games')         return <div style={overlayStyle}><PcGamesPage /><Toast /></div>;
+  if (currentPage === 'emulator-config')  return <div style={overlayStyle}><EmulatorConfigPage /><Toast /></div>;
+  if (currentPage === 'rom-paths')        return <div style={overlayStyle}><RomPathsPage /><Toast /></div>;
+  if (currentPage === 'input-mapping')    return <div style={overlayStyle}><InputMappingPage /><Toast /></div>;
+  if (currentPage === 'emulator-settings') return <div style={overlayStyle}><EmulatorSettingsPage /><Toast /></div>;
+  if (currentPage === 'game-verification') return <div style={overlayStyle}><GameVerificationPage /><Toast /></div>;
+  if (currentPage === 'catalog')          return <div style={overlayStyle}><CatalogPage /><Toast /></div>;
+  if (currentPage === 'random-picker')    return <div style={overlayStyle}><RandomPickerPage /><Toast /></div>;
 
   return (
-    <div
-      className="theme-hyperspin"
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'radial-gradient(ellipse at 30% 50%, #3a0808 0%, #1a0404 40%, #0a0a0a 100%)',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      {/* Marquee scroll bar */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 28,
-        background: 'linear-gradient(90deg, rgba(0,0,0,0.9), rgba(243,156,18,0.15), rgba(0,0,0,0.9))',
-        borderBottom: '1px solid rgba(243,156,18,0.3)',
-        overflow: 'hidden', zIndex: 15, display: 'flex', alignItems: 'center',
-      }}>
-        <div style={{
-          whiteSpace: 'nowrap', fontSize: 11, fontWeight: 700, letterSpacing: '0.2em',
-          textTransform: 'uppercase', color: '#f39c12',
-          textShadow: '0 0 8px #f39c12, 0 0 24px rgba(243,156,18,0.6)',
-          animation: 'marquee-scroll 20s linear infinite',
-        }}>
-          CUBI · EMULATION FRONTEND · SELECT YOUR SYSTEM · PRESS START · CUBI · EMULATION FRONTEND · SELECT YOUR SYSTEM · PRESS START ·&nbsp;
-        </div>
-      </div>
-      {/* Settings button */}
-      <button
-        onClick={() => navigateTo('settings')}
-        title={t('hyperspin.settings')}
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          zIndex: 20,
-          background: 'rgba(0,0,0,0.5)',
-          border: '1px solid #333',
-          borderRadius: 8,
-          color: '#888',
-          width: 36,
-          height: 36,
-          fontSize: 16,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        ⚙
-      </button>
-
-      {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        {/* Left: Preview Panel with CRT */}
-        <div className="fx-crt fx-scanline-sweep" style={{ flex: '0 0 55%', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-          <PreviewPanel
-            system={currentSystem}
-            game={view === 'games' ? (games[gameIndex] ?? null) : null}
-            mode={view === 'games' ? 'game' : 'system' as const}
-          />
-        </div>
-
-        {/* Right: Wheel */}
-        <div style={{ flex: '0 0 45%', position: 'relative' }}>
-          {/* Subtle right-side metallic sheen */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.015) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          {view === 'systems' ? (
-            <WheelCarousel
-              items={systems.map((s) => ({ id: s.id, label: s.name }))}
-              focusedIndex={systemIndex}
-              onFocusChange={setSystemIndex}
-              onSelect={handleSelectSystem}
-            />
-          ) : (
-            <GameWheel
-              games={games}
-              focusedIndex={gameIndex}
-              onFocusChange={setGameIndex}
-              onSelect={handleSelectGame}
-              onBack={handleBackToSystems}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Bottom bar */}
-      <BottomBar
-        mode={view === 'games' ? 'game' : 'system'}
-        systemName={currentSystem?.name}
-      />
-
+    <>
+      {view === 'systems' ? (
+        <HSTheme
+          games={systemGames}
+          onLaunch={handleSelectSystem}
+          onExit={() => navigateTo('settings')}
+          onMenu={() => navigateTo('settings')}
+        />
+      ) : (
+        <HSTheme
+          games={hsGames}
+          onLaunch={handleLaunchGame}
+          onFavorite={(g) => useLibraryStore.getState().toggleFavorite(g.id)}
+          onExit={() => { setView('systems'); }}
+          onMenu={() => navigateTo('settings')}
+        />
+      )}
       <Toast />
-    </div>
+    </>
   );
 }

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="currentColor">
-  <!-- Windows 11 logo — four-pane flag (one-color) -->
-  <!-- Derived from public domain Windows logo geometry -->
-  <path d="M0 14.4 L45.5 7.6 L45.5 50 L0 50 Z"/>
-  <path d="M50.5 6.9 L100 0 L100 50 L50.5 50 Z"/>
-  <path d="M0 54 L45.5 54 L45.5 96.2 L0 89.2 Z"/>
-  <path d="M50.5 54 L100 54 L100 100 L50.5 93.1 Z"/>
+  
+  
+  <path d="M0 14.4 L45.5 7.6 L45.5 50 L0 50 Z"></path>
+  <path d="M50.5 6.9 L100 0 L100 50 L50.5 50 Z"></path>
+  <path d="M0 54 L45.5 54 L45.5 96.2 L0 89.2 Z"></path>
+  <path d="M50.5 54 L100 54 L100 100 L50.5 93.1 Z"></path>
 </svg>

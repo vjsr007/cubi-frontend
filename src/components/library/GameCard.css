@@ -1,6 +1,7 @@
 /* GameCard.css — arcade-styled game tile */
 
 .game-card {
+  --card-color: #553c9a;
   position: relative;
   display: flex; flex-direction: column;
   background: linear-gradient(160deg, #1a1a1a, #0a0a0a);
@@ -44,7 +45,7 @@
 .game-card-art {
   position: relative;
   aspect-ratio: 3/4;
-  background: var(--color-surface-3, #1e1e1e);
+  background: linear-gradient(160deg, var(--card-color), color-mix(in oklab, var(--card-color) 30%, black));
   overflow: hidden;
 }
 .game-card-art img { width: 100%; height: 100%; object-fit: cover; display: block; }

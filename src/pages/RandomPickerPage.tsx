@@ -1,28 +1,41 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLibraryStore } from '../stores/libraryStore';
 import { api } from '../lib/invoke';
-import { toImageSrc } from '../lib/media';
-import { ArcadeButton } from '../components/arcade/ArcadeButton';
 import type { GameInfo, SystemInfo } from '../types';
 
-type SpinPhase = 'idle' | 'spinning' | 'slowing' | 'done';
+const CELL_H = 150;
+const REEL_CENTER = 220; // px from top to center band midpoint
 
-const SPIN_DURATION = 2800;
-const PHASES: { after: number; interval: number }[] = [
-  { after: 0,    interval: 55  },
-  { after: 800,  interval: 90  },
-  { after: 1400, interval: 140 },
-  { after: 1900, interval: 200 },
-  { after: 2300, interval: 280 },
-  { after: 2600, interval: 380 },
-];
+const GENRE_EMOJI: Record<string, string> = {
+  'Action':       '⚔️', 'Acción': '⚔️', 'ACCIÓN': '⚔️',
+  'Adventure':    '🗺️', 'Aventura': '🗺️', 'AVENTURA': '🗺️',
+  'RPG':          '💎', 'Role-Playing': '💎',
+  'Shooter':      '🚀', 'SHOOTER': '🚀', 'Shoot': '🚀',
+  'Platform':     '🍄', 'Plataformas': '🍄', 'PLATAFORMAS': '🍄', 'Platformer': '🍄',
+  'Racing':       '🏎️', 'Carreras': '🏎️',
+  'Puzzle':       '🧩', 'PUZZLE': '🧩',
+  'Sports':       '⚽', 'Deportes': '⚽',
+  'Fighting':     '👊', 'Lucha': '👊', 'LUCHA': '👊',
+  'Strategy':     '🎯', 'Estrategia': '🎯', 'ESTRATEGIA': '🎯',
+  'Simulation':   '🏗️',
+  'Beat em Up':   '🥊', 'BEAT EM UP': '🥊',
+  'Run and Gun':  '🔫', 'RUN N GUN': '🔫',
+  'Arcade':       '👾', 'ARCADE': '👾',
+};
 
-function getInterval(elapsed: number): number {
-  for (let i = PHASES.length - 1; i >= 0; i--) {
-    if (elapsed >= PHASES[i].after) return PHASES[i].interval;
+function genreEmoji(genre?: string): string {
+  if (!genre) return '🎮';
+  for (const [k, v] of Object.entries(GENRE_EMOJI)) {
+    if (genre.toLowerCase().includes(k.toLowerCase())) return v;
   }
-  return PHASES[0].interval;
+  return '🎮';
 }
+
+function fmtNum(n: number): string {
+  return n.toLocaleString('es');
+}
+
+const CONFETTI_COLORS = ['#00f0ff', '#ff006e', '#ffce5e', '#39ff14', '#b026ff', '#ff6b00'];
 
 export function RandomPickerPage() {
   const systems = useLibraryStore((s) => s.systems);
@@ -31,11 +44,22 @@ export function RandomPickerPage() {
   const [allGames, setAllGames] = useState<GameInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null);
-  const [displayGame, setDisplayGame] = useState<GameInfo | null>(null);
   const [pickedGame, setPickedGame] = useState<GameInfo | null>(null);
-  const [phase, setPhase] = useState<SpinPhase>('idle');
-  const [imgError, setImgError] = useState(false);
+  const [spinning, setSpinning] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [rolls, setRolls] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [confetti, setConfetti] = useState<{ id: number; left: number; color: string; circle: boolean; dur: number; delay: number }[]>([]);
+  const [jackpot, setJackpot] = useState(false);
+  const [marquee, setMarquee] = useState('◂ READY TO ROLL ▸');
+  const [reelWin, setReelWin] = useState(false);
+  const [cabWin, setCabWin] = useState(false);
+  const [leverDown, setLeverDown] = useState(false);
+
+  const trackRef = useRef<HTMLDivElement>(null);
+  const confettiId = useRef(0);
+
+  const [reelStrip, setReelStrip] = useState<GameInfo[]>([]);
 
   useEffect(() => {
     api.getAllGames().then((games) => {
@@ -44,359 +68,487 @@ export function RandomPickerPage() {
     });
   }, []);
 
-  const filteredGames = selectedSystemId
-    ? allGames.filter((g) => g.system_id === selectedSystemId)
-    : allGames;
+  const filteredGames = useMemo(() =>
+    selectedSystemId ? allGames.filter((g) => g.system_id === selectedSystemId) : allGames,
+    [allGames, selectedSystemId]
+  );
+
+  const buildStrip = useCallback((landOn: GameInfo, pool: GameInfo[]): GameInfo[] => {
+    const strip: GameInfo[] = [];
+    for (let i = 0; i < 40; i++) strip.push(pool[Math.floor(Math.random() * pool.length)]);
+    strip[38] = landOn;
+    return strip;
+  }, []);
+
+  const burst = useCallback(() => {
+    const items = Array.from({ length: 60 }, (_, i) => ({
+      id: confettiId.current++,
+      left: Math.random() * 100,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      circle: Math.random() > 0.5,
+      dur: 1.6 + Math.random() * 1.4,
+      delay: Math.random() * 0.3,
+    }));
+    setConfetti((prev) => [...prev, ...items]);
+    setTimeout(() => setConfetti((prev) => prev.filter((c) => !items.find((i) => i.id === c.id))), 2500);
+  }, []);
 
   const spin = useCallback(() => {
-    if (phase !== 'idle' || filteredGames.length === 0) return;
+    if (spinning || filteredGames.length === 0) return;
 
-    const final = filteredGames[Math.floor(Math.random() * filteredGames.length)];
-    setPickedGame(null);
-    setImgError(false);
-    setPhase('spinning');
+    const landOn = filteredGames[Math.floor(Math.random() * filteredGames.length)];
+    const isJackpot = Math.random() < 0.12;
+    const strip = buildStrip(landOn, filteredGames);
+    setReelStrip(strip);
 
-    let elapsed = 0;
+    setSpinning(true);
+    setReelWin(false);
+    setMarquee('◂ ROLLING… ▸');
+    setLeverDown(true);
+    setTimeout(() => setLeverDown(false), 180);
 
-    const tick = () => {
-      elapsed += getInterval(elapsed);
+    const track = trackRef.current;
+    if (track) {
+      track.style.transition = 'none';
+      track.style.transform = 'translateY(0px)';
+      void track.offsetHeight;
+      const finalY = -(38 * CELL_H) + (REEL_CENTER - CELL_H / 2);
+      const dur = 2200 + Math.random() * 600;
+      track.style.transition = `transform ${dur}ms cubic-bezier(0.12, 0.7, 0.1, 1)`;
+      track.style.transform = `translateY(${finalY}px)`;
 
-      if (elapsed >= SPIN_DURATION) {
-        setDisplayGame(final);
-        setPickedGame(final);
-        setPhase('done');
-        return;
-      }
+      setTimeout(() => {
+        setPickedGame(landOn);
+        setSpinning(false);
+        setReelWin(true);
+        setCabWin(true);
+        setMarquee(`★ ${landOn.title.toUpperCase()} ★`);
+        setTimeout(() => setCabWin(false), 600);
+        setRolls((r) => r + 1);
+        setStreak((s) => s + 1);
+        burst();
+        if (isJackpot) {
+          setJackpot(true);
+          setTimeout(() => burst(), 300);
+          setTimeout(() => burst(), 600);
+          setTimeout(() => setJackpot(false), 1600);
+        }
+      }, dur + 60);
+    }
+  }, [spinning, filteredGames, buildStrip, burst]);
 
-      const random = filteredGames[Math.floor(Math.random() * filteredGames.length)];
-      setDisplayGame(random);
-
-      setTimeout(tick, getInterval(elapsed));
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === 'Space') { e.preventDefault(); spin(); }
+      else if (e.key === 'r' || e.key === 'R') spin();
+      else if (e.key === 'Enter' && pickedGame && !spinning) handleLaunch();
     };
-
-    setTimeout(tick, getInterval(0));
-  }, [phase, filteredGames]);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [spin, pickedGame, spinning]);
 
   const handleLaunch = async () => {
     if (!pickedGame) return;
     setLaunching(true);
-    try {
-      await launchGame(pickedGame.id);
-    } finally {
-      setLaunching(false);
-    }
+    setMarquee('▶ LAUNCHING…');
+    burst();
+    try { await launchGame(pickedGame.id); } finally { setLaunching(false); }
   };
 
   const handleSystemSelect = (id: string | null) => {
     setSelectedSystemId(id);
-    setPhase('idle');
     setPickedGame(null);
-    setDisplayGame(null);
+    setStreak(0);
+    setReelWin(false);
+    setReelStrip([]);
+    setMarquee('◂ READY TO ROLL ▸');
+    if (trackRef.current) {
+      trackRef.current.style.transition = 'none';
+      trackRef.current.style.transform = 'translateY(0px)';
+    }
   };
-
-  const isSpinning = phase === 'spinning' || phase === 'slowing';
-  const imgSrc = !imgError ? toImageSrc(displayGame?.box_art ?? null) : null;
 
   const systemName = pickedGame
     ? systems.find((s) => s.id === pickedGame.system_id)?.name ?? pickedGame.system_id
     : null;
 
+  const poolCount = filteredGames.length;
+
   return (
     <div style={{
+      position: 'relative',
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      background: 'linear-gradient(160deg, #070712 0%, #0d0920 50%, #070712 100%)',
+      background: `
+        radial-gradient(ellipse 60% 50% at 20% 0%, rgba(124,58,237,.22) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 90% 100%, rgba(255,0,110,.16) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 60% 50%, rgba(0,240,255,.08) 0%, transparent 60%),
+        #07060f`,
       overflow: 'hidden',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: '#e5e5e5',
     }}>
-      {/* Header */}
-      <div style={{ padding: '20px 28px 12px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2, color: '#fff',
-            textShadow: '0 0 20px #a855f7, 0 0 40px #7c3aed' }}>
-            LUCKY PLAY
-          </span>
-          <span style={{ fontSize: 13, color: 'var(--color-text-muted)', letterSpacing: 1 }}>
-            — máquina aleatoria
-          </span>
-        </div>
+      {/* CRT scanline overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 50,
+        background: 'repeating-linear-gradient(0deg, transparent 0, transparent 1px, rgba(255,255,255,.02) 1px, rgba(0,0,0,.15) 2px)',
+        opacity: 0.35, mixBlendMode: 'overlay',
+      }} />
 
-        {/* System filter */}
-        <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-          <FilterPill
-            label={`Todos (${allGames.length})`}
-            active={selectedSystemId === null}
-            onClick={() => handleSystemSelect(null)}
-          />
-          {systems.filter((s) => allGames.some((g) => g.system_id === s.id)).map((s) => (
-            <FilterPill
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 18, padding: '28px 40px 16px', position: 'relative', zIndex: 5 }}>
+        <h1 style={{
+          fontSize: 44, fontWeight: 900, letterSpacing: '0.04em', margin: 0, position: 'relative',
+          background: 'linear-gradient(180deg, #fff 0%, #b794ff 100%)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+          textShadow: 'none',
+          filter: 'drop-shadow(0 0 30px rgba(124,58,237,.5))',
+        }}>
+          LUCKY PLAY
+          <span style={{
+            position: 'absolute', fontSize: 20, top: -8, right: -26,
+            animation: 'lp-twinkle 2s ease-in-out infinite',
+          }}>✦</span>
+        </h1>
+        <span style={{ fontSize: 15, color: '#7a7a92', letterSpacing: '0.04em' }}>
+          — máquina aleatoria · <b style={{ color: '#00f0ff' }}>{fmtNum(poolCount)}</b> juegos en el bombo
+        </span>
+      </div>
+
+      {/* Filter chips */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 40px 18px',
+        position: 'relative', zIndex: 5, maxHeight: 170, overflow: 'hidden',
+        maskImage: 'linear-gradient(180deg, black 80%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(180deg, black 80%, transparent 100%)',
+      }}>
+        <Chip label="Todos" count={allGames.length} active={selectedSystemId === null} onClick={() => handleSystemSelect(null)} />
+        {systems
+          .filter((s) => allGames.some((g) => g.system_id === s.id))
+          .map((s) => (
+            <Chip
               key={s.id}
-              label={`${s.name} (${allGames.filter((g) => g.system_id === s.id).length})`}
+              label={s.name}
+              count={allGames.filter((g) => g.system_id === s.id).length}
               active={selectedSystemId === s.id}
               onClick={() => handleSystemSelect(s.id)}
             />
           ))}
-        </div>
       </div>
 
-      {/* Main slot area */}
+      {/* Stage */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 28px',
-        minHeight: 0,
+        flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 56,
+        alignItems: 'center', padding: '0 60px 40px', position: 'relative', zIndex: 5, minHeight: 0,
       }}>
         {loading ? (
-          <div style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>Cargando juegos…</div>
-        ) : filteredGames.length === 0 ? (
-          <div style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>
-            No hay juegos en este sistema.
-          </div>
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#555' }}>Cargando juegos…</div>
         ) : (
-          <div style={{ display: 'flex', gap: 40, alignItems: 'center', width: '100%', maxWidth: 900 }}>
-
-            {/* Slot machine */}
-            <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              {/* Machine frame */}
+          <>
+            {/* Slot Cabinet */}
+            <div style={{ position: 'relative', width: 420, justifySelf: 'end' }}>
               <div style={{
-                position: 'relative',
-                width: 260,
-                height: 360,
-                borderRadius: 16,
-                border: `2px solid ${isSpinning ? '#a855f7' : phase === 'done' ? '#22d3ee' : '#3b1d6e'}`,
-                background: '#0f0820',
-                boxShadow: isSpinning
-                  ? '0 0 30px #a855f755, inset 0 0 40px #1a0a3060'
-                  : phase === 'done'
-                  ? '0 0 40px #22d3ee44, inset 0 0 40px #0a2a3060'
-                  : '0 0 15px #1a0a3060, inset 0 0 30px #0d091a',
-                transition: 'border-color 0.4s, box-shadow 0.4s',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                position: 'relative', borderRadius: 24, padding: 18,
+                background: 'linear-gradient(180deg, #1a1330 0%, #0d0a1a 100%)',
+                boxShadow: spinning
+                  ? '0 0 0 2px rgba(255,0,110,.7), 0 0 50px rgba(255,0,110,.5), 0 0 100px rgba(255,0,110,.25)'
+                  : '0 0 0 2px rgba(0,240,255,.5), 0 0 40px rgba(0,240,255,.35), 0 0 80px rgba(0,240,255,.15), inset 0 2px 20px rgba(0,240,255,.08)',
+                transition: 'box-shadow .3s',
+                animation: cabWin ? 'lp-cab-win .6s ease-out' : undefined,
               }}>
-                {/* Scan lines overlay */}
-                <div style={{
-                  position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)',
-                }} />
-
-                {/* Top/bottom gradient masks */}
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, height: 60, zIndex: 3, pointerEvents: 'none',
-                  background: 'linear-gradient(to bottom, #0f0820, transparent)',
-                }} />
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, zIndex: 3, pointerEvents: 'none',
-                  background: 'linear-gradient(to top, #0f0820, transparent)',
-                }} />
-
-                {/* Art */}
-                {displayGame ? (
-                  <img
-                    key={isSpinning ? displayGame.id : `final-${displayGame.id}`}
-                    src={imgSrc ?? undefined}
-                    alt={displayGame.title}
-                    onError={() => setImgError(true)}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      filter: isSpinning ? 'blur(1.5px) brightness(0.7)' : 'brightness(1)',
-                      transition: isSpinning ? 'none' : 'filter 0.5s',
-                    }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 48 }}>🎰</span>
-                    <span style={{ color: '#4b2a8a', fontSize: 13, letterSpacing: 1 }}>GIRA PARA JUGAR</span>
-                  </div>
-                )}
-
-                {/* No-art fallback */}
-                {displayGame && !imgSrc && (
-                  <div style={{
-                    position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', padding: 16, gap: 8,
-                  }}>
-                    <span style={{ fontSize: 36 }}>🎮</span>
-                    <span style={{
-                      color: '#e2d9ff', fontSize: 15, fontWeight: 700, textAlign: 'center',
-                      textShadow: '0 2px 6px #000',
-                    }}>
-                      {displayGame.title}
-                    </span>
-                  </div>
-                )}
-
-                {/* Spinning indicator */}
-                {isSpinning && (
-                  <div style={{
-                    position: 'absolute', inset: 0, zIndex: 4,
-                    background: 'linear-gradient(180deg, transparent 20%, #a855f710 50%, transparent 80%)',
-                    animation: 'scanSweep 0.3s linear infinite',
+                {/* Corner bolts */}
+                {(['tl','tr','bl','br'] as const).map((pos) => (
+                  <span key={pos} style={{
+                    position: 'absolute',
+                    top: pos.startsWith('t') ? 8 : undefined, bottom: pos.startsWith('b') ? 8 : undefined,
+                    left: pos.endsWith('l') ? 8 : undefined, right: pos.endsWith('r') ? 8 : undefined,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: 'radial-gradient(circle at 30% 30%, #5af, #249)',
+                    boxShadow: '0 0 6px rgba(0,240,255,.6)',
                   }} />
-                )}
-              </div>
+                ))}
 
-              {/* Spin button */}
-              <ArcadeButton
-                variant={isSpinning ? 'chrome' : 'violet'}
-                size="lg"
-                shine={!isSpinning}
-                pulse={phase === 'idle'}
-                onClick={spin}
-                disabled={isSpinning || filteredGames.length === 0}
-                style={{ width: 200 }}
-              >
-                {isSpinning ? '⟳ Girando…' : '🎰 GIRAR'}
-              </ArcadeButton>
-            </div>
+                {/* Marquee */}
+                <div style={{
+                  textAlign: 'center', fontFamily: 'ui-monospace, monospace', fontSize: 11,
+                  letterSpacing: '0.3em', textTransform: 'uppercase', padding: '6px 0 12px',
+                  color: spinning ? '#ff006e' : '#00f0ff',
+                  textShadow: spinning ? '0 0 8px rgba(255,0,110,.6)' : '0 0 8px rgba(0,240,255,.6)',
+                  animation: spinning ? 'lp-flicker .3s steps(2) infinite' : undefined,
+                }}>{marquee}</div>
 
-            {/* Game info panel */}
-            <div style={{
-              flex: 1,
-              minHeight: 360,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              gap: 20,
-            }}>
-              {phase === 'done' && pickedGame ? (
-                <>
-                  <div>
-                    <div style={{
-                      fontSize: 11, letterSpacing: 3, color: '#22d3ee',
-                      textTransform: 'uppercase', marginBottom: 8,
-                    }}>
-                      Tu próximo juego
-                    </div>
-                    <div style={{
-                      fontSize: 28, fontWeight: 800, color: '#fff',
-                      lineHeight: 1.2, textShadow: '0 0 20px #22d3ee88',
-                      marginBottom: 6,
-                    }}>
-                      {pickedGame.title}
-                    </div>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-                      {systemName && <Tag color="#a855f7">{systemName}</Tag>}
-                      {pickedGame.year && <Tag color="#f59e0b">{pickedGame.year}</Tag>}
-                      {pickedGame.genre && <Tag color="#10b981">{pickedGame.genre}</Tag>}
-                      {pickedGame.players > 1 && <Tag color="#3b82f6">{pickedGame.players}P</Tag>}
-                      {pickedGame.favorite && <Tag color="#ec4899">♥ Favorito</Tag>}
-                    </div>
+                {/* Reel window */}
+                <div style={{
+                  position: 'relative', height: 440, borderRadius: 14, overflow: 'hidden',
+                  background: '#05040c',
+                  boxShadow: 'inset 0 0 40px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,255,255,.04)',
+                }}>
+                  {/* Top/bottom fade masks */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 90, background: 'linear-gradient(180deg, #05040c, transparent)', zIndex: 6, pointerEvents: 'none' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, background: 'linear-gradient(0deg, #05040c, transparent)', zIndex: 6, pointerEvents: 'none' }} />
 
-                    {pickedGame.description && (
-                      <p style={{
-                        color: 'var(--color-text-muted)', fontSize: 13, lineHeight: 1.6,
-                        maxWidth: 420,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 4,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}>
-                        {pickedGame.description}
-                      </p>
-                    )}
-                  </div>
+                  {/* Center selection band */}
+                  <div style={{
+                    position: 'absolute', left: 0, right: 0, top: '50%', height: CELL_H,
+                    transform: 'translateY(-50%)', zIndex: 5, pointerEvents: 'none',
+                    borderTop: `2px solid ${reelWin ? 'rgba(57,255,20,.8)' : 'rgba(0,240,255,.6)'}`,
+                    borderBottom: `2px solid ${reelWin ? 'rgba(57,255,20,.8)' : 'rgba(0,240,255,.6)'}`,
+                    boxShadow: reelWin
+                      ? '0 0 32px rgba(57,255,20,.5), inset 0 0 40px rgba(57,255,20,.1)'
+                      : '0 0 24px rgba(0,240,255,.3), inset 0 0 40px rgba(0,240,255,.06)',
+                    transition: 'border-color .3s, box-shadow .3s',
+                  }} />
 
-                  {pickedGame.developer && (
-                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                      <span style={{ color: '#6b7280' }}>Dev: </span>{pickedGame.developer}
-                      {pickedGame.publisher && pickedGame.publisher !== pickedGame.developer && (
-                        <> · <span style={{ color: '#6b7280' }}>Pub: </span>{pickedGame.publisher}</>
-                      )}
-                    </div>
-                  )}
-
-                  {pickedGame.play_count > 0 && (
-                    <div style={{ fontSize: 12, color: '#6b7280' }}>
-                      Jugado {pickedGame.play_count} {pickedGame.play_count === 1 ? 'vez' : 'veces'}
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <ArcadeButton
-                      variant="cyan"
-                      size="lg"
-                      shine
-                      icon="▶"
-                      onClick={handleLaunch}
-                      disabled={launching}
-                    >
-                      {launching ? 'Lanzando…' : 'JUGAR AHORA'}
-                    </ArcadeButton>
-                    <ArcadeButton
-                      variant="magenta"
-                      size="md"
-                      onClick={() => { setPhase('idle'); setPickedGame(null); setDisplayGame(null); }}
-                    >
-                      Otro juego
-                    </ArcadeButton>
-                  </div>
-                </>
-              ) : (
-                <div style={{ color: '#3b1d6e' }}>
-                  <div style={{ fontSize: 64, marginBottom: 16, opacity: 0.5 }}>🎰</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#5a3a9a', marginBottom: 6 }}>
-                    {isSpinning ? 'Buscando tu juego…' : `${filteredGames.length} juegos disponibles`}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#3b1d6e' }}>
-                    {isSpinning ? 'Preparando la selección perfecta' : 'Presiona GIRAR para descubrir qué jugar hoy'}
+                  {/* Reel track */}
+                  <div ref={trackRef} style={{ position: 'absolute', left: 0, right: 0, top: 0, display: 'flex', flexDirection: 'column', willChange: 'transform' }}>
+                    {reelStrip.length === 0 ? (
+                      <div style={{ height: CELL_H, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 12 }}>
+                        <span style={{ fontSize: 54 }}>🎰</span>
+                        <span style={{ fontSize: 14, color: '#6a6a85', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'ui-monospace,monospace' }}>GIRA PARA JUGAR</span>
+                      </div>
+                    ) : reelStrip.map((g, i) => (
+                      <ReelCell key={i} game={g} systems={systems} />
+                    ))}
                   </div>
                 </div>
-              )}
+
+                {/* Physical lever */}
+                <div
+                  onClick={spin}
+                  title="¡Tira de la palanca!"
+                  style={{
+                    position: 'absolute', right: -40, top: '50%',
+                    transform: leverDown ? 'translateY(-30%)' : 'translateY(-50%)',
+                    transition: 'transform .15s',
+                    zIndex: 8, cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', marginBottom: -6,
+                    background: 'radial-gradient(circle at 35% 30%, #ff5a8a, #cc1144)',
+                    boxShadow: '0 0 16px rgba(255,0,110,.7), inset 0 -3px 6px rgba(0,0,0,.4)',
+                  }} />
+                  <div style={{ width: 8, height: 90, background: 'linear-gradient(180deg, #888, #444)', borderRadius: 4 }} />
+                  <div style={{ width: 24, height: 14, background: '#333', borderRadius: '0 0 6px 6px' }} />
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* Result panel */}
+            <div style={{ maxWidth: 560 }}>
+              <div style={{
+                fontSize: 13, fontWeight: 700, letterSpacing: '0.32em', color: '#00f0ff',
+                textTransform: 'uppercase', textShadow: '0 0 12px rgba(0,240,255,.5)',
+                marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00f0ff', boxShadow: '0 0 8px #00f0ff', display: 'inline-block', animation: 'lp-dot 1.5s ease-in-out infinite' }} />
+                Tu próximo juego
+              </div>
+
+              <h2 style={{
+                fontSize: 64, fontWeight: 900, lineHeight: 1, margin: '0 0 18px',
+                color: '#fff', letterSpacing: '-0.01em',
+                textShadow: '0 4px 24px rgba(0,0,0,.6)',
+                minHeight: 64,
+                opacity: spinning ? 0.4 : 1,
+                filter: spinning ? 'blur(2px)' : 'none',
+                transition: 'opacity .2s, filter .2s',
+              }}>
+                {pickedGame?.title ?? '—'}
+              </h2>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 34 }}>
+                {systemName && <TagEl>{systemName}</TagEl>}
+                {pickedGame?.year && <TagEl meta>{pickedGame.year}</TagEl>}
+                {pickedGame?.genre && <TagEl meta>{pickedGame.genre.toUpperCase()}</TagEl>}
+                {pickedGame?.favorite && <TagEl>♥ Favorito</TagEl>}
+              </div>
+
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                <BtnPlay onClick={handleLaunch} disabled={!pickedGame || launching || spinning}>
+                  <span style={{ fontSize: 20 }}>▶</span> {launching ? 'Lanzando…' : 'Jugar ahora'}
+                </BtnPlay>
+                <BtnReroll onClick={spin} disabled={spinning || filteredGames.length === 0}>
+                  <span style={{ fontSize: 20 }}>🎲</span> Otro juego
+                </BtnReroll>
+              </div>
+
+              <div style={{ display: 'flex', gap: 28, marginTop: 34, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                <Stat label="Tiradas hoy" value={rolls} color="#00f0ff" />
+                <Stat label="Racha" value={streak} color="#ffce5e" />
+                <Stat label="En el bombo" value={poolCount} />
+              </div>
+            </div>
+          </>
         )}
       </div>
 
+      {/* Keyboard hint */}
+      <div style={{
+        position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
+        fontSize: 11, color: '#555', letterSpacing: '0.2em', textTransform: 'uppercase',
+        fontFamily: 'ui-monospace, monospace', zIndex: 5, whiteSpace: 'nowrap',
+      }}>
+        <Kbd>Espacio</Kbd> girar · <Kbd>Enter</Kbd> jugar · <Kbd>R</Kbd> otra vez
+      </div>
+
+      {/* Confetti */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 60, overflow: 'hidden' }}>
+        {confetti.map((c) => (
+          <i key={c.id} style={{
+            position: 'absolute', width: 10, height: 14, top: -20,
+            left: `${c.left}%`, background: c.color,
+            borderRadius: c.circle ? '50%' : 2,
+            boxShadow: `0 0 6px ${c.color}`,
+            animation: `lp-fall ${c.dur}s cubic-bezier(.3,.6,.7,1) ${c.delay}s forwards`,
+            opacity: 0,
+            display: 'block',
+          }} />
+        ))}
+      </div>
+
+      {/* Jackpot */}
+      {jackpot && (
+        <div style={{
+          position: 'fixed', top: '18%', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 65, pointerEvents: 'none',
+          fontSize: 72, fontWeight: 900, letterSpacing: '0.1em',
+          background: 'linear-gradient(90deg, #ffce5e, #ff006e, #00f0ff, #ffce5e)',
+          backgroundSize: '300% 100%',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+          animation: 'lp-jackpot 1.4s ease-out, lp-rainbow 1.4s linear',
+        }}>
+          ¡JACKPOT!
+        </div>
+      )}
+
       <style>{`
-        @keyframes scanSweep {
-          0%   { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
+        @keyframes lp-twinkle { 0%,100%{opacity:.4;transform:scale(.8) rotate(0)} 50%{opacity:1;transform:scale(1.2) rotate(20deg)} }
+        @keyframes lp-dot     { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes lp-flicker { 0%,100%{opacity:1} 50%{opacity:.6} }
+        @keyframes lp-cab-win { 0%,100%{transform:scale(1)} 30%{transform:scale(1.04)} 60%{transform:scale(.99)} }
+        @keyframes lp-fall    { 0%{opacity:1;transform:translateY(0) rotate(0)} 100%{opacity:0;transform:translateY(110vh) rotate(720deg)} }
+        @keyframes lp-jackpot { 0%{opacity:0;transform:translate(-50%,20px) scale(.6)} 25%{opacity:1;transform:translate(-50%,-20px) scale(1.1)} 80%{opacity:1;transform:translate(-50%,-20px) scale(1)} 100%{opacity:0;transform:translate(-50%,-60px) scale(1)} }
+        @keyframes lp-rainbow { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
       `}</style>
     </div>
   );
 }
 
-function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function ReelCell({ game, systems }: { game: GameInfo; systems: SystemInfo[] }) {
+  const sysName = systems.find((s) => s.id === game.system_id)?.name ?? game.system_id;
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '4px 12px',
-        borderRadius: 20,
-        border: `1px solid ${active ? '#a855f7' : '#2a1a4a'}`,
-        background: active ? '#a855f720' : 'transparent',
-        color: active ? '#e2d9ff' : '#5a3a8a',
-        fontSize: 12,
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        whiteSpace: 'nowrap',
-      }}
-    >
+    <div style={{ height: CELL_H, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 12 }}>
+      <div style={{ fontSize: 54, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.6))' }}>
+        {genreEmoji(game.genre)}
+      </div>
+      <div style={{
+        fontSize: 15, fontWeight: 700, color: '#cdbff0', textAlign: 'center', lineHeight: 1.2,
+        maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis',
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+      }}>
+        {game.title}
+      </div>
+      <div style={{ fontSize: 10, color: '#6a6a85', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace' }}>
+        {sysName}{game.year ? ` · ${game.year}` : ''}
+      </div>
+    </div>
+  );
+}
+
+function Chip({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '6px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+      border: `1px solid ${active ? 'transparent' : 'rgba(124,58,237,.3)'}`,
+      background: active
+        ? 'linear-gradient(135deg, #7c3aed, #b026ff)'
+        : 'rgba(124,58,237,.06)',
+      color: active ? '#fff' : '#a78bda',
+      boxShadow: active ? '0 0 16px rgba(124,58,237,.6)' : undefined,
+      transition: 'all .15s',
+      whiteSpace: 'nowrap',
+    }}>
       {label}
+      <span style={{ opacity: 0.6, fontSize: 11, marginLeft: 3 }}>{fmtNum(count)}</span>
     </button>
   );
 }
 
-function Tag({ children, color }: { children: React.ReactNode; color: string }) {
+function TagEl({ children, meta }: { children: React.ReactNode; meta?: boolean }) {
   return (
     <span style={{
-      padding: '3px 10px',
-      borderRadius: 12,
-      border: `1px solid ${color}44`,
-      background: `${color}18`,
-      color,
-      fontSize: 12,
-      fontWeight: 600,
+      padding: '6px 16px', borderRadius: 999, fontSize: meta ? 12 : 14, fontWeight: meta ? 500 : 700,
+      background: meta ? 'rgba(255,255,255,.04)' : 'rgba(124,58,237,.18)',
+      border: `1px solid ${meta ? 'rgba(255,255,255,.1)' : 'rgba(124,58,237,.5)'}`,
+      color: meta ? '#9a9ab0' : '#c4a8ff',
+      fontFamily: meta ? 'ui-monospace, monospace' : undefined,
     }}>
       {children}
     </span>
+  );
+}
+
+function BtnPlay({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      position: 'relative', fontFamily: 'inherit', fontSize: 19, fontWeight: 800,
+      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '20px 44px',
+      borderRadius: 999, cursor: disabled ? 'not-allowed' : 'pointer',
+      border: '2px solid #00f0ff', background: 'rgba(0,240,255,.08)', color: '#00f0ff',
+      boxShadow: '0 0 20px rgba(0,240,255,.4), inset 0 0 20px rgba(0,240,255,.06)',
+      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 14,
+      opacity: disabled ? 0.4 : 1,
+      transition: 'all .18s',
+    }}>
+      {children}
+    </button>
+  );
+}
+
+function BtnReroll({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      position: 'relative', fontFamily: 'inherit', fontSize: 19, fontWeight: 800,
+      letterSpacing: '0.14em', textTransform: 'uppercase', padding: '20px 44px',
+      borderRadius: 999, cursor: disabled ? 'not-allowed' : 'pointer',
+      border: '2px solid #ff006e', background: 'rgba(255,0,110,.08)', color: '#ff006e',
+      boxShadow: '0 0 20px rgba(255,0,110,.4), inset 0 0 20px rgba(255,0,110,.06)',
+      overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 14,
+      opacity: disabled ? 0.4 : 1,
+      transition: 'all .18s',
+    }}>
+      {children}
+    </button>
+  );
+}
+
+function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{
+        fontSize: 26, fontWeight: 900, fontFamily: 'ui-monospace, monospace',
+        color: color ?? '#fff',
+        textShadow: color ? `0 0 12px ${color}80` : undefined,
+      }}>
+        {fmtNum(value)}
+      </span>
+      <span style={{ fontSize: 10, color: '#6a6a85', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd style={{
+      background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)',
+      borderRadius: 4, padding: '1px 7px', color: '#aaa',
+    }}>
+      {children}
+    </kbd>
   );
 }

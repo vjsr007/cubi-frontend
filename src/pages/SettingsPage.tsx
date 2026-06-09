@@ -44,12 +44,16 @@ export function SettingsPage() {
   const [detecting, setDetecting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [fullscreen, setFullscreen] = useState(true);
+  const [rgsxUrl, setRgsxUrl] = useState('');
+  const [rgsxChecking, setRgsxChecking] = useState(false);
+  const [rgsxReachable, setRgsxReachable] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (config) {
       setDataRoot(config.paths.data_root);
       setEmudeckPath(config.paths.emudeck_path);
       setFullscreen(config.general.fullscreen ?? true);
+      setRgsxUrl(config.general.rgsx_device_url ?? '');
     }
   }, [config]);
 
@@ -91,12 +95,31 @@ export function SettingsPage() {
   const handleSave = async () => {
     if (!config) return;
     try {
-      await saveConfig({ ...config, paths: { data_root: dataRoot, emudeck_path: emudeckPath } });
+      await saveConfig({
+        ...config,
+        paths: { data_root: dataRoot, emudeck_path: emudeckPath },
+        general: { ...config.general, rgsx_device_url: rgsxUrl || undefined },
+      });
       setSaved(true);
       showToast(t('settings.saved'), 'success');
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       showToast(String(e), 'error');
+    }
+  };
+
+  const handleRgsxTest = async () => {
+    if (!rgsxUrl) return;
+    setRgsxChecking(true);
+    setRgsxReachable(null);
+    try {
+      const ok = await api.checkRgsxConnection(rgsxUrl);
+      setRgsxReachable(ok);
+      showToast(ok ? 'RGSX device reachable ✓' : 'RGSX device not reachable', ok ? 'success' : 'error');
+    } catch {
+      setRgsxReachable(false);
+    } finally {
+      setRgsxChecking(false);
     }
   };
 
@@ -239,6 +262,35 @@ export function SettingsPage() {
             {detecting ? <LoadingSpinner size="sm" /> : '🔍'}
             {t('settings.detectEmuDeck')}
           </button>
+        </section>
+
+        {/* RGSX */}
+        <section style={sectionStyle}>
+          <p style={sectionLabel}>RGSX — ROM Downloader</p>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: 'var(--color-text)', marginBottom: 4 }}>
+            Device URL
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 0, marginBottom: 10 }}>
+            Web interface of your Batocera/Knulli device running RGSX (port 5000). Example:{' '}
+            <code style={{ background: 'var(--color-surface-3)', padding: '1px 4px', borderRadius: 3 }}>http://192.168.1.100:5000</code>
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="text"
+              value={rgsxUrl}
+              onChange={(e) => { setRgsxUrl(e.target.value); setRgsxReachable(null); }}
+              placeholder="http://192.168.1.100:5000"
+              style={inputStyle}
+            />
+            <button onClick={handleRgsxTest} disabled={rgsxChecking || !rgsxUrl} style={btnStyle}>
+              {rgsxChecking ? '…' : '🔌 Test'}
+            </button>
+          </div>
+          {rgsxReachable !== null && (
+            <p style={{ fontSize: 12, margin: 0, color: rgsxReachable ? 'var(--color-success)' : 'var(--color-error)' }}>
+              {rgsxReachable ? '✓ Device reachable — RGSX integration active' : '✗ Device not reachable — check IP and port 5000'}
+            </p>
+          )}
         </section>
 
         {/* Display */}

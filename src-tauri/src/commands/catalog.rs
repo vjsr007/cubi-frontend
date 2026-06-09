@@ -58,3 +58,17 @@ pub fn get_catalog_config() -> Result<CatalogConfig, String> {
 pub fn set_catalog_download_url(system_id: String, url: String) -> Result<(), String> {
     crate::services::catalog_service::set_download_url(&system_id, &url)
 }
+
+/// Probe whether an RGSX device web UI is reachable at the given URL.
+/// Returns true if the server responds with any HTTP status.
+#[tauri::command]
+pub async fn check_rgsx_connection(url: String) -> Result<bool, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .map_err(|e| e.to_string())?;
+    match client.get(&url).send().await {
+        Ok(_) => Ok(true),
+        Err(_) => Ok(false),
+    }
+}

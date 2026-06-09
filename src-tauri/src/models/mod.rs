@@ -10,6 +10,7 @@ pub mod catalog;
 pub mod system_wiki;
 pub mod emulator;
 pub mod flash_mapping;
+pub mod rgsx;
 
 pub use config::*;
 pub use game::*;
@@ -22,3 +23,4 @@ pub use catalog::*;
 pub use system_wiki::*;
 pub use emulator::*;
 pub use flash_mapping::*;
+pub use rgsx::*;

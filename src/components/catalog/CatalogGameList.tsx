@@ -4,6 +4,9 @@ import type { CatalogGame } from '../../types';
 interface Props {
   games: CatalogGame[];
   downloadBaseUrl?: string;
+  rgsxGameMap?: Map<string, string>;
+  rgsxDlStates?: Record<string, string>;
+  onRgsxDownload?: (rgsxGameName: string) => void;
   onViewGame?: (gameId: string) => void;
   onDownload?: (url: string) => void;
 }
@@ -21,13 +24,9 @@ const thStyle: React.CSSProperties = {
   zIndex: 1,
 };
 
-export function CatalogGameList({ games, downloadBaseUrl, onViewGame, onDownload }: Props) {
+export function CatalogGameList({ games, downloadBaseUrl, rgsxGameMap, rgsxDlStates, onRgsxDownload, onViewGame, onDownload }: Props) {
   if (games.length === 0) {
-    return (
-      <div style={{ padding: 32, textAlign: 'center', opacity: 0.5, fontSize: 14 }}>
-        No games found
-      </div>
-    );
+    return <div style={{ padding: 32, textAlign: 'center', opacity: 0.5, fontSize: 14 }}>No games found</div>;
   }
 
   return (
@@ -39,7 +38,7 @@ export function CatalogGameList({ games, downloadBaseUrl, onViewGame, onDownload
             <th style={{ ...thStyle, width: 100 }}>Region</th>
             <th style={{ ...thStyle, width: 70, textAlign: 'center' }}>Status</th>
             <th style={{ ...thStyle, width: 90 }}>Size</th>
-            <th style={{ ...thStyle, width: 80 }}>Action</th>
+            <th style={{ ...thStyle, width: 100 }}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -48,6 +47,9 @@ export function CatalogGameList({ games, downloadBaseUrl, onViewGame, onDownload
               key={game.id}
               game={game}
               downloadBaseUrl={downloadBaseUrl}
+              rgsxGameMap={rgsxGameMap}
+              rgsxDlStates={rgsxDlStates}
+              onRgsxDownload={onRgsxDownload}
               onViewGame={onViewGame}
               onDownload={onDownload}
             />

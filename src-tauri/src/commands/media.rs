@@ -47,6 +47,7 @@ pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> R
             &app_data_dir,
             &game.system_id,
             &game.file_name,
+            &game.file_path,
         )
     } else {
         media_service::resolve_game_media(
@@ -54,6 +55,7 @@ pub fn get_game_media(app: AppHandle, db: State<Database>, game_id: String) -> R
             &app_data_dir,
             &game.system_id,
             &game.file_name,
+            &game.file_path,
         )
     };
 
@@ -128,6 +130,7 @@ pub async fn download_game_media(
             &app_data_dir,
             &game.system_id,
             &game.file_name,
+            &game.file_path,
         )
     };
 

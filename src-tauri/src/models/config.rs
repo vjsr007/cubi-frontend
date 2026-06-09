@@ -72,6 +72,9 @@ pub struct GeneralConfig {
     /// Steam ID or vanity URL — used together with steam_api_key (REQ-024).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub steam_id: Option<String>,
+    /// RGSX device URL — e.g. http://192.168.1.100:5000 (Batocera/Knulli device running RGSX).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rgsx_device_url: Option<String>,
 }
 
 impl Default for GeneralConfig {
@@ -84,6 +87,7 @@ impl Default for GeneralConfig {
             steamgriddb_api_key: None,
             steam_api_key: None,
             steam_id: None,
+            rgsx_device_url: None,
         }
     }
 }

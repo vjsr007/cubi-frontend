@@ -10,6 +10,7 @@ import type {
   MediaImportResult, YoutubeSearchResult,
   CatalogSystemStats, CatalogPage, CatalogFilter, CatalogSync, CatalogConfig,
   SystemWiki, FlashKeyMapping, FlashGameConfig,
+  RgsxPlatform, RgsxGame, RgsxDownloadResult, RgsxProgress,
 } from '../types';
 import type { GameInfoPatch } from '../types/editor';
 import type { SteamSearchResult, SteamGameData } from '../types/steam';
@@ -169,6 +170,14 @@ export const api = {
     invoke<SteamGameData | null>('fetch_steam_data', { gameId }),
   refreshSteamData: (gameId: string) =>
     invoke<SteamGameData>('refresh_steam_data', { gameId }),
+
+  // RGSX Integration
+  checkRgsxConnection: (url: string) => invoke<boolean>('check_rgsx_connection', { url }),
+  rgsxGetPlatforms: (url: string) => invoke<RgsxPlatform[]>('rgsx_get_platforms', { url }),
+  rgsxGetGames: (url: string, platformName: string) => invoke<RgsxGame[]>('rgsx_get_games', { url, platformName }),
+  rgsxDownloadGame: (url: string, platformName: string, gameName: string, queue?: boolean) =>
+    invoke<RgsxDownloadResult>('rgsx_download_game', { url, platformName, gameName, queue: queue ?? false }),
+  rgsxGetProgress: (url: string) => invoke<RgsxProgress>('rgsx_get_progress', { url }),
 
   // Game Catalog (REQ-022)
   getCatalogStats: () => invoke<CatalogSystemStats[]>('get_catalog_stats'),

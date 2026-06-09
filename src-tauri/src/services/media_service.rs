@@ -57,6 +57,7 @@ pub fn resolve_game_media(
     app_data_dir: &Path,
     system_id: &str,
     file_name: &str,
+    file_path: &str,
 ) -> GameMedia {
     let root = Path::new(data_root);
     let stem = Path::new(file_name)
@@ -73,16 +74,17 @@ pub fn resolve_game_media(
             .or_else(|| scraped_base.as_ref().and_then(|base| find_file(&base.join(subfolder), stem, exts)))
     };
 
-    // Box art: try miximages > backcovers (as front sometimes) > roms/*/downloaded_images
+    // Box art: try miximages > roms/*/downloaded_images (check actual ROM dir first,
+    // then system_id-based dir — handles multi-folder systems like msx/msx2)
+    let rom_images_dir = Path::new(file_path)
+        .parent()
+        .map(|d| d.join("downloaded_images"));
+    let system_images_dir = root.join("roms").join(system_id).join("downloaded_images");
+
     let box_art = lookup("box2dfront", IMG_EXTS)
         .or_else(|| lookup("miximages", IMG_EXTS))
-        .or_else(|| {
-            find_file(
-                &root.join("roms").join(system_id).join("downloaded_images"),
-                stem,
-                IMG_EXTS,
-            )
-        });
+        .or_else(|| rom_images_dir.as_ref().and_then(|d| find_file(d, stem, IMG_EXTS)))
+        .or_else(|| find_file(&system_images_dir, stem, IMG_EXTS));
 
     GameMedia {
         box_art,

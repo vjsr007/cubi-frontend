@@ -43,6 +43,8 @@ export interface GeneralConfig {
   steam_api_key?: string;
   /** Steam ID or vanity URL — used with steam_api_key for cloud library (REQ-024). */
   steam_id?: string;
+  /** RGSX device URL — e.g. http://192.168.1.100:5000 */
+  rgsx_device_url?: string;
 }
 
 export interface PathsConfig {
@@ -446,6 +448,39 @@ export interface CatalogConfig {
   dat_source_url: string;
   auto_sync: boolean;
   download_urls: Record<string, string>;
+}
+
+// ── RGSX Integration ─────────────────────────────────────────────────
+
+export interface RgsxPlatform {
+  platform_name: string;
+  folder: string;
+  games_count: number;
+}
+
+export interface RgsxGame {
+  name: string;
+  url?: string;
+  size?: string;
+}
+
+export interface RgsxDownloadResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  queued?: boolean;
+}
+
+export interface RgsxDownloadItem {
+  downloaded_size: number;
+  total_size: number;
+  status: string;
+  progress_percent: number;
+  game_name?: string;
+}
+
+export interface RgsxProgress {
+  downloads: Record<string, RgsxDownloadItem>;
 }
 
 // ── System Wiki ───────────────────────────────────────────────────────

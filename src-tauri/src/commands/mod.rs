@@ -16,3 +16,4 @@ pub mod catalog;
 pub mod system_wiki;
 pub mod emulator_commands;
 pub mod flash_mapping;
+pub mod rgsx;

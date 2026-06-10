@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { ScraperConfig } from '../types';
+import { listen } from '@tauri-apps/api/event';
+import type { ScraperConfig, ScrapeProgress, ScrapeResult } from '../types';
 import { useI18nStore } from '../stores/i18nStore';
 import { useUiStore } from '../stores/uiStore';
 import { useScraperStore } from '../stores/scraperStore';
@@ -60,6 +61,45 @@ export function ScraperPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('scrapers');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  // "Rellenar todo" — bulk scrape all missing metadata + art in one click
+  const [fillRunning, setFillRunning] = useState(false);
+  const [fillProgress, setFillProgress] = useState<ScrapeProgress | null>(null);
+  const [fillResult, setFillResult] = useState<ScrapeResult | null>(null);
+
+  useEffect(() => {
+    const unlisten = listen<ScrapeProgress>('scrape-progress', (e) => {
+      setFillProgress(e.payload);
+      if (e.payload.done) setFillRunning(false);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
+
+  const handleFillAll = async () => {
+    const best = scrapers.find((s) => s.enabled && s.id === 'screenscraper')
+      ?? scrapers.find((s) => s.enabled && s.id === 'thegamesdb')
+      ?? scrapers.find((s) => s.enabled);
+    if (!best) return;
+    setFillRunning(true);
+    setFillResult(null);
+    setFillProgress(null);
+    try {
+      const result = await api.runScrapeJob({
+        scraper_id: best.id,
+        filter: 'missing_only',
+        overwrite: false,
+      });
+      setFillResult(result);
+    } catch (e) {
+      setFillResult({ scraped: 0, skipped: 0, errors: 1, messages: [String(e)] });
+    } finally {
+      setFillRunning(false);
+    }
+  };
+
+  const handleFillCancel = async () => {
+    try { await api.cancelScrapeJob(); } catch {}
+  };
 
   const handleImportEsde = async () => {
     setImportStatus('Buscando configuración de ES-DE...');
@@ -153,6 +193,86 @@ export function ScraperPage() {
           </div>
         )}
       </div>
+
+      {/* Rellenar todo — quick-fill banner */}
+      {activeTab === 'scrapers' && (
+        <div style={{
+          margin: '12px 20px 0',
+          borderRadius: 14,
+          padding: '14px 20px',
+          background: 'linear-gradient(135deg, rgba(124,58,237,.18) 0%, rgba(0,240,255,.08) 100%)',
+          border: '1px solid rgba(124,58,237,.35)',
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: '#c4a8ff' }}>
+              ✨ Rellenar todo
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>
+              Busca automáticamente metadata y portadas para todos los juegos que faltan — usa el mejor scraper disponible.
+            </p>
+          </div>
+
+          {/* Progress inline */}
+          {(fillRunning || fillProgress) && (
+            <div style={{ flex: 2, minWidth: 220 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {fillProgress?.game_title || 'Iniciando…'}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                  {fillProgress ? `${fillProgress.current}/${fillProgress.total}` : ''}
+                </span>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,.08)', borderRadius: 6, height: 6, overflow: 'hidden' }}>
+                <div style={{
+                  background: 'linear-gradient(90deg, #7c3aed, #00f0ff)',
+                  height: '100%',
+                  width: fillProgress && fillProgress.total > 0
+                    ? `${Math.round((fillProgress.current / fillProgress.total) * 100)}%`
+                    : '0%',
+                  transition: 'width .3s',
+                }} />
+              </div>
+            </div>
+          )}
+
+          {/* Result summary */}
+          {fillResult && !fillRunning && (
+            <div style={{ fontSize: 12, display: 'flex', gap: 12 }}>
+              <span style={{ color: '#22c55e' }}>↑ {fillResult.scraped} scrapeados</span>
+              <span style={{ color: 'var(--color-text-muted)' }}>⏭ {fillResult.skipped} omitidos</span>
+              {fillResult.errors > 0 && <span style={{ color: '#ef4444' }}>⚠ {fillResult.errors} errores</span>}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleFillAll}
+              disabled={fillRunning || scrapers.filter((s) => s.enabled).length === 0}
+              style={{
+                background: fillRunning ? 'rgba(124,58,237,.3)' : 'linear-gradient(135deg, #7c3aed, #9333ea)',
+                color: '#fff', border: 'none', borderRadius: 10,
+                padding: '9px 20px', fontSize: 13, fontWeight: 700,
+                cursor: fillRunning ? 'not-allowed' : 'pointer',
+                opacity: fillRunning ? 0.7 : 1,
+                boxShadow: fillRunning ? 'none' : '0 0 16px rgba(124,58,237,.5)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {fillRunning ? '⏳ Rellenando…' : '🚀 Rellenar todo'}
+            </button>
+            {fillRunning && (
+              <button
+                onClick={handleFillCancel}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       {activeTab === 'scrapers' ? (

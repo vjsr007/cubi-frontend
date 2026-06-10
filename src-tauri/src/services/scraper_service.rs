@@ -80,11 +80,13 @@ pub async fn run_scrape_job(
             });
         }
 
-        // Skip logic for MissingOnly
+        // Skip logic for MissingOnly: skip only when ALL key fields are populated
         if job.filter == ScrapeFilter::MissingOnly {
-            let has_meta = game.description.is_some() || game.developer.is_some();
-            let has_art = game.box_art.is_some();
-            if has_meta && has_art {
+            let meta_ok = game.description.is_some()
+                && game.year.is_some()
+                && game.genre.is_some();
+            let art_ok = game.box_art.is_some();
+            if meta_ok && art_ok {
                 skipped += 1;
                 continue;
             }
@@ -164,7 +166,7 @@ async fn scrape_screenscraper(
     let mut updated = game.clone();
 
     // Apply metadata if filter allows
-    if matches!(filter, ScrapeFilter::All | ScrapeFilter::MetadataOnly) {
+    if matches!(filter, ScrapeFilter::All | ScrapeFilter::MetadataOnly | ScrapeFilter::MissingOnly) {
         if overwrite || updated.title == game.title {
             if let Some(t) = &data.title { updated.title = t.clone(); }
         }
@@ -192,7 +194,7 @@ async fn scrape_screenscraper(
     }
 
     // Download media if filter allows
-    let want_images = matches!(filter, ScrapeFilter::All | ScrapeFilter::ImagesOnly);
+    let want_images = matches!(filter, ScrapeFilter::All | ScrapeFilter::ImagesOnly | ScrapeFilter::MissingOnly);
     let want_videos = matches!(filter, ScrapeFilter::All | ScrapeFilter::VideosOnly);
 
     let media_root = data_dir.join("media");
@@ -253,7 +255,7 @@ async fn scrape_thegamesdb(
     let db = app.state::<Database>();
     let mut updated = game.clone();
 
-    if matches!(filter, ScrapeFilter::All | ScrapeFilter::MetadataOnly) {
+    if matches!(filter, ScrapeFilter::All | ScrapeFilter::MetadataOnly | ScrapeFilter::MissingOnly) {
         if let Some(t) = &data.title {
             if overwrite { updated.title = t.clone(); }
         }
@@ -270,7 +272,7 @@ async fn scrape_thegamesdb(
         }
     }
 
-    let want_images = matches!(filter, ScrapeFilter::All | ScrapeFilter::ImagesOnly);
+    let want_images = matches!(filter, ScrapeFilter::All | ScrapeFilter::ImagesOnly | ScrapeFilter::MissingOnly);
     let media_root = data_dir.join("media");
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
